@@ -1,7 +1,6 @@
 'use strict';
 
-var P = require('bluebird');
-var _ = require('underscore');
+var common = require('../saymon-common.js');
 
 /**
  * A basic actor.
@@ -9,24 +8,28 @@ var _ = require('underscore');
 class Actor {
   /**
    * @param {ActorSystem} system Actor system.
-   * @param {Actor|null} parent Actor parent or null, if it's a root actor.
-   * @param {Object} behaviour Actor behaviour definition.
    */
-  constructor(system, parent, behaviour) {
+  constructor(system) {
     this.system = system;
-    this.parent = parent;
-    this.id = system.generateActorId();
-    this.behaviour = _.clone(behaviour);
   }
 
   /**
    * Creates a child actor.
    *
    * @param {Object} behaviour Child actor behaviour definition.
+   * @param {Object} [options] Actor creation options.
+   * - {String} mode Actor creation mode.
    * @returns {P} Promise that yields a child actor once it is created.
    */
-  createChild(behaviour) {
-    return P.resolve(new Actor(this.system, this, behaviour));
+  createChild(behaviour, options) {
+    return this.system.createActor(behaviour, this, options);
+  }
+
+  /**
+   * @returns {String} This actor ID.
+   */
+  getId() {
+    return common.abstractMethodError('getId');
   }
 
   /**
@@ -37,17 +40,7 @@ class Actor {
    * @returns {P} Promise which is resolved once the message is sent.
    */
   send(topic, message) {
-    return P.bind(this)
-      .then(() => {
-        var handler = this.behaviour[topic];
-
-        if (handler) {
-          if (_.isFunction(handler)) handler.call(this, message);
-        }
-        else {
-          throw new Error('No handler for message, topic=' + topic + ', actor=' + this);
-        }
-      });
+    return common.abstractMethodError('send', topic, message);
   }
 
   /**
@@ -59,19 +52,7 @@ class Actor {
    * @returns {P} Promise which yields the actor response.
    */
   sendAndReceive(topic, message) {
-    return P.bind(this)
-      .then(() => {
-        var handler = this.behaviour[topic];
-
-        if (handler) {
-          if (_.isFunction(handler)) return handler.call(this, message);
-
-          return handler;
-        }
-        else {
-          throw new Error('No handler for message, topic=' + topic + ', actor=' + this);
-        }
-      });
+    return common.abstractMethodError('sendAndReceive', topic, message);
   }
 
   toString() {
