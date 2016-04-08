@@ -15,6 +15,7 @@ class Actor {
   constructor(system, parent, behaviour) {
     this.system = system;
     this.parent = parent;
+    this.id = system.generateActorId();
     this.behaviour = _.clone(behaviour);
   }
 
@@ -71,6 +72,10 @@ class Actor {
           throw new Error('No handler for message, topic=' + topic + ', actor=' + this);
         }
       });
+  }
+
+  toString() {
+    return 'Actor(' + this.id + ')';
   }
 }
 
