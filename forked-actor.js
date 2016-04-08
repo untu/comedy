@@ -47,7 +47,7 @@ class ForkedActor extends Actor {
   sendAndReceive(topic, message) {
     return this._send0(topic, message)
       .then(msgId => {
-        var pending = Promise.pending();
+        var pending = P.pending();
 
         this.responsePromises[msgId] = pending;
 
