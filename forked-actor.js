@@ -21,31 +21,34 @@ class ForkedActor extends Actor {
 
     // Listen for message responses.
     bus.on('message', (msg) => {
-      if (msg.type != 'actor-response') return log.warn('Ignoring message of an unknown type:', msg);
+      if (msg.type == 'actor-response') {
+        if (!msg.id) return log.warn('Ignoring "actor-response" message with absent ID.');
 
-      if (!msg.id) return log.warn('Ignoring "actor-response" message with absent ID.');
+        var respPromise = this.responsePromises[msg.id];
 
-      var respPromise = this.responsePromises[msg.id];
+        if (!respPromise) return log.warn('No pending promise for "actor-response":', msg);
 
-      if (!respPromise) return log.warn('No pending promise for "actor-response":', msg);
+        delete this.responsePromises[msg.id];
 
-      delete this.responsePromises[msg.id];
-
-      if (msg.error) {
-        respPromise.reject(new Error(msg.error));
+        if (msg.error) {
+          respPromise.reject(new Error(msg.error));
+        }
+        else {
+          respPromise.resolve(msg.body && msg.body.response);
+        }
       }
       else {
-        respPromise.resolve(msg.body && msg.body.result);
+        log.warn('Ignoring message of an unknown type:', msg);
       }
     });
   }
 
   send(topic, message) {
-    return this._send0(topic, message).return(undefined);
+    return this._send0(topic, message, false).return(undefined);
   }
 
   sendAndReceive(topic, message) {
-    return this._send0(topic, message)
+    return this._send0(topic, message, true)
       .then(msgId => {
         var pending = P.pending();
 
@@ -61,10 +64,11 @@ class ForkedActor extends Actor {
    *
    * @param {String} topic Message topic.
    * @param message Message.
+   * @param {Boolean} receive Receive flag.
    * @returns {*} Promise that yields a sent message ID.
    * @private
    */
-  _send0(topic, message) {
+  _send0(topic, message, receive) {
     return new P((resolve, reject) => {
       var msgId = this.idCounter++;
       var msg0 = {
@@ -72,7 +76,8 @@ class ForkedActor extends Actor {
         id: msgId,
         body: {
           topic: topic,
-          message: message
+          message: message,
+          receive: receive
         }
       };
 
