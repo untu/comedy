@@ -55,6 +55,10 @@ class LocalActor extends Actor {
       });
   }
 
+  destroy() {
+    return P.resolve();
+  }
+
   toString() {
     return 'LocalActor(' + this.id + ')';
   }

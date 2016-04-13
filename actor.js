@@ -55,6 +55,15 @@ class Actor {
     return common.abstractMethodError('sendAndReceive', topic, message);
   }
 
+  /**
+   * Destroys this actor.
+   *
+   * @returns {P} Promise which is resolved when actor is destroyed.
+   */
+  destroy() {
+    return common.abstractMethodError('destroy');
+  }
+
   toString() {
     return 'Actor(' + this.id + ')';
   }

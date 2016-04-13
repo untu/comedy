@@ -66,6 +66,10 @@ class ForkedActor extends Actor {
       });
   }
 
+  destroy() {
+    return P.fromNode(cb => this.bus.send({ type: 'destroy-actor' }, cb));
+  }
+
   /**
    * Sends a message and returns a promise, which is resolved with sent message ID.
    *

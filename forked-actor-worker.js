@@ -33,37 +33,47 @@ process.once('message', msg => {
         });
 
         process.on('message', msg => {
-          if (msg.type != 'actor-message') return log.warn('Ignoring message of an unknown type: ', msg);
+          if (msg.type == 'actor-message') {
+            if (!msg.body) return process.send({ error: 'Missing message body' });
 
-          if (!msg.body) return process.send({ error: 'Missing message body' });
+            var topic = msg.body.topic;
 
-          var topic = msg.body.topic;
+            if (!topic) return process.send({ error: 'Missing message topic' });
 
-          if (!topic) return process.send({ error: 'Missing message topic' });
+            var sendPromise;
 
-          var sendPromise;
+            if (msg.body.receive) {
+              if (!msg.id) return process.send({ error: 'Missing message ID' });
 
-          if (msg.body.receive) {
-            if (!msg.id) return process.send({ error: 'Missing message ID' });
+              sendPromise = actor.sendAndReceive(topic, msg.body.message)
+                .then(resp => process.send({
+                  type: 'actor-response',
+                  id: msg.id,
+                  body: { response: resp }
+                }));
+            }
+            else {
+              sendPromise = actor.send(topic, msg.body.message);
+            }
 
-            sendPromise = actor.sendAndReceive(topic, msg.body.message)
-              .then(resp => process.send({
-                type: 'actor-response',
-                id: msg.id,
-                body: { response: resp }
-              }));
+            sendPromise.catch(err => process.send({
+              type: 'actor-response',
+              id: msg.id,
+              body: {
+                error: err.message
+              }
+            }));
+          }
+          else if (msg.type == 'destroy-actor') {
+            process.off('message');
+
+            actor.destroy().then(() => {
+              process.exit(0);
+            });
           }
           else {
-            sendPromise = actor.send(topic, msg.body.message);
+            log.warn('Ignoring message of an unknown type: ', msg);
           }
-
-          sendPromise.catch(err => process.send({
-            type: 'actor-response',
-            id: msg.id,
-            body: {
-              error: err.message
-            }
-          }));
         });
       });
   }
