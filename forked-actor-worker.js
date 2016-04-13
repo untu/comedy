@@ -57,7 +57,13 @@ process.once('message', msg => {
             sendPromise = actor.send(topic, msg.body.message);
           }
 
-          sendPromise.catch(err => process.send({ error: err.toString() }));
+          sendPromise.catch(err => process.send({
+            type: 'actor-response',
+            id: msg.id,
+            body: {
+              error: err.message
+            }
+          }));
         });
       });
   }

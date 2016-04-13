@@ -30,11 +30,18 @@ class ForkedActor extends Actor {
 
         delete this.responsePromises[msg.id];
 
-        if (msg.error) {
-          respPromise.reject(new Error(msg.error));
+        if (msg.body) {
+          var body = msg.body;
+
+          if (body.error) {
+            respPromise.reject(new Error(body.error));
+          }
+          else {
+            respPromise.resolve(body.response);
+          }
         }
         else {
-          respPromise.resolve(msg.body && msg.body.response);
+          respPromise.resolve();
         }
       }
       else {
