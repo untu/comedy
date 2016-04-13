@@ -48,7 +48,7 @@ class Actor {
    * to specified behaviour.
    *
    * @param {String} topic Message topic.
-   * @param message Message.
+   * @param [message] Message.
    * @returns {P} Promise which yields the actor response.
    */
   sendAndReceive(topic, message) {
