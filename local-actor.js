@@ -1,5 +1,6 @@
 'use strict';
 
+var common = require('../saymon-common.js');
 var Actor = require('./actor.js');
 var P = require('bluebird');
 var _ = require('underscore');
@@ -18,7 +19,17 @@ class LocalActor extends Actor {
 
     this.parent = parent;
     this.id = system.generateActorId();
-    this.behaviour = _.clone(behaviour);
+
+    if (common.isPlainObject(behaviour)) {
+      // Plain object behaviour.
+      this.behaviour = _.clone(behaviour);
+      this.handlerContext = this;
+    }
+    else {
+      // Class-defined behaviour.
+      this.behaviour = behaviour;
+      this.handlerContext = behaviour;
+    }
   }
 
   getId() {
@@ -33,7 +44,7 @@ class LocalActor extends Actor {
         if (handler) {
           if (_.isFunction(handler)) {
             try {
-              handler.call(this, message);
+              handler.call(this.handlerContext, message);
             }
             catch (err) {
               // Ignore error from handler to satisfy method contract.
@@ -52,7 +63,7 @@ class LocalActor extends Actor {
         var handler = this.behaviour[topic];
 
         if (handler) {
-          if (_.isFunction(handler)) return handler.call(this, message);
+          if (_.isFunction(handler)) return handler.call(this.handlerContext, message);
 
           return handler;
         }

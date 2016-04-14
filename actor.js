@@ -17,7 +17,8 @@ class Actor {
   /**
    * Creates a child actor.
    *
-   * @param {Object} behaviour Child actor behaviour definition.
+   * @param {Object|Function} behaviour Child actor behaviour definition. Can be a plain object or a
+   * class reference. In case of class reference, an actor object is automatically instantiated.
    * @param {Object} [options] Actor creation options.
    * - {String} mode Actor creation mode.
    * @returns {P} Promise that yields a child actor once it is created.

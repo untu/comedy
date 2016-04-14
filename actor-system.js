@@ -6,6 +6,7 @@ var childProcess = require('child_process');
 var toSource = require('tosource');
 var mongodb = require('mongodb');
 var P = require('bluebird');
+var _ = require('underscore');
 
 /**
  * An actor system.
@@ -31,11 +32,27 @@ class ActorSystem {
    * @returns {P} Promise that yields a created actor.
    */
   createActor(behaviour, parent, options) {
-    options = options || { mode: 'in-memory' };
+    options = options || { mode: 'local' };
 
     switch (options.mode) {
-      case 'in-memory':
-        return P.resolve(new LocalActor(this, parent, behaviour));
+      case 'local':
+        if (_.isFunction(behaviour)) {
+          var BehaviourClass = behaviour;
+
+          return P.resolve()
+            .then(() => new BehaviourClass())
+            .tap(behaviourInstance => {
+              if (_.isFunction(behaviourInstance.initialize)) {
+                return behaviourInstance.initialize();
+              }
+            })
+            .then(behaviourInstance => new LocalActor(this, parent, behaviourInstance));
+        }
+        else {
+          return P.resolve(new LocalActor(this, parent, behaviour));
+        }
+
+        break;
 
       case 'forked':
         return this.createForkedActor(behaviour, parent);

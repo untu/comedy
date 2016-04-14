@@ -6,4 +6,6 @@
 
 var ActorSystem = require('./actor-system.js');
 
-module.exports = ActorSystem.default();
+var defaultSystem = ActorSystem.default();
+
+exports.getRootActor = ActorSystem.prototype.getRootActor.bind(defaultSystem);
