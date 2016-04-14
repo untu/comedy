@@ -15,6 +15,14 @@ class Actor {
   }
 
   /**
+   * Actor initialization function that is called before any interaction with actor starts.
+   * This function may return promise, in which case the actor will only be available for
+   * communication after the returned promise is resolved.
+   */
+  initialize() {
+  }
+
+  /**
    * Creates a child actor.
    *
    * @param {Object|Function} behaviour Child actor behaviour definition. Can be a plain object or a

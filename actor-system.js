@@ -26,36 +26,30 @@ class ActorSystem {
   /**
    * Creates an actor.
    *
-   * @param {Object} behaviour Actor behaviour.
+   * @param {Object} Behaviour Actor behaviour.
    * @param {Actor} parent Actor parent.
    * @param {Object} [options] Actor creation options.
-   * @returns {P} Promise that yields a created actor.
+   * @returns {*} Promise that yields a created actor.
    */
-  createActor(behaviour, parent, options) {
+  createActor(Behaviour, parent, options) {
     options = options || { mode: 'local' };
 
     switch (options.mode) {
       case 'local':
-        if (_.isFunction(behaviour)) {
-          var BehaviourClass = behaviour;
+        return P.resolve()
+          .then(() => {
+            var behaviour0 = Behaviour;
 
-          return P.resolve()
-            .then(() => new BehaviourClass())
-            .tap(behaviourInstance => {
-              if (_.isFunction(behaviourInstance.initialize)) {
-                return behaviourInstance.initialize();
-              }
-            })
-            .then(behaviourInstance => new LocalActor(this, parent, behaviourInstance));
-        }
-        else {
-          return P.resolve(new LocalActor(this, parent, behaviour));
-        }
+            if (_.isFunction(Behaviour)) {
+              behaviour0 = new Behaviour();
+            }
 
-        break;
+            return new LocalActor(this, parent, behaviour0);
+          })
+          .tap(actor => actor.initialize());
 
       case 'forked':
-        return this.createForkedActor(behaviour, parent);
+        return this.createForkedActor(Behaviour, parent);
 
       default:
         return P.throw(new Error('Unknown actor mode: ' + options.mode));

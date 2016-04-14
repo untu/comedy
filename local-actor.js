@@ -36,6 +36,12 @@ class LocalActor extends Actor {
     return this.id;
   }
 
+  initialize() {
+    if (_.isFunction(this.behaviour.initialize)) {
+      return this.behaviour.initialize.call(this.handlerContext, this);
+    }
+  }
+
   send0(topic, message) {
     return P.bind(this)
       .then(() => {
