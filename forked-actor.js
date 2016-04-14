@@ -21,14 +21,16 @@ class ForkedActor extends Actor {
 
     // Listen for message responses.
     bus.on('message', (msg) => {
+      var respPromise = this.responsePromises[msg.id];
+
+      if (respPromise) {
+        delete this.responsePromises[msg.id];
+      }
+
       if (msg.type == 'actor-response') {
         if (!msg.id) return log.warn('Ignoring "actor-response" message with absent ID.');
 
-        var respPromise = this.responsePromises[msg.id];
-
         if (!respPromise) return log.warn('No pending promise for "actor-response":', msg);
-
-        delete this.responsePromises[msg.id];
 
         if (msg.body) {
           var body = msg.body;
@@ -43,6 +45,9 @@ class ForkedActor extends Actor {
         else {
           respPromise.resolve();
         }
+      }
+      else if (msg.type == 'actor-destroyed') {
+        respPromise && respPromise.resolve();
       }
       else {
         log.warn('Ignoring message of an unknown type:', msg);
@@ -67,7 +72,19 @@ class ForkedActor extends Actor {
   }
 
   destroy() {
-    return P.fromNode(cb => this.bus.send({ type: 'destroy-actor' }, cb));
+    var pending = P.pending();
+    var msgId = this.idCounter++;
+
+    this.bus.send({
+      type: 'destroy-actor',
+      id: msgId
+    }, err => {
+      if (err) return pending.reject(err);
+
+      this.responsePromises[msgId] = pending;
+    });
+
+    return pending.promise;
   }
 
   /**

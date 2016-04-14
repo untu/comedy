@@ -65,10 +65,12 @@ process.once('message', msg => {
             }));
           }
           else if (msg.type == 'destroy-actor') {
-            process.off('message');
+            process.removeAllListeners('message');
 
             actor.destroy().then(() => {
-              process.exit(0);
+              process.send({ type: 'actor-destroyed', id: msg.id }, () => {
+                process.exit(0);
+              });
             });
           }
           else {
