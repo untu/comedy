@@ -1,6 +1,7 @@
 'use strict';
 
 var common = require('../saymon-common.js');
+var P = require('bluebird');
 
 /**
  * A basic actor.
@@ -41,7 +42,10 @@ class Actor {
    * @returns {P} Promise which is resolved once the message is sent.
    */
   send(topic, message) {
-    return common.abstractMethodError('send', topic, message);
+    if (this.destroying)
+      return this._destroyCalledErrorPromise();
+
+    return this.send0(topic, message);
   }
 
   /**
@@ -53,7 +57,10 @@ class Actor {
    * @returns {P} Promise which yields the actor response.
    */
   sendAndReceive(topic, message) {
-    return common.abstractMethodError('sendAndReceive', topic, message);
+    if (this.destroying)
+      return this._destroyCalledErrorPromise();
+
+    return this.sendAndReceive0(topic, message);
   }
 
   /**
@@ -62,11 +69,55 @@ class Actor {
    * @returns {P} Promise which is resolved when actor is destroyed.
    */
   destroy() {
-    return common.abstractMethodError('destroy');
+    if (this.destroying)
+      return this._destroyCalledErrorPromise();
+
+    this.destroying = true;
+
+    return this.destroy0();
+  }
+
+  /**
+   * Actual send implementation. To be overridden by subclasses.
+   *
+   * @param {String} topic Message topic.
+   * @param message Message.
+   * @returns {P} Promise which is resolved once the message is sent.
+   */
+  send0(topic, message) {
+    return common.abstractMethodError('send', topic, message);
+  }
+
+  /**
+   * Actual sendAndReceive implementation. To be overridden by subclasses.
+   *
+   * @param {String} topic Message topic.
+   * @param [message] Message.
+   * @returns {P} Promise which yields the actor response.
+   */
+  sendAndReceive0(topic, message) {
+    return common.abstractMethodError('sendAndReceive', topic, message);
+  }
+
+  /**
+   * Actual destroy implementation. To be overridden by subclasses.
+   *
+   * @returns {P} Promise which is resolved when actor is destroyed.
+   */
+  destroy0() {
+    return P.resolve();
   }
 
   toString() {
     return 'Actor(' + this.id + ')';
+  }
+
+  /**
+   * @returns {P} Promise which throws 'destroy() called' error.
+   * @private
+   */
+  _destroyCalledErrorPromise() {
+    return P.resolve().throw(new Error('destroy() has been called for this actor, no further interaction possible'));
   }
 }
 

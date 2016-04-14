@@ -25,7 +25,7 @@ class LocalActor extends Actor {
     return this.id;
   }
 
-  send(topic, message) {
+  send0(topic, message) {
     return P.bind(this)
       .then(() => {
         var handler = this.behaviour[topic];
@@ -46,7 +46,7 @@ class LocalActor extends Actor {
       });
   }
 
-  sendAndReceive(topic, message) {
+  sendAndReceive0(topic, message) {
     return P.bind(this)
       .then(() => {
         var handler = this.behaviour[topic];
@@ -60,10 +60,6 @@ class LocalActor extends Actor {
           throw new Error('No handler for message, topic=' + topic + ', actor=' + this);
         }
       });
-  }
-
-  destroy() {
-    return P.resolve();
   }
 
   toString() {

@@ -55,11 +55,11 @@ class ForkedActor extends Actor {
     });
   }
 
-  send(topic, message) {
+  send0(topic, message) {
     return this._send0(topic, message, false).return(undefined);
   }
 
-  sendAndReceive(topic, message) {
+  sendAndReceive0(topic, message) {
     return this._send0(topic, message, true)
       .then(msgId => {
         var pending = P.pending();
@@ -71,7 +71,7 @@ class ForkedActor extends Actor {
       });
   }
 
-  destroy() {
+  destroy0() {
     var pending = P.pending();
     var msgId = this.idCounter++;
 
