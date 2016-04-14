@@ -34,6 +34,7 @@ class Actor {
 
   /**
    * Sends a message to this actor. The message is handled according to specified behaviour.
+   * A result of message handling is completely ignored, even if it has generated an error.
    *
    * @param {String} topic Message topic.
    * @param message Message.

@@ -31,7 +31,14 @@ class LocalActor extends Actor {
         var handler = this.behaviour[topic];
 
         if (handler) {
-          if (_.isFunction(handler)) handler.call(this, message);
+          if (_.isFunction(handler)) {
+            try {
+              handler.call(this, message);
+            }
+            catch (err) {
+              // Ignore error from handler to satisfy method contract.
+            }
+          }
         }
         else {
           throw new Error('No handler for message, topic=' + topic + ', actor=' + this);
