@@ -66,7 +66,13 @@ class ActorSystem {
   createForkedActor(behaviour, parent) {
     return P.resolve()
       .then(() => {
-        var workerProcess = childProcess.fork(__dirname + '/forked-actor-worker.js');
+        var psArgs = [];
+
+        if (_.isFunction(behaviour) && behaviour.name) {
+          psArgs.push(behaviour.name);
+        }
+
+        var workerProcess = childProcess.fork(__dirname + '/forked-actor-worker.js', psArgs);
 
         return new P((resolve, reject) => {
           var createMsg = {
