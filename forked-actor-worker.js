@@ -21,7 +21,16 @@ process.once('message', msg => {
       return;
     }
 
-    var compiledBeh = eval('(' + beh + ')'); // jshint ignore:line
+    var compiledBeh;
+
+    try {
+      compiledBeh = eval('(' + beh + ')'); // jshint ignore:line
+    }
+    catch (err) {
+      process.send({ error: 'Compilation error: ' + err });
+
+      process.exit(1);
+    }
 
     system.createActor(compiledBeh, {})
       .then(actor => {
