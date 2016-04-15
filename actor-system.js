@@ -1,5 +1,6 @@
 'use strict';
 
+var common = require('../saymon-common.js');
 var LocalActor = require('./local-actor.js');
 var ForkedActor = require('./forked-actor.js');
 var childProcess = require('child_process');
@@ -78,7 +79,7 @@ class ActorSystem {
           var createMsg = {
             type: 'create-actor',
             body: {
-              behaviour: toSource(behaviour),
+              behaviour: this._serializeBehaviour(behaviour),
               parent: {
                 id: parent.getId()
               }
@@ -110,6 +111,28 @@ class ActorSystem {
    */
   generateActorId() {
     return new mongodb.ObjectID().toString();
+  }
+
+  /**
+   * Serializes a given actor behaviour definition for transferring to other process.
+   *
+   * @param {Object|Function} behaviour Actor behaviour definition.
+   * @returns {String} Serialized actor behaviour.
+   * @private
+   */
+  _serializeBehaviour(behaviour) {
+    if (!common.isPlainObject(behaviour)) {
+      // Assume from this point that behaviour is a class.
+      // Get a base class for behaviour class.
+      var base = Object.getPrototypeOf(behaviour);
+
+      if (base && base.name) {
+        // Have a user-defined super class. Serialize it as well.
+        return this._serializeBehaviour(base) + toSource(behaviour);
+      }
+    }
+
+    return toSource(behaviour);
   }
 
   /**

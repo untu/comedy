@@ -24,7 +24,12 @@ process.once('message', msg => {
     var compiledBeh;
 
     try {
-      compiledBeh = eval('(' + beh + ')'); // jshint ignore:line
+      if (beh[0] == '{') {
+        // Plain object defined behaviour => wrap in braces.
+        beh = '(' + beh + ')';
+      }
+
+      compiledBeh = eval(beh); // jshint ignore:line
     }
     catch (err) {
       process.send({ error: 'Compilation error: ' + err });
@@ -86,6 +91,11 @@ process.once('message', msg => {
             log.warn('Ignoring message of an unknown type: ', msg);
           }
         });
+      })
+      .catch(err => {
+        process.send({ error: 'Failed to create forked actor: ' + err });
+
+        process.exit(1);
       });
   }
 });
