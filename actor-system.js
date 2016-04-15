@@ -4,10 +4,12 @@ var common = require('../saymon-common.js');
 var LocalActor = require('./local-actor.js');
 var ForkedActor = require('./forked-actor.js');
 var childProcess = require('child_process');
+var appRootPath = require('app-root-path');
 var toSource = require('tosource');
 var mongodb = require('mongodb');
 var P = require('bluebird');
 var _ = require('underscore');
+var globalRequire = require;
 
 /**
  * An actor system.
@@ -28,7 +30,7 @@ class ActorSystem {
     this.rootActorPromise = P.resolve(new LocalActor(this, null, {}))
       .tap(() => {
         if (_.isFunction(this.context.initialize)) {
-          return this.context.initialize();
+          return this.context.initialize(this._selfProxy());
         }
       });
   }
@@ -138,6 +140,23 @@ class ActorSystem {
   }
 
   /**
+   * Helper function to correctly import modules in different processes with
+   * different directory layout.
+   *
+   * @param {String} modulePath Path of the module to import. If starts with /, a module
+   * is searched relative to project directory.
+   * @returns {*} Module import result.
+   */
+  require(modulePath) {
+    if (modulePath[0] != '/' && modulePath[0] != '.') {
+      return globalRequire(modulePath);
+    }
+    else {
+      return globalRequire(appRootPath + modulePath);
+    }
+  }
+
+  /**
    * Serializes a given actor behaviour definition for transferring to other process.
    *
    * @param {Object|Function} behaviour Actor behaviour definition.
@@ -157,6 +176,19 @@ class ActorSystem {
     }
 
     return toSource(behaviour);
+  }
+
+  /**
+   * Generates a lightweight proxy object for this system to expose only
+   * specific methods to a client.
+   *
+   * @returns {Object} Proxy object.
+   * @private
+   */
+  _selfProxy() {
+    return {
+      require: this.require.bind(this)
+    };
   }
 
   /**

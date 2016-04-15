@@ -1,9 +1,7 @@
 'use strict';
 
 var common = require('../saymon-common.js');
-var appRootPath = require('app-root-path');
 var P = require('bluebird');
-var globalRequire = require;
 
 /**
  * A basic actor.
@@ -104,12 +102,7 @@ class Actor {
    * @returns {*} Module import result.
    */
   require(modulePath) {
-    if (modulePath[0] != '/' && modulePath[0] != '.') {
-      return globalRequire(modulePath);
-    }
-    else {
-      return globalRequire(appRootPath + modulePath);
-    }
+    return this.system.require(modulePath);
   }
 
   /**
