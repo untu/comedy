@@ -16,11 +16,19 @@ class ActorSystem {
   constructor(options) {
     options = options || {};
 
-    this.context = options.context || {};
+    this.contextBehaviour = options.context || {};
+
+    if (_.isFunction(this.contextBehaviour)) {
+      this.context = new this.contextBehaviour();
+    }
+    else {
+      this.context = this.contextBehaviour;
+    }
+
     this.rootActorPromise = P.resolve(new LocalActor(this, null, {}))
       .tap(() => {
-        if (options.context && _.isFunction(options.context.initialize)) {
-          return options.context.initialize();
+        if (_.isFunction(this.context.initialize)) {
+          return this.context.initialize();
         }
       });
   }
@@ -95,7 +103,7 @@ class ActorSystem {
             type: 'create-actor',
             body: {
               behaviour: this._serializeBehaviour(behaviour),
-              context: this._serializeBehaviour(this.context),
+              context: this._serializeBehaviour(this.contextBehaviour),
               parent: {
                 id: parent.getId()
               }
