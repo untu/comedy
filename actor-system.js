@@ -95,6 +95,7 @@ class ActorSystem {
             type: 'create-actor',
             body: {
               behaviour: this._serializeBehaviour(behaviour),
+              context: this._serializeBehaviour(this.context),
               parent: {
                 id: parent.getId()
               }

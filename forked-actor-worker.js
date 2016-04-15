@@ -3,8 +3,6 @@
 var ActorSystem = require('./actor-system.js');
 var log = require('../utils/log.js');
 
-var system = ActorSystem.default();
-
 process.once('message', msg => {
   if (msg.type == 'create-actor') {
     if (!msg.body) {
@@ -21,23 +19,17 @@ process.once('message', msg => {
       return;
     }
 
-    var compiledBeh;
+    var compiledBeh = compileBehaviour(beh);
+    var context = {};
 
-    try {
-      if (beh[0] == '{') {
-        // Plain object defined behaviour => wrap in braces.
-        beh = '(' + beh + ')';
-      }
-
-      compiledBeh = eval(beh); // jshint ignore:line
-    }
-    catch (err) {
-      process.send({ error: 'Compilation error: ' + err });
-
-      process.exit(1);
+    if (msg.body.context) {
+      context = compileBehaviour(msg.body.context);
     }
 
-    system.createActor(compiledBeh, {})
+    var system = new ActorSystem({ context: context });
+
+    system.rootActor()
+      .then(rootActor => rootActor.createChild(compiledBeh))
       .then(actor => {
         process.send({
           type: 'actor-created',
@@ -99,3 +91,25 @@ process.once('message', msg => {
       });
   }
 });
+
+/**
+ * Compiles a serialized actor behaviour.
+ *
+ * @param {String} behaviour Serialized behaviour.
+ * @returns {*} Compiled actor behaviour.
+ */
+function compileBehaviour(behaviour) {
+  try {
+    if (behaviour[0] == '{') {
+      // Plain object defined behaviour => wrap in braces.
+      behaviour = '(' + behaviour + ')';
+    }
+
+    return eval(behaviour); // jshint ignore:line
+  }
+  catch (err) {
+    process.send({ error: 'Compilation error: ' + err });
+
+    process.exit(1);
+  }
+}
