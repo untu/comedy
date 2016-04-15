@@ -13,15 +13,30 @@ var _ = require('underscore');
  * An actor system.
  */
 class ActorSystem {
-  constructor() {
-    this.rootActor = new LocalActor(this, null, {});
+  constructor(options) {
+    options = options || {};
+
+    this.context = options.context || {};
+    this.rootActorPromise = P.resolve(new LocalActor(this, null, {}))
+      .tap(() => {
+        if (options.context && _.isFunction(options.context.initialize)) {
+          return options.context.initialize();
+        }
+      });
   }
 
   /**
-   * @returns {Actor} Root actor for this system.
+   * @returns {*} Context of this system.
    */
-  getRootActor() {
-    return this.rootActor;
+  getContext() {
+    return this.context;
+  }
+
+  /**
+   * @returns {P} Promise which yields root actor for this system.
+   */
+  rootActor() {
+    return this.rootActorPromise;
   }
 
   /**
