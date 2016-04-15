@@ -1,7 +1,9 @@
 'use strict';
 
 var common = require('../saymon-common.js');
+var appRootPath = require('app-root-path');
 var P = require('bluebird');
+var globalRequire = require;
 
 /**
  * A basic actor.
@@ -91,6 +93,23 @@ class Actor {
     this.destroying = true;
 
     return this.destroy0();
+  }
+
+  /**
+   * Helper function to correctly import modules in different processes with
+   * different directory layout.
+   *
+   * @param {String} modulePath Path of the module to import. If starts with /, a module
+   * is searched relative to project directory.
+   * @returns {*} Module import result.
+   */
+  require(modulePath) {
+    if (modulePath[0] != '/' && modulePath[0] != '.') {
+      return globalRequire(modulePath);
+    }
+    else {
+      return globalRequire(appRootPath + modulePath);
+    }
   }
 
   /**
