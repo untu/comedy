@@ -99,7 +99,20 @@ class ActorSystem {
           psArgs.push(behaviour.name);
         }
 
-        var workerProcess = childProcess.fork(__dirname + '/forked-actor-worker.js', psArgs);
+        // Handle debugging: increment debugger port for child process.
+        var execArgv = _.map(process.execArgv, arg => {
+          var match = arg.match(/^--debug-brk=(\d+)/);
+
+          if (match) {
+            var debugPort = parseInt(match[1]);
+
+            return '--debug-brk=' + (debugPort + 1);
+          }
+
+          return arg;
+        });
+
+        var workerProcess = childProcess.fork(__dirname + '/forked-actor-worker.js', psArgs, { execArgv: execArgv });
 
         return new P((resolve, reject) => {
           var createMsg = {
