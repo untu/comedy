@@ -51,8 +51,15 @@ class LocalActor extends Actor {
 
         if (handler) {
           if (_.isFunction(handler)) {
+            var args = [message];
+
+            // Send additional arguments, if any.
+            if (arguments.length > 2) {
+              args = _.rest(_.toArray(arguments));
+            }
+
             try {
-              handler.call(this.handlerContext, message);
+              handler.apply(this.handlerContext, args);
             }
             catch (err) {
               log.error('Error from handler, actor=' + this + ', topic=' + topic + ', error=' + err);
@@ -71,7 +78,16 @@ class LocalActor extends Actor {
         var handler = this.behaviour[topic];
 
         if (handler) {
-          if (_.isFunction(handler)) return handler.call(this.handlerContext, message);
+          if (_.isFunction(handler)) {
+            var args = [message];
+
+            // Send additional arguments, if any.
+            if (arguments.length > 2) {
+              args = _.rest(_.toArray(arguments));
+            }
+
+            return handler.apply(this.handlerContext, args);
+          }
 
           return handler;
         }

@@ -2,7 +2,6 @@
 
 var common = require('../saymon-common.js');
 var P = require('bluebird');
-var _ = require('underscore');
 
 /**
  * A basic actor.
@@ -77,7 +76,13 @@ class Actor {
     if (this.destroying)
       return this._destroyCalledErrorPromise();
 
-    return this.send0(topic, message);
+    // Allow additional arguments.
+    if (arguments.length > 2) {
+      return this.send0.apply(this, arguments);
+    }
+    else {
+      return this.send0(topic, message);
+    }
   }
 
   /**
@@ -92,7 +97,13 @@ class Actor {
     if (this.destroying)
       return this._destroyCalledErrorPromise();
 
-    return this.sendAndReceive0(topic, message);
+    // Allow additional arguments.
+    if (arguments.length > 2) {
+      return this.sendAndReceive0.apply(this, arguments);
+    }
+    else {
+      return this.sendAndReceive0(topic, message);
+    }
   }
 
   /**

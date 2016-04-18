@@ -112,7 +112,9 @@ class ActorSystem {
               }
             }
           };
+          var resolved = false;
 
+          // Send a message to forked process and await response.
           workerProcess.send(createMsg, (err) => {
             if (err) return reject(err);
 
@@ -124,8 +126,14 @@ class ActorSystem {
               if (msg.type != 'actor-created' || !msg.body || !msg.body.id)
                 return reject(new Error('Unexpected response for "create-actor" message.'));
 
+              resolved = true;
               resolve(new ForkedActor(this, parent, workerProcess));
             });
+          });
+
+          // Handle forked process startup failure.
+          workerProcess.once('error', err => {
+            if (!resolved) reject(new Error('Failed to fork: ' + err));
           });
         });
       });
