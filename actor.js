@@ -2,6 +2,7 @@
 
 var common = require('../saymon-common.js');
 var P = require('bluebird');
+var _ = require('underscore');
 
 /**
  * A basic actor.

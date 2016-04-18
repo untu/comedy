@@ -30,6 +30,7 @@ class LocalActor extends Actor {
       // Class-defined behaviour.
       this.behaviour = behaviour;
       this.handlerContext = behaviour;
+      this.behaviourName = behaviour.constructor.name;
     }
   }
 
@@ -80,8 +81,36 @@ class LocalActor extends Actor {
       });
   }
 
+  /**
+   * Sets this actor to forward messages with given topics to it's parent.
+   * Topic names can be specified using an array or via varargs.
+   */
+  forwardToParent() {
+    if (arguments.length === 0) return;
+
+    var args = arguments[0];
+
+    if (arguments.length > 1) {
+      args = _.toArray(arguments);
+    }
+    else if (!_.isArray(arguments[0])) {
+      args = [arguments[0]];
+    }
+
+    _.each(args, topic => {
+      this.behaviour[topic] = function() {
+        return this.parent.send.apply(this.parent, [topic].concat(_.toArray(arguments)));
+      }.bind(this);
+    });
+  }
+
   toString() {
-    return 'LocalActor(' + this.id + ')';
+    if (this.behaviourName) {
+      return 'LocalActor(' + this.behaviourName + '(' + this.id + '))';
+    }
+    else {
+      return 'LocalActor(' + this.id + ')';
+    }
   }
 }
 

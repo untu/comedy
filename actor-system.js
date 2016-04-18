@@ -5,6 +5,7 @@ var LocalActor = require('./local-actor.js');
 var ForkedActor = require('./forked-actor.js');
 var childProcess = require('child_process');
 var appRootPath = require('app-root-path');
+var requireDir = require('require-dir');
 var toSource = require('tosource');
 var mongodb = require('mongodb');
 var P = require('bluebird');
@@ -141,7 +142,8 @@ class ActorSystem {
 
   /**
    * Helper function to correctly import modules in different processes with
-   * different directory layout.
+   * different directory layout. If a module path ends with /, imports the whole
+   * directory.
    *
    * @param {String} modulePath Path of the module to import. If starts with /, a module
    * is searched relative to project directory.
@@ -150,6 +152,9 @@ class ActorSystem {
   require(modulePath) {
     if (modulePath[0] != '/' && modulePath[0] != '.') {
       return globalRequire(modulePath);
+    }
+    else if (_.last(modulePath) == '/') {
+      return requireDir(appRootPath + modulePath);
     }
     else {
       return globalRequire(appRootPath + modulePath);
