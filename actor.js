@@ -9,9 +9,11 @@ var P = require('bluebird');
 class Actor {
   /**
    * @param {ActorSystem} system Actor system.
+   * @param {Actor} parent Parent actor.
    */
-  constructor(system) {
+  constructor(system, parent) {
     this.system = system;
+    this.parent = parent;
   }
 
   /**
@@ -36,6 +38,8 @@ class Actor {
   }
 
   /**
+   * Synchronously returns this actor's ID.
+   *
    * @returns {String} This actor ID.
    */
   getId() {
@@ -43,10 +47,21 @@ class Actor {
   }
 
   /**
+   * Synchronously returns this actor's context.
+   *
    * @returns {*} A context of this actor's system.
    */
   getContext() {
     return this.system.getContext();
+  }
+
+  /**
+   * Synchronously returns this actor's parent.
+   *
+   * @returns {Actor} This actor's parent.
+   */
+  getParent() {
+    return this.parent;
   }
 
   /**

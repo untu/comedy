@@ -16,7 +16,7 @@ class LocalActor extends Actor {
    * @param {Object} behaviour Actor behaviour definition.
    */
   constructor(system, parent, behaviour) {
-    super(system);
+    super(system, parent);
 
     this.parent = parent;
     this.id = system.generateActorId();

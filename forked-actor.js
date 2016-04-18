@@ -10,10 +10,11 @@ var P = require('bluebird');
 class ForkedActor extends Actor {
   /**
    * @param {ActorSystem} system Actor system.
+   * @param {Actor} parent Parent actor.
    * @param {Object} bus Message bus to send/receive messages.
    */
-  constructor(system, bus) {
-    super(system);
+  constructor(system, parent, bus) {
+    super(system, parent);
 
     this.bus = bus;
     this.idCounter = 1;

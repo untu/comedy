@@ -123,7 +123,7 @@ class ActorSystem {
               if (msg.type != 'actor-created' || !msg.body || !msg.body.id)
                 return reject(new Error('Unexpected response for "create-actor" message.'));
 
-              resolve(new ForkedActor(this, workerProcess));
+              resolve(new ForkedActor(this, parent, workerProcess));
             });
           });
         });
