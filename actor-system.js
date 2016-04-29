@@ -3,6 +3,7 @@
 var common = require('../saymon-common.js');
 var LocalActor = require('./local-actor.js');
 var ForkedActor = require('./forked-actor.js');
+var RoundRobinBalancerActor = require('./standard/round-robin-balancer-actor.js');
 var childProcess = require('child_process');
 var appRootPath = require('app-root-path');
 var requireDir = require('require-dir');
@@ -60,6 +61,18 @@ class ActorSystem {
    */
   createActor(Behaviour, parent, options) {
     options = options || { mode: 'local' };
+
+    if (options.clusterSize) {
+      return P.resolve()
+        .then(() => {
+          var balancerActor = new RoundRobinBalancerActor(this, parent);
+
+          var childPromises = _.times(options.clusterSize, () =>
+            balancerActor.createChild(Behaviour, _.omit(options, 'clusterSize')));
+
+          return P.all(childPromises).return(balancerActor);
+        });
+    }
 
     switch (options.mode) {
       case 'local':

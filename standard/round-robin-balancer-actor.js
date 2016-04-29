@@ -12,10 +12,9 @@ class RoundRobinBalancerActor extends LocalActor {
   /**
    * @param {ActorSystem} system Actor system.
    * @param {Actor|null} parent Actor parent or null, if it's a root actor.
-   * @param {Object} behaviour Actor behaviour definition.
    */
-  constructor(system, parent, behaviour) {
-    super(system, parent, behaviour);
+  constructor(system, parent) {
+    super(system, parent, {});
 
     this.nextIdx = 0;
   }
@@ -26,6 +25,10 @@ class RoundRobinBalancerActor extends LocalActor {
 
   sendAndReceive0() {
     return this._forward('sendAndReceive', _.toArray(arguments));
+  }
+
+  toString() {
+    return 'RoundRobinBalancerActor(' + this.getId() + ')';
   }
 
   /**
