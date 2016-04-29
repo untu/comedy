@@ -4,6 +4,7 @@ var common = require('../saymon-common.js');
 var LocalActor = require('./local-actor.js');
 var ForkedActor = require('./forked-actor.js');
 var RoundRobinBalancerActor = require('./standard/round-robin-balancer-actor.js');
+var log = require('../utils/log.js');
 var childProcess = require('child_process');
 var appRootPath = require('app-root-path');
 var requireDir = require('require-dir');
@@ -138,7 +139,7 @@ class ActorSystem {
               }
             }
           };
-          var resolved = false;
+          var actor;
 
           // Send a message to forked process and await response.
           workerProcess.send(createMsg, (err) => {
@@ -152,14 +153,31 @@ class ActorSystem {
               if (msg.type != 'actor-created' || !msg.body || !msg.body.id)
                 return reject(new Error('Unexpected response for "create-actor" message.'));
 
-              resolved = true;
-              resolve(new ForkedActor(this, parent, workerProcess));
+              actor = new ForkedActor(this, parent, workerProcess);
+              resolve(actor);
             });
           });
 
           // Handle forked process startup failure.
           workerProcess.once('error', err => {
-            if (!resolved) reject(new Error('Failed to fork: ' + err));
+            if (!actor) reject(new Error('Failed to fork: ' + err));
+          });
+
+          // Kill child process if self process is killed.
+          process.once('SIGINT', () => {
+            log.info('Received SIGINT, exiting');
+
+            process.exit(0);
+          });
+          process.once('SIGTERM', () => {
+            log.info('Received SIGTERM, exiting');
+
+            process.exit(0);
+          });
+          process.once('exit', () => {
+            log.info('Process exiting, killing forked actor ' + actor);
+
+            workerProcess.kill();
           });
         });
       });
