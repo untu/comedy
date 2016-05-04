@@ -36,6 +36,8 @@ class ActorSystem {
           return this.context.initialize(this._selfProxy());
         }
       });
+
+    this.debugPortCounter = 1;
   }
 
   /**
@@ -120,7 +122,7 @@ class ActorSystem {
           if (match) {
             var debugPort = parseInt(match[1]);
 
-            return '--debug-brk=' + (debugPort + 1);
+            return '--debug-brk=' + (debugPort + this.debugPortCounter++);
           }
 
           return arg;
@@ -175,9 +177,11 @@ class ActorSystem {
             process.exit(0);
           });
           process.once('exit', () => {
-            log.info('Process exiting, killing forked actor ' + actor);
+            if (actor) {
+              log.info('Process exiting, killing forked actor ' + actor);
 
-            workerProcess.kill();
+              workerProcess.kill();
+            }
           });
         });
       });

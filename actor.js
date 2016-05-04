@@ -14,6 +14,7 @@ class Actor {
   constructor(system, parent) {
     this.system = system;
     this.parent = parent;
+    this.childPromises = [];
   }
 
   /**
@@ -34,7 +35,11 @@ class Actor {
    * @returns {P} Promise that yields a child actor once it is created.
    */
   createChild(behaviour, options) {
-    return this.system.createActor(behaviour, this, options);
+    var childPromise = this.system.createActor(behaviour, this, options);
+
+    this.childPromises.push(childPromise);
+
+    return childPromise;
   }
 
   /**
@@ -161,6 +166,16 @@ class Actor {
    */
   destroy0() {
     return P.resolve();
+  }
+
+  /**
+   * Returns child actors for this actor.
+   *
+   * @returns {P} Operation promise, which yields an array of child actors.
+   * @private
+   */
+  _children() {
+    return P.all(this.childPromises);
   }
 
   toString() {
