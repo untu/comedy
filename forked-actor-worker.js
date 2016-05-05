@@ -27,10 +27,15 @@ process.once('message', msg => {
     context = compileBehaviour(msg.body.context);
   }
 
-  var system = new ActorSystem({ context: context, forked: true });
+  var system = new ActorSystem({
+    context: context,
+    config: msg.body.config,
+    debug: msg.body.debug,
+    forked: true,
+    root: compiledBeh
+  });
 
   system.rootActor()
-    .then(rootActor => rootActor.createChild(compiledBeh))
     .then(actor => {
       process.send({
         type: 'actor-created',

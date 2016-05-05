@@ -34,13 +34,22 @@ class ActorSystem {
 
     this.debugPortCounter = 1;
     this.log = options.log || this.require('/utils/log.js');
+    this.debug = options.debug;
+    
+    if (options.debug) this.log.setLevel(this.log.levels().Debug);
 
-    this.rootActorPromise = P.resolve(new RootActor(this, { forked: options.forked }))
-      .tap(() => {
-        if (_.isFunction(this.context.initialize)) {
-          return this.context.initialize(this._selfProxy());
-        }
-      });
+    var contextPromise = P.resolve().then(() => {
+      if (_.isFunction(this.context.initialize)) {
+        return this.context.initialize(this._selfProxy());
+      }
+    });
+    
+    if (options.root) {
+      this.rootActorPromise = contextPromise.then(() => this.createActor(options.root, null, { mode: 'in-memory' }));
+    }
+    else {
+      this.rootActorPromise = contextPromise.return(new RootActor(this, { forked: options.forked }));
+    }
   }
 
   /**
@@ -170,6 +179,8 @@ class ActorSystem {
             body: {
               behaviour: this._serializeBehaviour(behaviour),
               context: this._serializeBehaviour(this.contextBehaviour),
+              config: this.config,
+              debug: this.debug,
               parent: {
                 id: parent.getId()
               }
