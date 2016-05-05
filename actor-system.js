@@ -75,15 +75,13 @@ class ActorSystem {
   createActor(Behaviour, parent, options) {
     options = options || {};
 
+    var actorName = this._actorName(Behaviour);
+
     // Determine actor configuration.
-    if (this.config) {
-      var actorName = this._actorName(Behaviour);
+    if (this.config && actorName) {
+      var actorConfig = this.config[s.decapitalize(actorName)];
 
-      if (actorName) {
-        var actorConfig = this.config[s.decapitalize(actorName)];
-
-        options = _.extend({ mode: 'in-memory' }, actorConfig, options);
-      }
+      options = _.extend({ mode: 'in-memory' }, actorConfig, options);
     }
 
     // Perform clusterization, if needed.
@@ -102,20 +100,10 @@ class ActorSystem {
     // Actor creation.
     switch (options.mode || 'in-memory') {
       case 'in-memory':
-        return P.resolve()
-          .then(() => {
-            var behaviour0 = Behaviour;
-
-            if (_.isFunction(Behaviour)) {
-              behaviour0 = new Behaviour();
-            }
-
-            return new LocalActor(this, parent, behaviour0);
-          })
-          .tap(actor => actor.initialize());
+        return this.createLocalActor(Behaviour, parent, actorName);
 
       case 'forked':
-        return this.createForkedActor(Behaviour, parent);
+        return this.createForkedActor(Behaviour, parent, actorName);
 
       default:
         return P.resolve().throw(new Error('Unknown actor mode: ' + options.mode));
@@ -123,13 +111,36 @@ class ActorSystem {
   }
 
   /**
+   * Creates a process-local (in-memory) actor.
+   * 
+   * @param {Object|Function} Behaviour Actor behaviour definition.
+   * @param {Actor} parent Actor parent.
+   * @param {String} [actorName] Actor name.
+   * @returns {*} Promise that yields a newly-created actor.
+   */
+  createLocalActor(Behaviour, parent, actorName) {
+    return P.resolve()
+      .then(() => {
+        var behaviour0 = Behaviour;
+
+        if (_.isFunction(Behaviour)) {
+          behaviour0 = new Behaviour();
+        }
+
+        return new LocalActor(this, parent, behaviour0, actorName);
+      })
+      .tap(actor => actor.initialize());
+  }
+
+  /**
    * Creates a forked actor.
    *
    * @param {Object} behaviour Actor behaviour definition.
    * @param {Actor} parent Actor parent.
+   * @param {String} [actorName] Actor name.
    * @returns {P} Promise that yields a newly-created actor.
    */
-  createForkedActor(behaviour, parent) {
+  createForkedActor(behaviour, parent, actorName) {
     return P.resolve()
       .then(() => {
         var psArgs = [];
@@ -178,7 +189,7 @@ class ActorSystem {
               if (msg.type != 'actor-created' || !msg.body || !msg.body.id)
                 return reject(new Error('Unexpected response for "create-actor" message.'));
 
-              actor = new ForkedActor(this, parent, workerProcess, msg.body.id);
+              actor = new ForkedActor(this, parent, workerProcess, msg.body.id, actorName);
               resolve(actor);
             });
           });
@@ -254,9 +265,14 @@ class ActorSystem {
       behaviour0 = new Behaviour();
     }
 
+    // Take 'name' field, if present.
     if (behaviour0.name) return _.result(behaviour0, 'name');
 
+    // Use 'getName' getter, if present.
     if (_.isFunction(behaviour0.getName)) return behaviour0.getName();
+    
+    // Use class name, if present.
+    if (behaviour0.constructor && behaviour0.constructor.name) return behaviour0.constructor.name;
 
     return '';
   }

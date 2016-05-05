@@ -13,9 +13,10 @@ class LocalActor extends Actor {
    * @param {ActorSystem} system Actor system.
    * @param {Actor|null} parent Actor parent or null, if it's a root actor.
    * @param {Object} behaviour Actor behaviour definition.
+   * @param {String} [name] Actor name.
    */
-  constructor(system, parent, behaviour) {
-    super(system, parent, system.generateActorId());
+  constructor(system, parent, behaviour, name) {
+    super(system, parent, system.generateActorId(), name);
 
     this.parent = parent;
 
@@ -28,7 +29,6 @@ class LocalActor extends Actor {
       // Class-defined behaviour.
       this.behaviour = behaviour;
       this.handlerContext = behaviour;
-      this.behaviourName = behaviour.constructor.name;
     }
   }
 
@@ -115,8 +115,10 @@ class LocalActor extends Actor {
   }
 
   toString() {
-    if (this.behaviourName) {
-      return 'LocalActor(' + this.behaviourName + '(' + this.id + '))';
+    var name = this.getName();
+    
+    if (name) {
+      return 'LocalActor(' + this.id + ', ' + name + ')';
     }
     else {
       return 'LocalActor(' + this.id + ')';

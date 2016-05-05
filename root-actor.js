@@ -13,7 +13,7 @@ class RootActor extends LocalActor {
    * - {Boolean} [forked] If true - this is a forked root.
    */
   constructor(system, options) {
-    super(system, null, {});
+    super(system, null, {}, 'Root');
 
     options = options || {};
 

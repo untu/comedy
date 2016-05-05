@@ -14,7 +14,7 @@ class RoundRobinBalancerActor extends LocalActor {
    * @param {Actor|null} parent Actor parent or null, if it's a root actor.
    */
   constructor(system, parent) {
-    super(system, parent, {});
+    super(system, parent, {}, 'RoundRobinBalancer');
 
     this.nextIdx = 0;
   }

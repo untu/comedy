@@ -166,6 +166,25 @@ class Actor {
   }
 
   /**
+   * Returns a JSON tree representation of this actor's hierarchy.
+   *
+   * @returns {P} Operation promise which yields a hierarchy data object.
+   */
+  tree() {
+    var selfObj = {
+      id: this.getId(),
+      name: this.name
+    };
+
+    return P.resolve(this._children())
+      .map(child => child.tree())
+      .then(childTrees => {
+        _.isEmpty(childTrees) || (selfObj.children = childTrees);
+      })
+      .return(selfObj);
+  }
+
+  /**
    * Actual send implementation. To be overridden by subclasses.
    *
    * @param {String} topic Message topic.

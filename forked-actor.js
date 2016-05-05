@@ -12,9 +12,10 @@ class ForkedActor extends Actor {
    * @param {Actor} parent Parent actor.
    * @param {Object} bus Message bus to send/receive messages.
    * @param {String} id Actor ID.
+   * @param {String} [name] Actor name.
    */
-  constructor(system, parent, bus, id) {
-    super(system, parent, id);
+  constructor(system, parent, bus, id, name) {
+    super(system, parent, id, name);
 
     this.bus = bus;
     this.idCounter = 1;
