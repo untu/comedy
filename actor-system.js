@@ -1,7 +1,7 @@
 'use strict';
 
 var common = require('../saymon-common.js');
-var LocalActor = require('./local-actor.js');
+var InMemoryActor = require('./in-memory-actor.js');
 var ForkedActor = require('./forked-actor.js');
 var RootActor = require('./root-actor.js');
 var RoundRobinBalancerActor = require('./standard/round-robin-balancer-actor.js');
@@ -109,7 +109,7 @@ class ActorSystem {
     // Actor creation.
     switch (options.mode || 'in-memory') {
       case 'in-memory':
-        return this.createLocalActor(Behaviour, parent, actorName);
+        return this.createInMemoryActor(Behaviour, parent, actorName);
 
       case 'forked':
         return this.createForkedActor(Behaviour, parent, actorName);
@@ -127,7 +127,7 @@ class ActorSystem {
    * @param {String} [actorName] Actor name.
    * @returns {*} Promise that yields a newly-created actor.
    */
-  createLocalActor(Behaviour, parent, actorName) {
+  createInMemoryActor(Behaviour, parent, actorName) {
     return P.resolve()
       .then(() => {
         var behaviour0 = Behaviour;
@@ -136,7 +136,7 @@ class ActorSystem {
           behaviour0 = new Behaviour();
         }
 
-        return new LocalActor(this, parent, behaviour0, actorName);
+        return new InMemoryActor(this, parent, behaviour0, actorName);
       })
       .tap(actor => actor.initialize());
   }

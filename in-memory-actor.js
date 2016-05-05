@@ -9,7 +9,7 @@ var os = require('os');
 /**
  * A process-local (in-memory) actor.
  */
-class LocalActor extends Actor {
+class InMemoryActor extends Actor {
   /**
    * @param {ActorSystem} system Actor system.
    * @param {Actor|null} parent Actor parent or null, if it's a root actor.
@@ -126,12 +126,12 @@ class LocalActor extends Actor {
     var name = this.getName();
     
     if (name) {
-      return 'LocalActor(' + this.id + ', ' + name + ')';
+      return 'InMemoryActor(' + this.id + ', ' + name + ')';
     }
     else {
-      return 'LocalActor(' + this.id + ')';
+      return 'InMemoryActor(' + this.id + ')';
     }
   }
 }
 
-module.exports = LocalActor;
+module.exports = InMemoryActor;

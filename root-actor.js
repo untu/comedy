@@ -1,12 +1,12 @@
 'use strict';
 
-var LocalActor = require('./local-actor.js');
+var InMemoryActor = require('./in-memory-actor.js');
 var Logger = require('../utils/logger.js');
 
 /**
  * A root actor.
  */
-class RootActor extends LocalActor {
+class RootActor extends InMemoryActor {
   /**
    * @param {ActorSystem} system Actor system.
    * @param {Object} [options] Actor options.

@@ -1,6 +1,6 @@
 'use strict';
 
-var LocalActor = require('../local-actor.js');
+var InMemoryActor = require('../in-memory-actor.js');
 var P = require('bluebird');
 var _ = require('underscore');
 
@@ -8,7 +8,7 @@ var _ = require('underscore');
  * Actor that distributes incoming messages between it's children
  * using round-robin strategy.
  */
-class RoundRobinBalancerActor extends LocalActor {
+class RoundRobinBalancerActor extends InMemoryActor {
   /**
    * @param {ActorSystem} system Actor system.
    * @param {Actor|null} parent Actor parent or null, if it's a root actor.
