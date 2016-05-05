@@ -3,6 +3,7 @@
 var common = require('../saymon-common.js');
 var LocalActor = require('./local-actor.js');
 var ForkedActor = require('./forked-actor.js');
+var RootActor = require('./root-actor.js');
 var RoundRobinBalancerActor = require('./standard/round-robin-balancer-actor.js');
 var childProcess = require('child_process');
 var appRootPath = require('app-root-path');
@@ -29,7 +30,7 @@ class ActorSystem {
       this.context = this.contextBehaviour;
     }
 
-    this.rootActorPromise = P.resolve(new LocalActor(this, null, {}))
+    this.rootActorPromise = P.resolve(new RootActor(this))
       .tap(() => {
         if (_.isFunction(this.context.initialize)) {
           return this.context.initialize(this._selfProxy());
