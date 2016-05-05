@@ -1,6 +1,7 @@
 'use strict';
 
 var LocalActor = require('../local-actor.js');
+var P = require('bluebird');
 var _ = require('underscore');
 
 /**
@@ -39,19 +40,19 @@ class RoundRobinBalancerActor extends LocalActor {
    * @private
    */
   _forward(methodName, args) {
-    return this._children().then(children => {
-      if (_.isEmpty(children)) {
-        throw new Error('No children to forward message to.');
-      }
+    var childPromises = this._children();
 
-      if (this.nextIdx > children.length - 1) {
-        this.nextIdx = 0;
-      }
+    if (_.isEmpty(childPromises)) {
+      return P.resolve().throw(new Error('No children to forward message to.'));
+    }
 
-      var currentChild = children[this.nextIdx++];
+    if (this.nextIdx > childPromises.length - 1) {
+      this.nextIdx = 0;
+    }
 
-      return currentChild[methodName].apply(currentChild, args);
-    });
+    var currentChildPromise = childPromises[this.nextIdx++];
+
+    return currentChildPromise.then(child => child[methodName].apply(child, args));
   }
 }
 

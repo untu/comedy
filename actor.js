@@ -2,6 +2,7 @@
 
 var common = require('../saymon-common.js');
 var P = require('bluebird');
+var _ = require('underscore');
 
 /**
  * A basic actor.
@@ -175,11 +176,11 @@ class Actor {
   /**
    * Returns child actors for this actor.
    *
-   * @returns {P} Operation promise, which yields an array of child actors.
+   * @returns {P[]} Array with child promises.
    * @private
    */
   _children() {
-    return P.all(this.childPromises);
+    return _.clone(this.childPromises);
   }
 
   toString() {
