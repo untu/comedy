@@ -12,6 +12,7 @@ var toSource = require('tosource');
 var mongodb = require('mongodb');
 var P = require('bluebird');
 var _ = require('underscore');
+var s = require('underscore.string');
 var globalRequire = require;
 
 /**
@@ -22,6 +23,7 @@ class ActorSystem {
     options = options || {};
 
     this.contextBehaviour = options.context || {};
+    this.config = options.config;
 
     if (_.isFunction(this.contextBehaviour)) {
       this.context = new this.contextBehaviour();
@@ -71,22 +73,35 @@ class ActorSystem {
    * @returns {*} Promise that yields a created actor.
    */
   createActor(Behaviour, parent, options) {
-    options = options || { mode: 'local' };
+    options = options || {};
 
-    if (options.clusterSize) {
+    // Determine actor configuration.
+    if (this.config) {
+      var actorName = this._actorName(Behaviour);
+
+      if (actorName) {
+        var actorConfig = this.config[s.decapitalize(actorName)];
+
+        options = _.extend({ mode: 'in-memory' }, actorConfig, options);
+      }
+    }
+
+    // Perform clusterization, if needed.
+    if (options.clusterSize > 1) {
       return P.resolve()
         .then(() => {
           var balancerActor = new RoundRobinBalancerActor(this, parent);
 
           var childPromises = _.times(options.clusterSize, () =>
-            balancerActor.createChild(Behaviour, _.omit(options, 'clusterSize')));
+            balancerActor.createChild(Behaviour, _.extend({}, options, { clusterSize: 1 })));
 
           return P.all(childPromises).return(balancerActor);
         });
     }
 
-    switch (options.mode) {
-      case 'local':
+    // Actor creation.
+    switch (options.mode || 'in-memory') {
+      case 'in-memory':
         return P.resolve()
           .then(() => {
             var behaviour0 = Behaviour;
@@ -103,7 +118,7 @@ class ActorSystem {
         return this.createForkedActor(Behaviour, parent);
 
       default:
-        return P.throw(new Error('Unknown actor mode: ' + options.mode));
+        return P.resolve().throw(new Error('Unknown actor mode: ' + options.mode));
     }
   }
 
@@ -223,6 +238,27 @@ class ActorSystem {
     else {
       return globalRequire(appRootPath + modulePath);
     }
+  }
+
+  /**
+   * Determines actor name based on actor behaviour.
+   *
+   * @param Behaviour Actor behaviour definition.
+   * @returns {String} Actor name or empty string, if actor name is not defined.
+   * @private
+   */
+  _actorName(Behaviour) {
+    var behaviour0 = Behaviour;
+
+    if (_.isFunction(Behaviour)) {
+      behaviour0 = new Behaviour();
+    }
+
+    if (behaviour0.name) return _.result(behaviour0, 'name');
+
+    if (_.isFunction(behaviour0.getName)) return behaviour0.getName();
+
+    return '';
   }
 
   /**

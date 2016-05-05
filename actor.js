@@ -12,11 +12,13 @@ class Actor {
    * @param {ActorSystem} system Actor system.
    * @param {Actor} parent Parent actor.
    * @param {String} id Actor ID.
+   * @param {String} [name] Actor name.
    */
-  constructor(system, parent, id) {
+  constructor(system, parent, id, name) {
     this.system = system;
     this.parent = parent;
     this.id = id;
+    this.name = name || '';
     this.childPromises = [];
   }
 
@@ -57,6 +59,15 @@ class Actor {
    */
   getId() {
     return this.id;
+  }
+
+  /**
+   * Synchronously returns this actor's name.
+   *
+   * @returns {String} This actor's name or empty string, if there is no name for this actor.
+   */
+  getName() {
+    return this.name;
   }
 
   /**
