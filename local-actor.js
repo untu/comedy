@@ -1,7 +1,6 @@
 'use strict';
 
 var common = require('../saymon-common.js');
-var log = require('../utils/log.js');
 var Actor = require('./actor.js');
 var P = require('bluebird');
 var _ = require('underscore');
@@ -57,7 +56,7 @@ class LocalActor extends Actor {
               handler.apply(this.handlerContext, args);
             }
             catch (err) {
-              log.error('Error from handler, actor=' + this + ', topic=' + topic + ', error=' + err);
+              this.getLog().error('Error from handler, actor=' + this + ', topic=' + topic + ', error=' + err);
             }
           }
         }

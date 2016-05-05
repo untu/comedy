@@ -39,7 +39,7 @@ class Actor {
    */
   createChild(behaviour, options) {
     var childPromise = this.system.createActor(behaviour, this, options).then(actor => {
-      this.system.getLog().info(this.toString() + ' created child actor ' + actor);
+      this.getLog().info(this.toString() + ' created child actor ' + actor);
 
       return actor;
     });
@@ -74,6 +74,15 @@ class Actor {
    */
   getParent() {
     return this.parent;
+  }
+
+  /**
+   * Synchronously returns a logger for this actor.
+   *
+   * @returns {Object} Actor logger.
+   */
+  getLog() {
+    return this.system.getLog();
   }
 
   /**

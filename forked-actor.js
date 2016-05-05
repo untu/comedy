@@ -20,7 +20,7 @@ class ForkedActor extends Actor {
     this.idCounter = 1;
     this.responsePromises = {};
 
-    var log = system.getLog();
+    var log = this.getLog();
 
     // Listen for message responses.
     bus.on('message', (msg) => {
