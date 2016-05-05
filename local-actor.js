@@ -16,10 +16,9 @@ class LocalActor extends Actor {
    * @param {Object} behaviour Actor behaviour definition.
    */
   constructor(system, parent, behaviour) {
-    super(system, parent);
+    super(system, parent, system.generateActorId());
 
     this.parent = parent;
-    this.id = system.generateActorId();
 
     if (common.isPlainObject(behaviour)) {
       // Plain object behaviour.
@@ -32,10 +31,6 @@ class LocalActor extends Actor {
       this.handlerContext = behaviour;
       this.behaviourName = behaviour.constructor.name;
     }
-  }
-
-  getId() {
-    return this.id;
   }
 
   initialize() {

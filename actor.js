@@ -11,10 +11,12 @@ class Actor {
   /**
    * @param {ActorSystem} system Actor system.
    * @param {Actor} parent Parent actor.
+   * @param {String} id Actor ID.
    */
-  constructor(system, parent) {
+  constructor(system, parent, id) {
     this.system = system;
     this.parent = parent;
+    this.id = id;
     this.childPromises = [];
   }
 
@@ -53,7 +55,7 @@ class Actor {
    * @returns {String} This actor ID.
    */
   getId() {
-    return common.abstractMethodError('getId');
+    return this.id;
   }
 
   /**

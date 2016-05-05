@@ -14,10 +14,9 @@ class ForkedActor extends Actor {
    * @param {String} id Actor ID.
    */
   constructor(system, parent, bus, id) {
-    super(system, parent);
+    super(system, parent, id);
 
     this.bus = bus;
-    this.id = id;
     this.idCounter = 1;
     this.responsePromises = {};
 
@@ -59,10 +58,6 @@ class ForkedActor extends Actor {
     });
   }
 
-  getId() {
-    return this.id;
-  }
-
   send0(topic, message) {
     return this._send0(topic, message, false);
   }
@@ -88,7 +83,7 @@ class ForkedActor extends Actor {
   }
 
   toString() {
-    return 'ForkedActor(' + this.id + ')';
+    return 'ForkedActor(' + this.getId() + ')';
   }
 
   /**
