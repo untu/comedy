@@ -4,6 +4,7 @@ var common = require('../saymon-common.js');
 var Actor = require('./actor.js');
 var P = require('bluebird');
 var _ = require('underscore');
+var os = require('os');
 
 /**
  * A process-local (in-memory) actor.
@@ -89,6 +90,13 @@ class LocalActor extends Actor {
           throw new Error('No handler for message, topic=' + topic + ', actor=' + this);
         }
       });
+  }
+
+  location0() {
+    return {
+      hostname: os.hostname(),
+      pid: process.pid
+    };
   }
 
   /**

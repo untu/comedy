@@ -176,7 +176,10 @@ class Actor {
       name: this.name
     };
 
-    return P.resolve(this._children())
+    return P.resolve()
+      .then(() => this.location0())
+      .then(location => selfObj.location = location)
+      .then(() => this._children())
       .map(child => child.tree())
       .then(childTrees => {
         _.isEmpty(childTrees) || (selfObj.children = childTrees);
@@ -192,7 +195,7 @@ class Actor {
    * @returns {P} Promise which is resolved once the message is sent.
    */
   send0(topic, message) {
-    return common.abstractMethodError('send', topic, message);
+    return common.abstractMethodError('send0', topic, message);
   }
 
   /**
@@ -203,7 +206,7 @@ class Actor {
    * @returns {P} Promise which yields the actor response.
    */
   sendAndReceive0(topic, message) {
-    return common.abstractMethodError('sendAndReceive', topic, message);
+    return common.abstractMethodError('sendAndReceive0', topic, message);
   }
 
   /**
@@ -213,6 +216,15 @@ class Actor {
    */
   destroy0() {
     return P.resolve();
+  }
+
+  /**
+   * Returns this actor's location description object.
+   *
+   * @returns {Object|P} Location description object or a promise returning such object.
+   */
+  location0() {
+    return common.abstractMethodError('location0');
   }
 
   /**
