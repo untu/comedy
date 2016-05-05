@@ -60,11 +60,11 @@ class ForkedActor extends Actor {
   }
 
   send0(topic, message) {
-    return this._send0(topic, message, false);
+    return this._sendActorMessage(topic, message, false);
   }
 
   sendAndReceive0(topic, message) {
-    return this._send0(topic, message, true);
+    return this._sendActorMessage(topic, message, true);
   }
 
   destroy0() {
@@ -83,12 +83,18 @@ class ForkedActor extends Actor {
     return pending.promise;
   }
 
+  tree() {
+    return this._send0({
+      type: 'actor-tree'
+    }, true);
+  }
+
   toString() {
     return 'ForkedActor(' + this.getId() + ')';
   }
 
   /**
-   * Sends a message and returns a promise, which is resolved with sent message ID.
+   * Sends an actor message to a forked actor and returns a promise, which is resolved with message response.
    *
    * @param {String} topic Message topic.
    * @param message Message.
@@ -97,18 +103,30 @@ class ForkedActor extends Actor {
    * yields undefined if a receive flag is off.
    * @private
    */
-  _send0(topic, message, receive) {
+  _sendActorMessage(topic, message, receive) {
+    return this._send0({
+      type: 'actor-message',
+      body: {
+        topic: topic,
+        message: message,
+        receive: receive
+      }
+    }, receive);
+  }
+
+  /**
+   * Sends an arbitrary message to a forked actor.
+   *
+   * @param {Object} msg Message to send.
+   * @param {Boolean} receive Receive flag.
+   * @returns {*} Promise that yields a message response promise, if a receive flag is on. A promise
+   * yields undefined if a receive flag is off.
+   * @private
+   */
+  _send0(msg, receive) {
     return new P((resolve, reject) => {
       var msgId = this.idCounter++;
-      var msg0 = {
-        type: 'actor-message',
-        id: msgId,
-        body: {
-          topic: topic,
-          message: message,
-          receive: receive
-        }
-      };
+      msg.id = msgId;
 
       var ret;
 
@@ -121,7 +139,7 @@ class ForkedActor extends Actor {
         ret = pending.promise;
       }
 
-      this.bus.send(msg0, err => {
+      this.bus.send(msg, err => {
         if (err) return reject(err);
 
         resolve(ret);
