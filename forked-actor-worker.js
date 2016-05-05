@@ -26,7 +26,7 @@ process.once('message', msg => {
       context = compileBehaviour(msg.body.context);
     }
 
-    var system = new ActorSystem({ context: context });
+    var system = new ActorSystem({ context: context, forked: true });
 
     system.rootActor()
       .then(rootActor => rootActor.createChild(compiledBeh))

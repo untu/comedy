@@ -38,8 +38,9 @@ class Actor {
    * @returns {P} Promise that yields a child actor once it is created.
    */
   createChild(behaviour, options) {
+    var log = this.getLog();
     var childPromise = this.system.createActor(behaviour, this, options).then(actor => {
-      this.getLog().info(this.toString() + ' created child actor ' + actor);
+      log.debug(this.toString() + ' created child actor ' + actor);
 
       return actor;
     });

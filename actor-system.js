@@ -30,15 +30,15 @@ class ActorSystem {
       this.context = this.contextBehaviour;
     }
 
-    this.rootActorPromise = P.resolve(new RootActor(this))
+    this.debugPortCounter = 1;
+    this.log = options.log || this.require('/utils/log.js');
+
+    this.rootActorPromise = P.resolve(new RootActor(this, { forked: options.forked }))
       .tap(() => {
         if (_.isFunction(this.context.initialize)) {
           return this.context.initialize(this._selfProxy());
         }
       });
-
-    this.debugPortCounter = 1;
-    this.log = options.log || this.require('/utils/log.js');
   }
 
   /**
@@ -186,7 +186,7 @@ class ActorSystem {
           });
           process.once('exit', () => {
             if (actor) {
-              this.log.info('Process exiting, killing forked actor ' + actor);
+              this.log.debug('Process exiting, killing forked actor ' + actor);
 
               workerProcess.kill();
             }
