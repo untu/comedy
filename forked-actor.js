@@ -1,7 +1,6 @@
 'use strict';
 
 var Actor = require('./actor.js');
-var log = require('../utils/log.js');
 var P = require('bluebird');
 
 /**
@@ -19,6 +18,8 @@ class ForkedActor extends Actor {
     this.bus = bus;
     this.idCounter = 1;
     this.responsePromises = {};
+
+    var log = system.getLog();
 
     // Listen for message responses.
     bus.on('message', (msg) => {
@@ -57,19 +58,11 @@ class ForkedActor extends Actor {
   }
 
   send0(topic, message) {
-    return this._send0(topic, message, false).return(undefined);
+    return this._send0(topic, message, false);
   }
 
   sendAndReceive0(topic, message) {
-    return this._send0(topic, message, true)
-      .then(msgId => {
-        var pending = P.pending();
-
-        this.responsePromises[msgId] = pending;
-
-        // Await for message response.
-        return pending.promise;
-      });
+    return this._send0(topic, message, true);
   }
 
   destroy0() {
@@ -94,7 +87,8 @@ class ForkedActor extends Actor {
    * @param {String} topic Message topic.
    * @param message Message.
    * @param {Boolean} receive Receive flag.
-   * @returns {*} Promise that yields a sent message ID.
+   * @returns {*} Promise that yields a message response promise, if a receive flag is on. A promise
+   * yields undefined if a receive flag is off.
    * @private
    */
   _send0(topic, message, receive) {
@@ -110,10 +104,21 @@ class ForkedActor extends Actor {
         }
       };
 
+      var ret;
+
+      if (receive) {
+        var pending = P.pending();
+
+        this.responsePromises[msgId] = pending;
+
+        // Await for message response.
+        ret = pending.promise;
+      }
+
       this.bus.send(msg0, err => {
         if (err) return reject(err);
 
-        resolve(msgId);
+        resolve(ret);
       });
     });
   }

@@ -4,7 +4,6 @@ var common = require('../saymon-common.js');
 var LocalActor = require('./local-actor.js');
 var ForkedActor = require('./forked-actor.js');
 var RoundRobinBalancerActor = require('./standard/round-robin-balancer-actor.js');
-var log = require('../utils/log.js');
 var childProcess = require('child_process');
 var appRootPath = require('app-root-path');
 var requireDir = require('require-dir');
@@ -38,6 +37,7 @@ class ActorSystem {
       });
 
     this.debugPortCounter = 1;
+    this.log = options.log || this.require('/utils/log.js');
   }
 
   /**
@@ -45,6 +45,13 @@ class ActorSystem {
    */
   getContext() {
     return this.context;
+  }
+
+  /**
+   * @returns {*} Logger for this system.
+   */
+  getLog() {
+    return this.log;
   }
 
   /**
@@ -167,18 +174,18 @@ class ActorSystem {
 
           // Kill child process if self process is killed.
           process.once('SIGINT', () => {
-            log.info('Received SIGINT, exiting');
+            this.log.info('Received SIGINT, exiting');
 
             process.exit(0);
           });
           process.once('SIGTERM', () => {
-            log.info('Received SIGTERM, exiting');
+            this.log.info('Received SIGTERM, exiting');
 
             process.exit(0);
           });
           process.once('exit', () => {
             if (actor) {
-              log.info('Process exiting, killing forked actor ' + actor);
+              this.log.info('Process exiting, killing forked actor ' + actor);
 
               workerProcess.kill();
             }
