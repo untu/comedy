@@ -162,7 +162,7 @@ class ActorSystem {
               if (msg.type != 'actor-created' || !msg.body || !msg.body.id)
                 return reject(new Error('Unexpected response for "create-actor" message.'));
 
-              actor = new ForkedActor(this, parent, workerProcess);
+              actor = new ForkedActor(this, parent, workerProcess, msg.body.id);
               resolve(actor);
             });
           });

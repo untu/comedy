@@ -11,11 +11,13 @@ class ForkedActor extends Actor {
    * @param {ActorSystem} system Actor system.
    * @param {Actor} parent Parent actor.
    * @param {Object} bus Message bus to send/receive messages.
+   * @param {String} id Actor ID.
    */
-  constructor(system, parent, bus) {
+  constructor(system, parent, bus, id) {
     super(system, parent);
 
     this.bus = bus;
+    this.id = id;
     this.idCounter = 1;
     this.responsePromises = {};
 
@@ -57,6 +59,10 @@ class ForkedActor extends Actor {
     });
   }
 
+  getId() {
+    return this.id;
+  }
+
   send0(topic, message) {
     return this._send0(topic, message, false);
   }
@@ -79,6 +85,10 @@ class ForkedActor extends Actor {
     });
 
     return pending.promise;
+  }
+
+  toString() {
+    return 'ForkedActor(' + this.id + ')';
   }
 
   /**
