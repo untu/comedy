@@ -4,6 +4,8 @@ var common = require('../saymon-common.js');
 var Logger = require('../utils/logger.js');
 var InMemoryActor = require('./in-memory-actor.js');
 var ForkedActor = require('./forked-actor.js');
+var ForkedActorParent = require('./forked-actor-parent.js');
+var ForkedActorChild = require('./forked-actor-child.js');
 var RootActor = require('./root-actor.js');
 var ActorStub = require('./actor-stub.js');
 var RoundRobinBalancerActor = require('./standard/round-robin-balancer-actor.js');
@@ -57,7 +59,7 @@ class ActorSystem {
       if (options.forked) {
         // Create forked root with proper parent.
         this.rootActorPromise = this.rootActorPromise.then(rootActor => {
-          return new ForkedActor(
+          return new ForkedActorChild(
             this,
             new ForkedActor(this, null, process, new ActorStub(this, options.forked.id)),
             process,
@@ -223,11 +225,12 @@ class ActorSystem {
               if (msg.type != 'actor-created' || !msg.body || !msg.body.id)
                 return reject(new Error('Unexpected response for "create-actor" message.'));
 
-              actor = new ForkedActor(
+              actor = new ForkedActorParent(
                 this,
                 parent,
                 workerProcess,
-                new ActorStub(this, msg.body.id, actorName));
+                msg.body.id,
+                actorName);
               
               resolve(actor);
             });

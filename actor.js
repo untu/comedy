@@ -142,6 +142,14 @@ class Actor {
   }
 
   /**
+   * Sets this actor to forward messages with given topics to it's parent.
+   * Topic names can be specified using an array or via varargs.
+   */
+  forwardToParent() {
+    common.abstractMethodError('forwardToParent');
+  }
+
+  /**
    * Destroys this actor.
    *
    * @returns {P} Promise which is resolved when actor is destroyed.

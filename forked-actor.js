@@ -77,7 +77,7 @@ class ForkedActor extends Actor {
           if (msg.actorId != this.getId()) return;
           
           if (msg.type == 'actor-tree') {
-            this.actor.tree()
+            this.tree()
               .then(tree => this._send0({
                 type: 'actor-response',
                 id: msg.id,
@@ -136,10 +136,6 @@ class ForkedActor extends Actor {
         });
       });
   }
-  
-  createChild(behaviour, options) {
-    return this.actor.createChild(behaviour, options);
-  }
 
   send0(topic, message) {
     return this._sendActorMessage(topic, message, false);
@@ -166,10 +162,6 @@ class ForkedActor extends Actor {
     return pending.promise;
   }
 
-  tree() {
-    return this._send0({ type: 'actor-tree' }, true);
-  }
-
   toString() {
     var name = this.getName();
 
@@ -179,6 +171,14 @@ class ForkedActor extends Actor {
     else {
       return 'ForkedActor(' + this.getId() + ')';
     }
+  }
+
+  /**
+   * @returns {Actor} Wrapped actor.
+   * @protected
+   */
+  _getActor() {
+    return this.actor;
   }
 
   /**
@@ -227,7 +227,7 @@ class ForkedActor extends Actor {
    * @param {Boolean} [receive] Receive flag.
    * @returns {*} Promise that yields a message response promise, if a receive flag is on. A promise
    * yields undefined if a receive flag is off.
-   * @private
+   * @protected
    */
   _send0(msg, receive) {
     return new P((resolve, reject) => {

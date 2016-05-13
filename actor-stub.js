@@ -14,6 +14,10 @@ class ActorStub extends Actor {
   constructor(system, id, name) {
     super(system, null, id, name);
   }
+  
+  toString() {
+    return 'ActorStub(' + this.getId() + ')';
+  }
 }
 
 module.exports = ActorStub;
