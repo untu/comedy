@@ -1,6 +1,7 @@
 'use strict';
 
 var common = require('../saymon-common.js');
+var ActorLogger = require('./utils/actor-logger.js');
 var P = require('bluebird');
 var _ = require('underscore');
 
@@ -20,6 +21,7 @@ class Actor {
     this.id = id;
     this.name = name || '';
     this.childPromises = [];
+    this.log = new ActorLogger(system.getLog(), this);
   }
 
   /**
@@ -41,10 +43,10 @@ class Actor {
    */
   createChild(behaviour, options) {
     var log = this.getLog();
-    var childPromise = this.system.createActor(behaviour, this, options).then(actor => {
+    var childPromise = this.system.createActor(behaviour, this, options).tap(actor => {
       log.debug(this.toString() + ' created child actor ' + actor);
 
-      return actor;
+      return actor.initialize();
     });
 
     this.childPromises.push(childPromise);
@@ -91,10 +93,10 @@ class Actor {
   /**
    * Synchronously returns a logger for this actor.
    *
-   * @returns {Object} Actor logger.
+   * @returns {ActorLogger} Actor logger.
    */
   getLog() {
-    return this.system.getLog();
+    return this.log;
   }
 
   /**

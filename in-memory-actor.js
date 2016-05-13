@@ -33,9 +33,9 @@ class InMemoryActor extends Actor {
     }
   }
 
-  initialize() {
+  initialize(self) {
     if (_.isFunction(this.behaviour.initialize)) {
-      return this.behaviour.initialize.call(this.handlerContext, this);
+      return this.behaviour.initialize.call(this.handlerContext, self || this);
     }
   }
 

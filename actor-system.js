@@ -4,6 +4,7 @@ var common = require('../saymon-common.js');
 var InMemoryActor = require('./in-memory-actor.js');
 var ForkedActor = require('./forked-actor.js');
 var RootActor = require('./root-actor.js');
+var ActorStub = require('./actor-stub.js');
 var RoundRobinBalancerActor = require('./standard/round-robin-balancer-actor.js');
 var childProcess = require('child_process');
 var appRootPath = require('app-root-path');
@@ -45,11 +46,26 @@ class ActorSystem {
     });
     
     if (options.root) {
+      // Create root with custom behaviour.
       this.rootActorPromise = contextPromise.then(() => this.createActor(options.root, null, { mode: 'in-memory' }));
+
+      if (options.forked) {
+        // Create forked root with proper parent.
+        this.rootActorPromise = this.rootActorPromise.then(rootActor => {
+          return new ForkedActor(
+            this,
+            new ForkedActor(this, null, process, new ActorStub(this, options.forked.id)),
+            process,
+            rootActor);
+        });
+      }
     }
     else {
-      this.rootActorPromise = contextPromise.return(new RootActor(this, { forked: options.forked }));
+      // Create default root.
+      this.rootActorPromise = contextPromise.return(new RootActor(this, { forked: !!options.forked }));
     }
+    
+    this.rootActorPromise = this.rootActorPromise.tap(actor => actor.initialize());
   }
 
   /**
@@ -137,8 +153,7 @@ class ActorSystem {
         }
 
         return new InMemoryActor(this, parent, behaviour0, actorName);
-      })
-      .tap(actor => actor.initialize());
+      });
   }
 
   /**
@@ -200,7 +215,12 @@ class ActorSystem {
               if (msg.type != 'actor-created' || !msg.body || !msg.body.id)
                 return reject(new Error('Unexpected response for "create-actor" message.'));
 
-              actor = new ForkedActor(this, parent, workerProcess, msg.body.id, actorName);
+              actor = new ForkedActor(
+                this,
+                parent,
+                workerProcess,
+                new ActorStub(this, msg.body.id, actorName));
+              
               resolve(actor);
             });
           });

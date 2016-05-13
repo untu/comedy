@@ -11,52 +11,134 @@ class ForkedActor extends Actor {
    * @param {ActorSystem} system Actor system.
    * @param {Actor} parent Parent actor.
    * @param {Object} bus Message bus to send/receive messages.
-   * @param {String} id Actor ID.
-   * @param {String} [name] Actor name.
+   * @param {Actor} actor Wrapped actor.
    */
-  constructor(system, parent, bus, id, name) {
-    super(system, parent, id, name);
+  constructor(system, parent, bus, actor) {
+    super(system, parent, actor.getId(), actor.getName());
 
     this.bus = bus;
+    this.actor = actor;
     this.idCounter = 1;
     this.responsePromises = {};
+  }
 
-    var log = this.getLog();
+  initialize() {
+    return P.resolve()
+      .then(() => this.actor.initialize(this))
+      .then(() => {
+        // Listen for message responses.
+        this.bus.on('message', msg => {
+          var log = this.getLog();
 
-    // Listen for message responses.
-    bus.on('message', (msg) => {
-      var respPromise = this.responsePromises[msg.id];
+          if (!msg.id) return log.warn('Missing ID in actor message (ignoring):', msg);
 
-      if (respPromise) {
-        delete this.responsePromises[msg.id];
-      }
+          log.debug('Received message:', msg);
+          
+          if (msg.type == 'actor-message') {
+            if (!msg.body) return this._sendErrorResponse(msg.id, 'Missing message body');
 
-      if (msg.type == 'actor-response') {
-        if (!msg.id) return log.warn('Ignoring "actor-response" message with absent ID.');
+            var topic = msg.body.topic;
 
-        if (!respPromise) return log.warn('No pending promise for "actor-response":', msg);
+            if (!topic) return this._sendErrorResponse(msg.id, 'Missing message topic');
+            
+            var actor = this.actor;
 
-        if (msg.body) {
-          var body = msg.body;
+            if (msg.actorId != this.getId()) {
+              var parent = this.getParent();
 
-          if (body.error) {
-            respPromise.reject(new Error(body.error));
+              // Check if we've got a message to a parent.
+              if (parent && parent.getId() == msg.actorId) {
+                actor = parent;
+              }
+              else {
+                return this._sendErrorResponse(msg.id, 'Target actor ID doesn\'t match neither self nor parent');
+              }
+            }
+
+            var sendPromise;
+
+            if (msg.body.receive) {
+              sendPromise = actor.sendAndReceive(topic, msg.body.message)
+                .then(resp => this._send0({
+                  type: 'actor-response',
+                  id: msg.id,
+                  body: { response: resp }
+                }));
+            }
+            else {
+              sendPromise = actor.send(topic, msg.body.message);
+            }
+
+            sendPromise.catch(err => this._sendErrorResponse(msg.id, err.message));
+            
+            return;
+          }
+
+          if (msg.actorId != this.getId()) return;
+          
+          if (msg.type == 'actor-tree') {
+            this.actor.tree()
+              .then(tree => this._send0({
+                type: 'actor-response',
+                id: msg.id,
+                body: { response: tree }
+              }))
+              .catch(err => this._sendErrorResponse(msg.id, err.message));
+          }
+          else if (msg.type == 'actor-response') {
+            var respPromise = this.responsePromises[msg.id];
+
+            if (respPromise) {
+              delete this.responsePromises[msg.id];
+            }
+
+            if (!msg.id) return log.warn('Ignoring "actor-response" message with absent ID.');
+
+            if (!respPromise) return log.warn('No pending promise for "actor-response":', msg);
+
+            if (msg.body) {
+              var body = msg.body;
+
+              if (body.error) {
+                respPromise.reject(new Error(body.error));
+              }
+              else {
+                respPromise.resolve(body.response);
+              }
+            }
+            else {
+              respPromise.resolve();
+            }
+          }
+          else if (msg.type == 'destroy-actor') {
+            this.bus.removeAllListeners('message');
+
+            this.actor.destroy().then(() => {
+              this.bus.send({ type: 'actor-destroyed', actorId: this.getId(), id: msg.id }, () => {
+                log.debug('Killing forked process for ' + this);
+
+                process.exit(0);
+              });
+            });
+          }
+          else if (msg.type == 'actor-destroyed') {
+            var respPromise0 = this.responsePromises[msg.id];
+
+            if (respPromise0) {
+              delete this.responsePromises[msg.id];
+
+              respPromise0.resolve();
+            }
           }
           else {
-            respPromise.resolve(body.response);
+            log.warn('Ignoring message of an unknown type:', msg);
           }
-        }
-        else {
-          respPromise.resolve();
-        }
-      }
-      else if (msg.type == 'actor-destroyed') {
-        respPromise && respPromise.resolve();
-      }
-      else {
-        log.warn('Ignoring message of an unknown type:', msg);
-      }
-    });
+        });
+      });
+  }
+  
+  createChild(behaviour, options) {
+    return this.actor.createChild(behaviour, options);
   }
 
   send0(topic, message) {
@@ -73,6 +155,7 @@ class ForkedActor extends Actor {
 
     this.bus.send({
       type: 'destroy-actor',
+      actorId: this.getId(),
       id: msgId
     }, err => {
       if (err) return pending.reject(err);
@@ -84,9 +167,7 @@ class ForkedActor extends Actor {
   }
 
   tree() {
-    return this._send0({
-      type: 'actor-tree'
-    }, true);
+    return this._send0({ type: 'actor-tree' }, true);
   }
 
   toString() {
@@ -115,18 +196,41 @@ class ForkedActor extends Actor {
   }
 
   /**
+   * Sends an error response.
+   *
+   * @param {String} msgId Message ID.
+   * @param {String} errorText Error text.
+   * @returns {*} Operation promise.
+   * @private
+   */
+  _sendErrorResponse(msgId, errorText) {
+    return this._send0({
+      type: 'actor-response',
+      id: msgId,
+      body: {
+        error: errorText
+      }
+    });
+  }
+
+  /**
    * Sends an arbitrary message to a forked actor.
    *
    * @param {Object} msg Message to send.
-   * @param {Boolean} receive Receive flag.
+   * @param {Boolean} [receive] Receive flag.
    * @returns {*} Promise that yields a message response promise, if a receive flag is on. A promise
    * yields undefined if a receive flag is off.
    * @private
    */
   _send0(msg, receive) {
     return new P((resolve, reject) => {
-      var msgId = this.idCounter++;
-      msg.id = msgId;
+      var msgId = msg.id;
+
+      if (!msgId) {
+        msg.id = msgId = this.idCounter++;
+      }
+
+      msg.actorId = this.getId();
 
       var ret;
 
@@ -138,6 +242,8 @@ class ForkedActor extends Actor {
         // Await for message response.
         ret = pending.promise;
       }
+
+      this.getLog().debug('Sending message:', msg);
 
       this.bus.send(msg, err => {
         if (err) return reject(err);
