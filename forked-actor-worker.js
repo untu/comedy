@@ -35,6 +35,7 @@ process.once('message', msg => {
   var system = new ActorSystem({
     context: context,
     config: msg.body.config,
+    test: msg.body.test,
     debug: msg.body.debug,
     forked: msg.body.parent,
     root: compiledBeh

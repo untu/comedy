@@ -6,8 +6,6 @@
 
 var ActorSystem = require('./actor-system.js');
 
-var defaultSystem = ActorSystem.default();
-
 /**
  * Creates a new actor system with specified options.
  *
@@ -18,4 +16,6 @@ module.exports = function(options) {
   return new ActorSystem(options);
 };
 
-module.exports.rootActor = ActorSystem.prototype.rootActor.bind(defaultSystem);
+module.exports.rootActor = function() {
+  return ActorSystem.default().rootActor();
+};

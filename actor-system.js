@@ -1,6 +1,7 @@
 'use strict';
 
 var common = require('../saymon-common.js');
+var Logger = require('../utils/logger.js');
 var InMemoryActor = require('./in-memory-actor.js');
 var ForkedActor = require('./forked-actor.js');
 var RootActor = require('./root-actor.js');
@@ -15,6 +16,9 @@ var P = require('bluebird');
 var _ = require('underscore');
 var s = require('underscore.string');
 var globalRequire = require;
+var fs = require('fs');
+
+P.promisifyAll(fs);
 
 /**
  * An actor system.
@@ -24,7 +28,6 @@ class ActorSystem {
     options = options || {};
 
     this.contextBehaviour = options.context || {};
-    this.config = options.config;
 
     if (_.isFunction(this.contextBehaviour)) {
       this.context = new this.contextBehaviour();
@@ -34,10 +37,12 @@ class ActorSystem {
     }
 
     this.debugPortCounter = 1;
-    this.log = options.log || this.require('/utils/log.js');
-    this.debug = options.debug;
+    this.log = options.log || new Logger();
+    this.options = _.clone(options);
     
-    if (options.debug) this.log.setLevel(this.log.levels().Debug);
+    if (options.test) this.log.setLevel(this.log.levels().Error); // Only output errors in tests.
+    
+    if (options.debug) this.log.setLevel(this.log.levels().Debug); // Overrides test option.
 
     var contextPromise = P.resolve().then(() => {
       if (_.isFunction(this.context.initialize)) {
@@ -65,7 +70,9 @@ class ActorSystem {
       this.rootActorPromise = contextPromise.return(new RootActor(this, { forked: !!options.forked }));
     }
     
-    this.rootActorPromise = this.rootActorPromise.tap(actor => actor.initialize());
+    this.rootActorPromise = this.rootActorPromise
+      .tap(() => this._loadConfiguration(options.config))
+      .tap(actor => actor.initialize());
   }
 
   /**
@@ -195,7 +202,8 @@ class ActorSystem {
               behaviour: this._serializeBehaviour(behaviour),
               context: this._serializeBehaviour(this.contextBehaviour),
               config: this.config,
-              debug: this.debug,
+              test: this.options.test,
+              debug: this.options.debug,
               parent: {
                 id: parent.getId()
               }
@@ -344,14 +352,64 @@ class ActorSystem {
   }
 
   /**
+   * Loads actor configuration.
+   *
+   * @param {Object|String} config Actor configuration object or file path.
+   * @returns {P} Operation promise.
+   * @private
+   */
+  _loadConfiguration(config) {
+    if (_.isObject(config)) {
+      this.config = config;
+
+      this.log.info('Using programmatic actor configuration.');
+
+      return P.resolve();
+    }
+
+    var defaultPath = appRootPath + '/actors.json';
+
+    if (_.isString(config)) {
+      // Config path specified => read from FS.
+      return fs.readFileAsync(config)
+        .then(data => {
+          this.config = JSON.parse(data);
+
+          this.log.info('Using actor configuration file: ' + config);
+        })
+        .catch(() => {
+          this.log.info(
+            'Failed to load actor configuration file ' + config + ', will try default path: ' + defaultPath);
+
+          return this._loadConfiguration();
+        });
+    }
+
+    return fs.readFileAsync(defaultPath)
+      .then(data => {
+        this.config = JSON.parse(data);
+
+        this.log.info('Using actor configuration file: ' + defaultPath);
+      })
+      .catch(() => {
+        this.log.info(
+          'Failed to load actor configuration file ' + defaultPath + ', no actor configuration will be used.');
+      });
+  }
+
+  /**
    * @returns {ActorSystem} Default actor system.
    */
   static default() {
+    if (defaultSystem) {
+      defaultSystem = new ActorSystem();
+    }
+    
     return defaultSystem;
   }
 }
 
-// Default actor system instance.
-var defaultSystem = new ActorSystem();
+// Default actor system instance reference.
+var defaultSystem;
 
 module.exports = ActorSystem;
