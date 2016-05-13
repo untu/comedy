@@ -362,7 +362,7 @@ class ActorSystem {
     if (_.isObject(config)) {
       this.config = config;
 
-      this.log.info('Using programmatic actor configuration.');
+      this.options.forked || this.log.info('Using programmatic actor configuration.');
 
       return P.resolve();
     }
