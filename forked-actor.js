@@ -171,7 +171,14 @@ class ForkedActor extends Actor {
   }
 
   toString() {
-    return 'ForkedActor(' + this.getId() + ')';
+    var name = this.getName();
+
+    if (name) {
+      return 'ForkedActor(' + this.id + ', ' + name + ')';
+    }
+    else {
+      return 'ForkedActor(' + this.getId() + ')';
+    }
   }
 
   /**

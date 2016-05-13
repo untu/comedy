@@ -44,7 +44,7 @@ class Actor {
   createChild(behaviour, options) {
     var log = this.getLog();
     var childPromise = this.system.createActor(behaviour, this, options).tap(actor => {
-      log.debug(this.toString() + ' created child actor ' + actor);
+      log.debug('Created child actor ' + actor);
 
       return actor.initialize();
     });
