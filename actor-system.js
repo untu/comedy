@@ -46,12 +46,9 @@ class ActorSystem {
     
     if (options.debug) this.log.setLevel(this.log.levels().Debug); // Overrides test option.
 
-    var contextPromise = P.resolve().then(() => {
-      if (_.isFunction(this.context.initialize)) {
-        return this.context.initialize(this._selfProxy());
-      }
-    });
-    
+    var contextPromise = 
+      _.isFunction(this.context.initialize) ? this.context.initialize(this._selfProxy()) : P.resolve();
+
     if (options.root) {
       // Create root with custom behaviour.
       this.rootActorPromise = contextPromise.then(() => this.createActor(options.root, null, { mode: 'in-memory' }));
