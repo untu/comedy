@@ -26,6 +26,14 @@ P.promisifyAll(fs);
  * An actor system.
  */
 class ActorSystem {
+  /**
+   * @param {Object} [options] Actor system options.
+   * - {Object|Function} [context] Actor system context behaviour.
+   * - {Object} [log] Custom logger.
+   * - {Boolean} [test] If true, sets this system into test mode.
+   * - {Boolean} [debug] If true, sets this system into debug mode.
+   * - {Object} [root] Root actor behaviour.
+   */
   constructor(options) {
     options = options || {};
 
