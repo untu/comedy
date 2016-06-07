@@ -299,6 +299,21 @@ class ActorSystem {
   }
 
   /**
+   * Destroys this system. All actors will be destroyed and context destroy hook will be called.
+   *
+   * @returns {P} Operation promise.
+   */
+  destroy() {
+    return this.rootActorPromise
+      .then(rootActor => rootActor.destroy())
+      .then(() => {
+        if (_.isFunction(this.context.destroy)) {
+          return this.context.destroy(this._selfProxy());
+        }
+      });
+  }
+
+  /**
    * Determines actor name based on actor behaviour.
    *
    * @param Behaviour Actor behaviour definition.
