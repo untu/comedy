@@ -91,6 +91,12 @@ class InMemoryActor extends Actor {
         }
       });
   }
+  
+  destroy0(self) {
+    if (_.isFunction(this.behaviour.destroy)) {
+      return this.behaviour.destroy.call(this.handlerContext, self || this);
+    }
+  }
 
   location0() {
     return {

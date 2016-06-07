@@ -21,6 +21,7 @@ class Actor {
     this.id = id;
     this.name = name || '';
     this.childPromises = [];
+    this.destroying = false;
     this.log = new ActorLogger(system.getLog(), this);
   }
 
@@ -42,6 +43,9 @@ class Actor {
    * @returns {P} Promise that yields a child actor once it is created.
    */
   createChild(behaviour, options) {
+    if (this.destroying)
+      return this._destroyCalledErrorPromise();
+    
     var log = this.getLog();
     var childPromise = this.system.createActor(behaviour, this, options).tap(actor => {
       log.debug('Created child actor ' + actor);
@@ -159,8 +163,8 @@ class Actor {
       return this._destroyCalledErrorPromise();
 
     this.destroying = true;
-
-    return this.destroy0();
+    
+    return P.map(this.childPromises, child => child.destroy()).then(() => this.destroy0());
   }
 
   /**
