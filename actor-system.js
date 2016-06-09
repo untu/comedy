@@ -78,7 +78,7 @@ class ActorSystem {
     }
     
     this.rootActorPromise = this.rootActorPromise
-      .tap(() => this._loadConfiguration(options.config))
+      .tap(() => options.test || this._loadConfiguration(options.config))
       .tap(actor => actor.initialize());
   }
 
