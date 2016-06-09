@@ -164,7 +164,11 @@ class Actor {
 
     this.destroying = true;
     
-    return P.map(this.childPromises, child => child.destroy()).then(() => this.destroy0());
+    this.log.debug('Destroying...');
+    
+    return P.map(this.childPromises, child => child.destroy())
+      .then(() => this.destroy0())
+      .then(() => this.log.debug('Destroyed.'));
   }
 
   /**
