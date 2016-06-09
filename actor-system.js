@@ -78,7 +78,7 @@ class ActorSystem {
     }
     
     this.rootActorPromise = this.rootActorPromise
-      .tap(() => options.test || this._loadConfiguration(options.config))
+      .tap(() => this._loadConfiguration(options.config))
       .tap(actor => actor.initialize());
   }
 
@@ -389,6 +389,9 @@ class ActorSystem {
 
       return P.resolve();
     }
+
+    // Do not load configuration from file in test mode.
+    if (this.options.test) return P.resolve();
 
     var defaultPath = appRootPath + '/actors.json';
 
