@@ -2,6 +2,7 @@
 
 var InMemoryActor = require('./in-memory-actor.js');
 var Logger = require('../utils/logger.js');
+var ActorLogger = require('./utils/actor-logger.js');
 
 /**
  * A root actor.
@@ -17,7 +18,7 @@ class RootActor extends InMemoryActor {
 
     options = options || {};
 
-    this.log = options.forked ? Logger.silent() : system.getLog();
+    this.log = options.forked ? Logger.silent() : new ActorLogger(system.getLog(), this);
   }
 
   getLog() {

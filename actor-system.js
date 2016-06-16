@@ -26,6 +26,14 @@ P.promisifyAll(fs);
  * An actor system.
  */
 class ActorSystem {
+  /**
+   * @param {Object} [options] Actor system options.
+   * - {Object|Function} [context] Actor system context behaviour.
+   * - {Object} [log] Custom logger.
+   * - {Boolean} [test] If true, sets this system into test mode.
+   * - {Boolean} [debug] If true, sets this system into debug mode.
+   * - {Object} [root] Root actor behaviour.
+   */
   constructor(options) {
     options = options || {};
 
@@ -296,6 +304,21 @@ class ActorSystem {
   }
 
   /**
+   * Destroys this system. All actors will be destroyed and context destroy hook will be called.
+   *
+   * @returns {P} Operation promise.
+   */
+  destroy() {
+    return this.rootActorPromise
+      .then(rootActor => rootActor.destroy())
+      .then(() => {
+        if (_.isFunction(this.context.destroy)) {
+          return this.context.destroy(this._selfProxy());
+        }
+      });
+  }
+
+  /**
    * Determines actor name based on actor behaviour.
    *
    * @param Behaviour Actor behaviour definition.
@@ -371,6 +394,9 @@ class ActorSystem {
 
       return P.resolve();
     }
+
+    // Do not load configuration from file in test mode.
+    if (this.options.test) return P.resolve();
 
     var defaultPath = appRootPath + '/actors.json';
 

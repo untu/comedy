@@ -9,7 +9,7 @@ var ActorSystem = require('./actor-system.js');
 /**
  * Creates a new actor system with specified options.
  *
- * @param {Object} options Actor system options.
+ * @param {Object} [options] Actor system options.
  * @returns {ActorSystem} New actor system.
  */
 module.exports = function(options) {
