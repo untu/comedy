@@ -105,29 +105,6 @@ class InMemoryActor extends Actor {
     };
   }
 
-  /**
-   * Sets this actor to forward messages with given topics to it's parent.
-   * Topic names can be specified using an array or via varargs.
-   */
-  forwardToParent() {
-    if (arguments.length === 0) return;
-
-    var args = arguments[0];
-
-    if (arguments.length > 1) {
-      args = _.toArray(arguments);
-    }
-    else if (!_.isArray(arguments[0])) {
-      args = [arguments[0]];
-    }
-
-    _.each(args, topic => {
-      this.behaviour[topic] = function() {
-        return this.parent.send.apply(this.parent, [topic].concat(_.toArray(arguments)));
-      }.bind(this);
-    });
-  }
-
   toString() {
     var name = this.getName();
     

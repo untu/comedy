@@ -21,6 +21,7 @@ class Actor {
     this.id = id;
     this.name = name || '';
     this.childPromises = [];
+    this.forwardList = [];
     this.destroying = false;
     this.log = new ActorLogger(system.getLog(), this);
   }
@@ -114,13 +115,19 @@ class Actor {
   send(topic, message) {
     if (this.destroying)
       return this._destroyCalledErrorPromise();
+    
+    if (this._checkForward(topic)) {
+      this.getLog().debug('Forwarding message to parent, topic=', topic, 'message=', message);
+
+      return this.parent.send.apply(this.parent, arguments);
+    }
 
     // Allow additional arguments.
     if (arguments.length > 2) {
       return this.send0.apply(this, arguments);
     }
     else {
-      return this.send0(topic, message);
+      return this.send0(topic, message); // To avoid IDE warnings.
     }
   }
 
@@ -136,21 +143,39 @@ class Actor {
     if (this.destroying)
       return this._destroyCalledErrorPromise();
 
+    if (this._checkForward(topic)) {
+      this.getLog().debug('Forwarding message to parent, topic=', topic, 'message=', message);
+
+      return this.parent.sendAndReceive.apply(this.parent, arguments);
+    }
+
     // Allow additional arguments.
     if (arguments.length > 2) {
       return this.sendAndReceive0.apply(this, arguments);
     }
     else {
-      return this.sendAndReceive0(topic, message);
+      return this.sendAndReceive0(topic, message); // To avoid IDE warnings.
     }
   }
 
   /**
    * Sets this actor to forward messages with given topics to it's parent.
-   * Topic names can be specified using an array or via varargs.
+   * Topic names can be specified using an array or via varargs. Regular
+   * expressions can be also used to specify forwarded topics.
    */
   forwardToParent() {
-    common.abstractMethodError('forwardToParent');
+    if (arguments.length === 0) return;
+
+    var args = arguments[0];
+
+    if (arguments.length > 1) {
+      args = _.toArray(arguments);
+    }
+    else if (!_.isArray(arguments[0])) {
+      args = [arguments[0]];
+    }
+
+    this.forwardList.push.apply(this.forwardList, args);
   }
 
   /**
@@ -265,6 +290,21 @@ class Actor {
    */
   _destroyCalledErrorPromise() {
     return P.resolve().throw(new Error('destroy() has been called for this actor, no further interaction possible'));
+  }
+
+  /**
+   * Checks if actor should forward a message with a given topic to it's parent.
+   *
+   * @param {String} topic Topic name.
+   * @returns {Boolean} If true, the message needs to be forwarded to parent.
+   * @private
+   */
+  _checkForward(topic) {
+    return _.some(this.forwardList, fwTopic => {
+      if (fwTopic instanceof RegExp) return topic.match(fwTopic);
+
+      return fwTopic == topic;
+    });
   }
 }
 
