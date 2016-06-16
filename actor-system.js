@@ -127,6 +127,11 @@ class ActorSystem {
           return P.all(childPromises).return(balancerActor);
         });
     }
+    
+    if (this.options.debug && options.mode != 'in-memory') {
+      this.log.warn('Forcing in-memory mode due to debug flag for actor:', actorName);
+      options = _.extend({}, options, { mode: 'in-memory' });
+    }
 
     // Actor creation.
     switch (options.mode || 'in-memory') {
