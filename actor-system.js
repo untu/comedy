@@ -17,6 +17,7 @@ var mongodb = require('mongodb');
 var P = require('bluebird');
 var _ = require('underscore');
 var s = require('underscore.string');
+var randomString = require('randomstring');
 var globalRequire = require;
 var fs = require('fs');
 
@@ -352,18 +353,61 @@ class ActorSystem {
    * @private
    */
   _serializeBehaviour(behaviour) {
-    if (!common.isPlainObject(behaviour)) {
-      // Assume from this point that behaviour is a class.
-      // Get a base class for behaviour class.
-      var base = Object.getPrototypeOf(behaviour);
+    if (common.isPlainObject(behaviour)) return toSource(behaviour);
 
-      if (base && base.name) {
-        // Have a user-defined super class. Serialize it as well.
-        return this._serializeBehaviour(base) + toSource(behaviour);
+    if (_.isFunction(behaviour)) { // Class-defined behaviour.
+      if (behaviour.name) {
+        return this._serializeEs6ClassBehaviour(behaviour);
+      }
+      else {
+        return this._serializeEs5ClassBehaviour(behaviour);
       }
     }
 
-    return toSource(behaviour);
+    throw new Error('Cannot serialize actor behaviour: ' + behaviour);
+  }
+
+  /**
+   * Serializes a given ES6 class actor behaviour definition.
+   *
+   * @param {Function} behaviour Actor behaviour definition in ES6 class form.
+   * @returns {String} Serialized actor behaviour.
+   * @private
+   */
+  _serializeEs6ClassBehaviour(behaviour) {
+    // Get a base class for behaviour class.
+    var base = Object.getPrototypeOf(behaviour);
+    var baseBehaviour = '';
+
+    if (base && base.name) {
+      // Have a user-defined super class. Serialize it as well.
+      baseBehaviour = this._serializeEs6ClassBehaviour(base);
+    }
+
+    return baseBehaviour + behaviour.toString();
+  }
+
+  /**
+   * Serializes a given ES6 class actor behaviour definition.
+   *
+   * @param {Function} behaviour Actor behaviour definition in ES5 class form.
+   * @returns {String} Serialized actor behaviour.
+   * @private
+   */
+  _serializeEs5ClassBehaviour(behaviour) {
+    var clsName = randomString.generate({
+      length: 12,
+      charset: 'alphabetic'
+    });
+    var expressions = [`var ${clsName} = function() {};\n`];
+
+    _.each(behaviour.prototype, (methodImpl, methodName) => {
+      expressions.push(`${clsName}.prototype.${methodName} = ${methodImpl.toString()};\n`);
+    });
+
+    expressions.push(`${clsName};`);
+
+    return expressions.join('');
   }
 
   /**
