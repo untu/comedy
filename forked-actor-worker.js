@@ -78,3 +78,49 @@ function compileBehaviour(behaviour) {
     process.exit(1);
   }
 }
+
+// --------------- Babel support ---------------------------
+
+//noinspection JSUnusedLocalSymbols
+function _createClass() { // jshint ignore:line
+  function defineProperties(target, props) {
+    for (var i = 0; i < props.length; i++) {
+      var descriptor = props[i];
+      descriptor.enumerable = descriptor.enumerable || false;
+      descriptor.configurable = true;
+
+      if ('value' in descriptor) descriptor.writable = true;
+
+      Object.defineProperty(target, descriptor.key, descriptor);
+    }
+  }
+
+  return function(Constructor, protoProps, staticProps) {
+    if (protoProps) defineProperties(Constructor.prototype, protoProps);
+
+    if (staticProps) defineProperties(Constructor, staticProps);
+
+    return Constructor;
+  };
+}
+
+//noinspection JSUnusedLocalSymbols
+function _classCallCheck(instance, Constructor) { // jshint ignore:line
+  if (!(instance instanceof Constructor)) {
+    throw new TypeError('Cannot call a class as a function');
+  }
+}
+
+//noinspection JSUnusedLocalSymbols
+function _possibleConstructorReturn(self, call) { // jshint ignore:line
+  if (!self) {
+    throw new Error('this hasn\'t been initialised - super() hasn\'t been called');
+  }
+
+  return call && (typeof call === 'object' || typeof call === 'function') ? call : self;
+}
+
+//noinspection JSUnusedLocalSymbols
+function _inherits(subClass, superClass) { // jshint ignore:line
+  return ActorSystem.inherits(subClass, superClass);
+}

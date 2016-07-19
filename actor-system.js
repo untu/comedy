@@ -382,7 +382,7 @@ class ActorSystem {
     var selfString = behaviour.toString();
 
     if (s.startsWith(selfString, 'function')) {
-      selfString = this._serializeEs5ClassBehaviour(behaviour, selfString);
+      selfString = this._serializeEs5ClassBehaviour(behaviour, selfString, base.name);
     }
 
     return baseBehaviour + selfString;
@@ -393,10 +393,11 @@ class ActorSystem {
    *
    * @param {Function} behaviour Actor behaviour definition in ES5 class form.
    * @param {String} [selfString] Stringified class head.
+   * @param {String} [baseName] Base class name.
    * @returns {String} Serialized actor behaviour.
    * @private
    */
-  _serializeEs5ClassBehaviour(behaviour, selfString) {
+  _serializeEs5ClassBehaviour(behaviour, selfString, baseName) {
     var clsName = this._actorName(behaviour);
 
     if (!clsName) {
@@ -408,8 +409,14 @@ class ActorSystem {
 
     var expressions = [`var ${clsName} = ${selfString || behaviour.toString()};\n`];
 
-    _.each(behaviour.prototype, (methodImpl, methodName) => {
-      expressions.push(`${clsName}.prototype.${methodName} = ${methodImpl.toString()};\n`);
+    if (baseName) {
+      expressions.push(`_inherits(${clsName}, ${baseName});`);
+    }
+
+    var membersNames = Object.getOwnPropertyNames(behaviour.prototype);
+
+    _.each(membersNames, memberName => {
+      expressions.push(`${clsName}.prototype.${memberName} = ${behaviour.prototype[memberName].toString()};\n`);
     });
 
     expressions.push(`${clsName};`);
@@ -488,6 +495,26 @@ class ActorSystem {
     }
     
     return defaultSystem;
+  }
+
+  /**
+   * A recommended function for ES5 class inheritance. If this function is used for inheritance,
+   * the actors are guaranteed to be successfully transferred to forked/remote nodes.
+   *
+   * @param {Function} subClass Sub class.
+   * @param {Function} superClass Super class.
+   */
+  static inherits(subClass, superClass) {
+    subClass.prototype = Object.create(superClass && superClass.prototype, {
+      constructor: {
+        value: subClass,
+        enumerable: false,
+        writable: true,
+        configurable: true
+      }
+    });
+
+    Object.setPrototypeOf(subClass, superClass);
   }
 }
 
