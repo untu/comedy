@@ -416,7 +416,9 @@ class ActorSystem {
     var membersNames = Object.getOwnPropertyNames(behaviour.prototype);
 
     _.each(membersNames, memberName => {
-      expressions.push(`${clsName}.prototype.${memberName} = ${behaviour.prototype[memberName].toString()};\n`);
+      if (memberName != 'constructor') {
+        expressions.push(`${clsName}.prototype.${memberName} = ${behaviour.prototype[memberName].toString()};\n`);
+      }
     });
 
     expressions.push(`${clsName};`);
