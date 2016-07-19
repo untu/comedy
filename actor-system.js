@@ -356,50 +356,57 @@ class ActorSystem {
     if (common.isPlainObject(behaviour)) return toSource(behaviour);
 
     if (_.isFunction(behaviour)) { // Class-defined behaviour.
-      if (behaviour.name) {
-        return this._serializeEs6ClassBehaviour(behaviour);
-      }
-      else {
-        return this._serializeEs5ClassBehaviour(behaviour);
-      }
+      return this._serializeClassBehaviour(behaviour);
     }
 
     throw new Error('Cannot serialize actor behaviour: ' + behaviour);
   }
 
   /**
-   * Serializes a given ES6 class actor behaviour definition.
+   * Serializes a given class-defined actor behaviour.
    *
-   * @param {Function} behaviour Actor behaviour definition in ES6 class form.
+   * @param {Function} behaviour Class-defined actor behaviour.
    * @returns {String} Serialized actor behaviour.
    * @private
    */
-  _serializeEs6ClassBehaviour(behaviour) {
+  _serializeClassBehaviour(behaviour) {
     // Get a base class for behaviour class.
     var base = Object.getPrototypeOf(behaviour);
     var baseBehaviour = '';
 
     if (base && base.name) {
       // Have a user-defined super class. Serialize it as well.
-      baseBehaviour = this._serializeEs6ClassBehaviour(base);
+      baseBehaviour = this._serializeClassBehaviour(base);
     }
 
-    return baseBehaviour + behaviour.toString();
+    var selfString = behaviour.toString();
+
+    if (s.startsWith(selfString, 'function')) {
+      selfString = this._serializeEs5ClassBehaviour(behaviour, selfString);
+    }
+
+    return baseBehaviour + selfString;
   }
 
   /**
-   * Serializes a given ES6 class actor behaviour definition.
+   * Serializes a given ES5 class actor behaviour definition.
    *
    * @param {Function} behaviour Actor behaviour definition in ES5 class form.
+   * @param {String} [selfString] Stringified class head.
    * @returns {String} Serialized actor behaviour.
    * @private
    */
-  _serializeEs5ClassBehaviour(behaviour) {
-    var clsName = randomString.generate({
-      length: 12,
-      charset: 'alphabetic'
-    });
-    var expressions = [`var ${clsName} = function() {};\n`];
+  _serializeEs5ClassBehaviour(behaviour, selfString) {
+    var clsName = this._actorName(behaviour);
+
+    if (!clsName) {
+      clsName = randomString.generate({
+        length: 12,
+        charset: 'alphabetic'
+      });
+    }
+
+    var expressions = [`var ${clsName} = ${selfString || behaviour.toString()};\n`];
 
     _.each(behaviour.prototype, (methodImpl, methodName) => {
       expressions.push(`${clsName}.prototype.${methodName} = ${methodImpl.toString()};\n`);
