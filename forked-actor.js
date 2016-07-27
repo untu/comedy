@@ -185,7 +185,7 @@ class ForkedActor extends Actor {
    * Sends an actor message to a forked actor and returns a promise, which is resolved with message response.
    *
    * @param {String} topic Message topic.
-   * @param message Message.
+   * @param {*} message Message.
    * @param {Boolean} receive Receive flag.
    * @returns {*} Promise that yields a message response promise, if a receive flag is on. A promise
    * yields undefined if a receive flag is off.

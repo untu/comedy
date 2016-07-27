@@ -8,8 +8,8 @@ var _ = require('underscore');
  */
 class ActorLogger extends Logger {
   /**
-   * @param log Wrapped logger.
-   * @param actor Owning actor.
+   * @param {Logger} log Wrapped logger.
+   * @param {Actor} actor Owning actor.
    */
   constructor(log, actor) {
     super(log);
