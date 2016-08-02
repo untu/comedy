@@ -70,7 +70,7 @@ function compileBehaviour(behaviour) {
       behaviour = '(' + behaviour + ')';
     }
 
-    return eval(behaviour); // jshint ignore:line
+    return eval(behaviour); // eslint-disable-line
   }
   catch (err) {
     process.send({ error: 'Compilation error: ' + err });

@@ -1,5 +1,7 @@
 'use strict';
 
+/* eslint no-path-concat: "off" */
+
 var common = require('../saymon-common.js');
 var Logger = require('../utils/logger.js');
 var InMemoryActor = require('./in-memory-actor.js');
@@ -23,6 +25,9 @@ var fs = require('fs');
 
 P.promisifyAll(fs);
 
+// Default actor system instance reference.
+var defaultSystem;
+
 /**
  * An actor system.
  */
@@ -41,7 +46,7 @@ class ActorSystem {
     this.contextBehaviour = options.context || {};
 
     if (_.isFunction(this.contextBehaviour)) {
-      this.context = new this.contextBehaviour();
+      this.context = new this.contextBehaviour(); // eslint-disable-line
     }
     else {
       this.context = this.contextBehaviour;
@@ -157,7 +162,7 @@ class ActorSystem {
 
   /**
    * Creates a process-local (in-memory) actor.
-   * 
+   *
    * @param {Object|Function} Behaviour Actor behaviour definition.
    * @param {Actor} parent Actor parent.
    * @param {String} [actorName] Actor name.
@@ -322,7 +327,7 @@ class ActorSystem {
   /**
    * Determines actor name based on actor behaviour.
    *
-   * @param Behaviour Actor behaviour definition.
+   * @param {Object|Function} Behaviour Actor behaviour definition.
    * @returns {String} Actor name or empty string, if actor name is not defined.
    * @private
    */
@@ -519,8 +524,5 @@ class ActorSystem {
     Object.setPrototypeOf(subClass, superClass);
   }
 }
-
-// Default actor system instance reference.
-var defaultSystem;
 
 module.exports = ActorSystem;

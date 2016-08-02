@@ -109,7 +109,7 @@ class Actor {
    * A result of message handling is completely ignored, even if it has generated an error.
    *
    * @param {String} topic Message topic.
-   * @param message Message.
+   * @param {*} message Message.
    * @returns {P} Promise which is resolved once the message is sent.
    */
   send(topic, message) {
@@ -136,7 +136,7 @@ class Actor {
    * to specified behaviour.
    *
    * @param {String} topic Message topic.
-   * @param [message] Message.
+   * @param {*} [message] Message.
    * @returns {P} Promise which yields the actor response.
    */
   sendAndReceive(topic, message) {
@@ -234,7 +234,7 @@ class Actor {
    * Actual send implementation. To be overridden by subclasses.
    *
    * @param {String} topic Message topic.
-   * @param message Message.
+   * @param {*} message Message.
    * @returns {P} Promise which is resolved once the message is sent.
    */
   send0(topic, message) {
@@ -245,7 +245,7 @@ class Actor {
    * Actual sendAndReceive implementation. To be overridden by subclasses.
    *
    * @param {String} topic Message topic.
-   * @param [message] Message.
+   * @param {*} [message] Message.
    * @returns {P} Promise which yields the actor response.
    */
   sendAndReceive0(topic, message) {
