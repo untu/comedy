@@ -194,9 +194,7 @@ class ActorSystem {
       .then(() => {
         var psArgs = [];
 
-        if (_.isFunction(behaviour) && behaviour.name) {
-          psArgs.push(behaviour.name);
-        }
+        actorName && psArgs.push(actorName);
 
         // Handle debugging: increment debugger port for child process.
         var execArgv = _.map(process.execArgv, arg => {

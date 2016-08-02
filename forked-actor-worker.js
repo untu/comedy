@@ -1,5 +1,6 @@
 'use strict';
 
+require('babel-polyfill');
 var ActorSystem = require('./actor-system.js');
 
 process.once('message', msg => {
@@ -81,8 +82,10 @@ function compileBehaviour(behaviour) {
 
 // --------------- Babel support ---------------------------
 
-//noinspection JSUnusedLocalSymbols
-function _createClass() { // jshint ignore:line
+/* eslint-disable */
+
+// noinspection JSUnusedLocalSymbols
+function _createClass() {
   function defineProperties(target, props) {
     for (var i = 0; i < props.length; i++) {
       var descriptor = props[i];
@@ -104,15 +107,15 @@ function _createClass() { // jshint ignore:line
   };
 }
 
-//noinspection JSUnusedLocalSymbols
-function _classCallCheck(instance, Constructor) { // jshint ignore:line
+// noinspection JSUnusedLocalSymbols
+function _classCallCheck(instance, Constructor) {
   if (!(instance instanceof Constructor)) {
     throw new TypeError('Cannot call a class as a function');
   }
 }
 
-//noinspection JSUnusedLocalSymbols
-function _possibleConstructorReturn(self, call) { // jshint ignore:line
+// noinspection JSUnusedLocalSymbols
+function _possibleConstructorReturn(self, call) {
   if (!self) {
     throw new Error('this hasn\'t been initialised - super() hasn\'t been called');
   }
@@ -120,7 +123,9 @@ function _possibleConstructorReturn(self, call) { // jshint ignore:line
   return call && (typeof call === 'object' || typeof call === 'function') ? call : self;
 }
 
-//noinspection JSUnusedLocalSymbols
-function _inherits(subClass, superClass) { // jshint ignore:line
+// noinspection JSUnusedLocalSymbols
+function _inherits(subClass, superClass) {
   return ActorSystem.inherits(subClass, superClass);
 }
+
+/* eslint-enable */
