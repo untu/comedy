@@ -1,5 +1,6 @@
 'use strict';
 
+require('ts-node/register'); // TypeScript support.
 var ActorSystem = require('./actor-system.js');
 
 process.once('message', msg => {
