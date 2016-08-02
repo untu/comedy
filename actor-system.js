@@ -119,6 +119,27 @@ class ActorSystem {
   createActor(Behaviour, parent, options) {
     options = options || {};
 
+    // Resource injection.
+    if (_.isArray(Behaviour.inject) && _.isFunction(Behaviour)) {
+      // Read resource list.
+      var resources = _.map(Behaviour.inject, resourceName => {
+        var getterName = resourceName;
+
+        if (!_.isFunction(this.context[getterName])) {
+          getterName = `get${s.capitalize(resourceName)}`;
+        }
+
+        if (!_.isFunction(this.context[getterName])) {
+          throw new Error(`Failed to inject resource "${resourceName}" to actor behaviour ${Behaviour}`);
+        }
+
+        return this.context[getterName]();
+      });
+
+      // Create an instance of actor behaviour, passing resources as constructor arguments.
+      Behaviour = new Behaviour(...resources);
+    }
+
     var actorName = this._actorName(Behaviour);
 
     // Determine actor configuration.
