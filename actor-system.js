@@ -119,27 +119,6 @@ class ActorSystem {
   createActor(Behaviour, parent, options) {
     options = options || {};
 
-    // Resource injection.
-    if (_.isArray(Behaviour.inject) && _.isFunction(Behaviour)) {
-      // Read resource list.
-      var resources = _.map(Behaviour.inject, resourceName => {
-        var getterName = resourceName;
-
-        if (!_.isFunction(this.context[getterName])) {
-          getterName = `get${s.capitalize(resourceName)}`;
-        }
-
-        if (!_.isFunction(this.context[getterName])) {
-          throw new Error(`Failed to inject resource "${resourceName}" to actor behaviour ${Behaviour}`);
-        }
-
-        return this.context[getterName]();
-      });
-
-      // Create an instance of actor behaviour, passing resources as constructor arguments.
-      Behaviour = new Behaviour(...resources);
-    }
-
     var actorName = this._actorName(Behaviour);
 
     // Determine actor configuration.
@@ -194,7 +173,7 @@ class ActorSystem {
         var behaviour0 = Behaviour;
 
         if (_.isFunction(Behaviour)) {
-          behaviour0 = new Behaviour();
+          behaviour0 = this._injectResources(Behaviour);
         }
 
         return new InMemoryActor(this, parent, behaviour0, actorName);
@@ -267,7 +246,7 @@ class ActorSystem {
                 workerProcess,
                 msg.body.id,
                 actorName);
-              
+
               resolve(actor);
             });
           });
@@ -352,22 +331,54 @@ class ActorSystem {
    * @private
    */
   _actorName(Behaviour) {
-    var behaviour0 = Behaviour;
-
-    if (_.isFunction(Behaviour)) {
-      behaviour0 = new Behaviour();
-    }
-
     // Take 'name' field, if present.
-    if (behaviour0.name) return _.result(behaviour0, 'name');
+    if (Behaviour.name) return _.result(Behaviour, 'name');
 
     // Use 'getName' getter, if present.
-    if (_.isFunction(behaviour0.getName)) return behaviour0.getName();
-    
+    if (_.isFunction(Behaviour.getName)) return Behaviour.getName();
+
     // Use class name, if present.
-    if (behaviour0.constructor && behaviour0.constructor.name) return behaviour0.constructor.name;
+    if (Behaviour.constructor && Behaviour.constructor.name) return Behaviour.constructor.name;
+
+    if (_.isFunction(Behaviour)) {
+      return this._actorName(new Behaviour());
+    }
 
     return '';
+  }
+
+  /**
+   * Performs actor resource injection.
+   *
+   * @param {Function} Behaviour Behaviour class.
+   * @returns {*} Behaviour instance with injected resources.
+   * @private
+   */
+  _injectResources(Behaviour) {
+    var resourceNames = _.result(Behaviour, 'inject');
+
+    // Resource injection.
+    if (_.isArray(resourceNames) && _.isFunction(Behaviour)) {
+      // Read resource list.
+      var resources = _.map(resourceNames, resourceName => {
+        var getterName = resourceName;
+
+        if (!_.isFunction(this.context[getterName])) {
+          getterName = `get${s.capitalize(resourceName)}`;
+        }
+
+        if (!_.isFunction(this.context[getterName])) {
+          throw new Error(`Failed to inject resource "${resourceName}" to actor behaviour ${Behaviour}`);
+        }
+
+        return this.context[getterName]();
+      });
+
+      // Create an instance of actor behaviour, passing resources as constructor arguments.
+      return new Behaviour(...resources);
+    }
+
+    return new Behaviour();
   }
 
   /**
