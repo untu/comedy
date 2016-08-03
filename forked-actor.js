@@ -16,6 +16,7 @@ class ForkedActor extends Actor {
   constructor(system, parent, bus, actor) {
     super(system, parent, actor.getId(), actor.getName());
 
+    this.system = system;
     this.bus = bus;
     this.actor = actor;
     this.idCounter = 1;
@@ -55,10 +56,18 @@ class ForkedActor extends Actor {
               }
             }
 
+            var message = msg.body.message;
+
+            if (msg.body.marshalledWith) {
+              var marshaller = this.system.getMarshaller(msg.body.marshalledWith);
+
+              message = marshaller.unmarshall(message);
+            }
+
             var sendPromise;
 
             if (msg.body.receive) {
-              sendPromise = actor.sendAndReceive(topic, msg.body.message)
+              sendPromise = actor.sendAndReceive(topic, message)
                 .then(resp => this._send0({
                   type: 'actor-response',
                   id: msg.id,
@@ -66,7 +75,7 @@ class ForkedActor extends Actor {
                 }));
             }
             else {
-              sendPromise = actor.send(topic, msg.body.message);
+              sendPromise = actor.send(topic, message);
             }
 
             sendPromise.catch(err => this._sendErrorResponse(msg.id, err.message));
@@ -192,14 +201,23 @@ class ForkedActor extends Actor {
    * @private
    */
   _sendActorMessage(topic, message, receive) {
-    return this._send0({
+    var actorMessage = {
       type: 'actor-message',
       body: {
         topic: topic,
         message: message,
         receive: receive
       }
-    }, receive);
+    };
+
+    var marshaller = this.system.getMarshallerForMessage(message);
+
+    if (marshaller) {
+      actorMessage.body.message = marshaller.marshall(message);
+      actorMessage.body.marshalledWith = marshaller.getName();
+    }
+
+    return this._send0(actorMessage, receive);
   }
 
   /**

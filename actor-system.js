@@ -43,6 +43,7 @@ class ActorSystem {
     options = options || {};
 
     this.contextBehaviour = options.context || {};
+    this.marshallers = {};
 
     if (_.isFunction(this.contextBehaviour)) {
       this.context = new this.contextBehaviour(); // eslint-disable-line
@@ -58,6 +59,18 @@ class ActorSystem {
     if (options.test) this.log.setLevel(this.log.levels().Error); // Only output errors in tests.
     
     if (options.debug) this.log.setLevel(this.log.levels().Debug); // Overrides test option.
+
+    // Initialize marshallers.
+    if (this.context.marshallers) {
+      this.marshallers = _.reduce(this.context.marshallers, (memo, marshaller) => {
+        var type = this._readProperty(marshaller, 'type');
+        var typeName = this._typeName(type);
+
+        memo[typeName] = marshaller;
+
+        return memo;
+      }, {});
+    }
 
     var initRet = _.isFunction(this.context.initialize) && this.context.initialize(this._selfProxy());
     var contextPromise = P.resolve().then(() => initRet);
@@ -99,6 +112,28 @@ class ActorSystem {
    */
   getLog() {
     return this.log;
+  }
+
+  /**
+   * Returns a marshaller for a given type name.
+   *
+   * @param {String} typeName Type name.
+   * @returns {Object|undefined} Marshaller for a given message or undefined, if a marshaller for a given
+   * message was not found.
+   */
+  getMarshaller(typeName) {
+    return this.marshallers[typeName];
+  }
+
+  /**
+   * Returns a marshaller for a given message.
+   *
+   * @param {*} message Message.
+   * @returns {Object|undefined} Marshaller for a given message or undefined, if a marshaller for a given
+   * message was not found.
+   */
+  getMarshallerForMessage(message) {
+    return this.marshallers[this._typeName(message)];
   }
 
   /**
@@ -338,13 +373,28 @@ class ActorSystem {
     if (_.isFunction(Behaviour.getName)) return Behaviour.getName();
 
     // Use class name, if present.
-    if (Behaviour.constructor && Behaviour.constructor.name) return Behaviour.constructor.name;
+    var typeName = this._typeName(Behaviour);
+
+    if (typeName) return typeName;
 
     if (_.isFunction(Behaviour)) {
       return this._actorName(new Behaviour());
     }
 
     return '';
+  }
+
+  /**
+   * Attempts to determine a name of a given type.
+   *
+   * @param {*} type Type of interest.
+   * @returns {String|undefined} Type name or undefined, if type name cannot be determined.
+   * @private
+   */
+  _typeName(type) {
+    if (type.constructor && type.constructor.name) {
+      return type.constructor.name;
+    }
   }
 
   /**
