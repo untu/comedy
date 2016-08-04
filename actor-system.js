@@ -99,6 +99,8 @@ class ActorSystem {
           var type = this._readProperty(marshaller0, 'type');
           var typeName = _.isString(type) ? type : this._typeName(type);
 
+          if (!typeName) throw new Error('Failed to determine type name for marshaller: ' + marshaller0);
+
           marshaller0.type = typeName;
           memo[typeName] = marshaller0;
 
@@ -412,11 +414,11 @@ class ActorSystem {
     if (!type) return;
 
     if (_.isFunction(type)) {
-      return type.name;
+      return type.typeName || type.name;
     }
 
-    if (type.constructor && type.constructor.name) {
-      return type.constructor.name;
+    if (type.constructor) {
+      return type.constructor.typeName || type.constructor.name;
     }
   }
 
