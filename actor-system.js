@@ -61,11 +61,12 @@ class ActorSystem {
     if (options.debug) this.log.setLevel(this.log.levels().Debug); // Overrides test option.
 
     // Initialize marshallers.
-    if (this.context.marshallers) {
-      this.marshallers = _.reduce(this.context.marshallers, (memo, marshaller) => {
+    if (options.marshallers) {
+      this.marshallers = _.reduce(options.marshallers, (memo, marshaller) => {
         var type = this._readProperty(marshaller, 'type');
-        var typeName = this._typeName(type);
+        var typeName = _.isString(type) ? type : this._typeName(type);
 
+        marshaller.type = typeName;
         memo[typeName] = marshaller;
 
         return memo;
@@ -261,6 +262,11 @@ class ActorSystem {
               }
             }
           };
+
+          if (this.marshallers) {
+            createMsg.body.marshallers = this._serializeBehaviour(_.values(this.marshallers));
+          }
+
           var actor;
 
           // Send a message to forked process and await response.
@@ -392,6 +398,12 @@ class ActorSystem {
    * @private
    */
   _typeName(type) {
+    if (!type) return;
+
+    if (_.isFunction(type)) {
+      return type.name;
+    }
+
     if (type.constructor && type.constructor.name) {
       return type.constructor.name;
     }
@@ -411,17 +423,13 @@ class ActorSystem {
     if (_.isArray(resourceNames) && _.isFunction(Behaviour)) {
       // Read resource list.
       var resources = _.map(resourceNames, resourceName => {
-        var getterName = resourceName;
+        var resource = this._readProperty(this.context, resourceName);
 
-        if (!_.isFunction(this.context[getterName])) {
-          getterName = `get${s.capitalize(resourceName)}`;
-        }
-
-        if (!_.isFunction(this.context[getterName])) {
+        if (!resource) {
           throw new Error(`Failed to inject resource "${resourceName}" to actor behaviour ${Behaviour}`);
         }
 
-        return this.context[getterName]();
+        return resource;
       });
 
       // Create an instance of actor behaviour, passing resources as constructor arguments.
@@ -429,6 +437,28 @@ class ActorSystem {
     }
 
     return new Behaviour();
+  }
+
+  /**
+   * Reads a given property from an object. Attempts to read either directly by name or by getter (if present).
+   *
+   * @param {Object} object Object of interest.
+   * @param {String} propName Property name.
+   * @returns {*} Property value or undefined.
+   * @private
+   */
+  _readProperty(object, propName) {
+    var ret = object[propName];
+
+    if (!ret) {
+      var getterName = `get${s.capitalize(propName)}`;
+
+      if (_.isFunction(object[getterName])) {
+        ret = object[getterName]();
+      }
+    }
+
+    return ret;
   }
 
   /**

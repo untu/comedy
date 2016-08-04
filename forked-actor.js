@@ -214,7 +214,7 @@ class ForkedActor extends Actor {
 
     if (marshaller) {
       actorMessage.body.message = marshaller.marshall(message);
-      actorMessage.body.marshalledWith = marshaller.getName();
+      actorMessage.body.marshalledWith = marshaller.type;
     }
 
     return this._send0(actorMessage, receive);

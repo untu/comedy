@@ -33,8 +33,15 @@ process.once('message', msg => {
     context = compileBehaviour(msg.body.context);
   }
 
+  var marshallers;
+
+  if (msg.body.marshallers) {
+    marshallers = compileBehaviour(msg.body.marshallers);
+  }
+
   var system = new ActorSystem({
     context: context,
+    marshallers: marshallers,
     config: msg.body.config,
     test: msg.body.test,
     debug: msg.body.debug,
@@ -66,7 +73,7 @@ process.once('message', msg => {
  */
 function compileBehaviour(behaviour) {
   try {
-    if (behaviour[0] == '{') {
+    if (behaviour[0] == '{' || behaviour[0] == '[') {
       // Plain object defined behaviour => wrap in braces.
       behaviour = '(' + behaviour + ')';
     }
