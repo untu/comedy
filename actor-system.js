@@ -60,19 +60,6 @@ class ActorSystem {
     
     if (options.debug) this.log.setLevel(this.log.levels().Debug); // Overrides test option.
 
-    // Initialize marshallers.
-    if (options.marshallers) {
-      this.marshallers = _.reduce(options.marshallers, (memo, marshaller) => {
-        var type = this._readProperty(marshaller, 'type');
-        var typeName = _.isString(type) ? type : this._typeName(type);
-
-        marshaller.type = typeName;
-        memo[typeName] = marshaller;
-
-        return memo;
-      }, {});
-    }
-
     var initRet = _.isFunction(this.context.initialize) && this.context.initialize(this._selfProxy());
     var contextPromise = P.resolve().then(() => initRet);
 
@@ -94,6 +81,30 @@ class ActorSystem {
     else {
       // Create default root.
       this.rootActorPromise = contextPromise.return(new RootActor(this, { forked: !!options.forked }));
+    }
+
+    // Initialize marshallers.
+    if (options.marshallers) {
+      contextPromise.then(() => {
+        this.marshallers = _.reduce(options.marshallers, (memo, marshaller) => {
+          var marshaller0;
+
+          if (_.isFunction(marshaller)) {
+            marshaller0 = this._injectResources(marshaller);
+          }
+          else {
+            marshaller0 = _.clone(marshaller);
+          }
+
+          var type = this._readProperty(marshaller0, 'type');
+          var typeName = _.isString(type) ? type : this._typeName(type);
+
+          marshaller0.type = typeName;
+          memo[typeName] = marshaller0;
+
+          return memo;
+        }, {});
+      });
     }
     
     this.rootActorPromise = this.rootActorPromise
@@ -263,8 +274,8 @@ class ActorSystem {
             }
           };
 
-          if (this.marshallers) {
-            createMsg.body.marshallers = this._serializeBehaviour(_.values(this.marshallers));
+          if (this.options.marshallers) {
+            createMsg.body.marshallers = this._serializeBehaviour(_.values(this.options.marshallers));
           }
 
           var actor;
