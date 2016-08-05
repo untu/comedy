@@ -17,6 +17,7 @@ var mongodb = require('mongodb');
 var P = require('bluebird');
 var _ = require('underscore');
 var s = require('underscore.string');
+var randomString = require('randomstring');
 var globalRequire = require;
 var fs = require('fs');
 
@@ -241,9 +242,7 @@ class ActorSystem {
       .then(() => {
         var psArgs = [];
 
-        if (_.isFunction(behaviour) && behaviour.name) {
-          psArgs.push(behaviour.name);
-        }
+        actorName && psArgs.push(actorName);
 
         // Handle debugging: increment debugger port for child process.
         var execArgv = _.map(process.execArgv, arg => {
@@ -482,18 +481,77 @@ class ActorSystem {
    * @private
    */
   _serializeBehaviour(behaviour) {
-    if (!common.isPlainObject(behaviour)) {
-      // Assume from this point that behaviour is a class.
-      // Get a base class for behaviour class.
-      var base = Object.getPrototypeOf(behaviour);
+    if (common.isPlainObject(behaviour)) return toSource(behaviour);
 
-      if (base && base.name) {
-        // Have a user-defined super class. Serialize it as well.
-        return this._serializeBehaviour(base) + toSource(behaviour);
-      }
+    if (_.isFunction(behaviour)) { // Class-defined behaviour.
+      return this._serializeClassBehaviour(behaviour);
     }
 
-    return toSource(behaviour);
+    throw new Error('Cannot serialize actor behaviour: ' + behaviour);
+  }
+
+  /**
+   * Serializes a given class-defined actor behaviour.
+   *
+   * @param {Function} behaviour Class-defined actor behaviour.
+   * @returns {String} Serialized actor behaviour.
+   * @private
+   */
+  _serializeClassBehaviour(behaviour) {
+    // Get a base class for behaviour class.
+    var base = Object.getPrototypeOf(behaviour);
+    var baseBehaviour = '';
+
+    if (base && base.name) {
+      // Have a user-defined super class. Serialize it as well.
+      baseBehaviour = this._serializeClassBehaviour(base);
+    }
+
+    var selfString = behaviour.toString();
+
+    if (s.startsWith(selfString, 'function')) {
+      selfString = this._serializeEs5ClassBehaviour(behaviour, selfString, base.name);
+    }
+
+    return baseBehaviour + selfString;
+  }
+
+  /**
+   * Serializes a given ES5 class actor behaviour definition.
+   *
+   * @param {Function} behaviour Actor behaviour definition in ES5 class form.
+   * @param {String} [selfString] Stringified class head.
+   * @param {String} [baseName] Base class name.
+   * @returns {String} Serialized actor behaviour.
+   * @private
+   */
+  _serializeEs5ClassBehaviour(behaviour, selfString, baseName) {
+    var clsName = this._actorName(behaviour);
+
+    if (!clsName) {
+      clsName = randomString.generate({
+        length: 12,
+        charset: 'alphabetic'
+      });
+    }
+
+    var expressions = [`var ${clsName} = ${selfString || behaviour.toString()};\n`];
+
+    if (baseName) {
+      expressions.push(`_inherits(${clsName}, ${baseName});`);
+    }
+
+    var membersNames = Object.getOwnPropertyNames(behaviour.prototype);
+
+    _.each(membersNames, memberName => {
+      if (memberName != 'constructor') {
+        expressions.push(`${clsName}.prototype.${memberName} = ${behaviour.prototype[memberName].toString()};\n`);
+      }
+    });
+
+    expressions.push(`${clsName};`);
+
+    return expressions.join('');
   }
 
   /**
@@ -567,6 +625,26 @@ class ActorSystem {
     }
     
     return defaultSystem;
+  }
+
+  /**
+   * A recommended function for ES5 class inheritance. If this function is used for inheritance,
+   * the actors are guaranteed to be successfully transferred to forked/remote nodes.
+   *
+   * @param {Function} subClass Sub class.
+   * @param {Function} superClass Super class.
+   */
+  static inherits(subClass, superClass) {
+    subClass.prototype = Object.create(superClass && superClass.prototype, {
+      constructor: {
+        value: subClass,
+        enumerable: false,
+        writable: true,
+        configurable: true
+      }
+    });
+
+    Object.setPrototypeOf(subClass, superClass);
   }
 }
 

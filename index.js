@@ -19,3 +19,5 @@ module.exports = function(options) {
 module.exports.rootActor = function() {
   return ActorSystem.default().rootActor();
 };
+
+module.exports.inherits = ActorSystem.inherits;
