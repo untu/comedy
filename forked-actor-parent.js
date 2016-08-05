@@ -19,7 +19,7 @@ class ForkedActorParent extends ForkedActor {
   }
 
   tree() {
-    return this._send0({ type: 'actor-tree' }, true);
+    return this._send0({ type: 'actor-tree' }, { receive: true });
   }
   
   toString() {

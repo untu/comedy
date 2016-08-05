@@ -5,11 +5,9 @@
 var common = require('../saymon-common.js');
 var Logger = require('../utils/logger.js');
 var InMemoryActor = require('./in-memory-actor.js');
-var ForkedActor = require('./forked-actor.js');
 var ForkedActorParent = require('./forked-actor-parent.js');
 var ForkedActorChild = require('./forked-actor-child.js');
 var RootActor = require('./root-actor.js');
-var ActorStub = require('./actor-stub.js');
 var RoundRobinBalancerActor = require('./standard/round-robin-balancer-actor.js');
 var childProcess = require('child_process');
 var appRootPath = require('app-root-path');
@@ -37,6 +35,7 @@ class ActorSystem {
    * - {Object} [log] Custom logger.
    * - {Boolean} [test] If true, sets this system into test mode.
    * - {Boolean} [debug] If true, sets this system into debug mode.
+   * - {Boolean} [forceInMemory] If true, all actors will be launched in 'in-memory' mode.
    * - {Object} [root] Root actor behaviour.
    */
   constructor(options) {
@@ -72,9 +71,9 @@ class ActorSystem {
         this.rootActorPromise = this.rootActorPromise.then(rootActor => {
           return new ForkedActorChild(
             this,
-            new ForkedActor(this, null, process, new ActorStub(this, options.forked.id)),
             process,
-            rootActor);
+            rootActor,
+            options.forked.id);
         });
       }
     }
@@ -190,8 +189,8 @@ class ActorSystem {
         });
     }
     
-    if (this.options.debug && options.mode != 'in-memory') {
-      this.log.warn('Forcing in-memory mode due to debug flag for actor:', actorName);
+    if (this.options.forceInMemory && options.mode != 'in-memory') {
+      this.log.warn('Forcing in-memory mode due to forceInMemory flag for actor:', actorName);
       options = _.extend({}, options, { mode: 'in-memory' });
     }
 

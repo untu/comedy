@@ -31,9 +31,9 @@ class ForkedActor extends Actor {
         this.bus.on('message', msg => {
           var log = this.getLog();
 
-          if (!msg.id) return log.warn('Missing ID in actor message (ignoring):', msg);
-
           log.debug('Received message:', msg);
+
+          if (!msg.id) return log.warn('Missing ID in actor message (ignoring):', msg);
           
           if (msg.type == 'actor-message') {
             if (!msg.body) return this._sendErrorResponse(msg.id, 'Missing message body');
@@ -147,11 +147,11 @@ class ForkedActor extends Actor {
   }
 
   send0(topic, message) {
-    return this._sendActorMessage(topic, message, false);
+    return this._sendActorMessage(topic, message, { receive: false });
   }
 
   sendAndReceive0(topic, message) {
-    return this._sendActorMessage(topic, message, true);
+    return this._sendActorMessage(topic, message, { receive: true });
   }
 
   destroy0() {
@@ -195,18 +195,20 @@ class ForkedActor extends Actor {
    *
    * @param {String} topic Message topic.
    * @param {*} message Message.
-   * @param {Boolean} receive Receive flag.
+   * @param {Object} options Operation options.
+   * - {Boolean} receive Receive flag.
+   * - {String} [actorId] ID of a remote actor to send message to (either self or parent).
    * @returns {*} Promise that yields a message response promise, if a receive flag is on. A promise
    * yields undefined if a receive flag is off.
-   * @private
+   * @protected
    */
-  _sendActorMessage(topic, message, receive) {
+  _sendActorMessage(topic, message, options) {
     var actorMessage = {
       type: 'actor-message',
       body: {
         topic: topic,
         message: message,
-        receive: receive
+        receive: options.receive
       }
     };
 
@@ -217,7 +219,7 @@ class ForkedActor extends Actor {
       actorMessage.body.marshalledWith = marshaller.type;
     }
 
-    return this._send0(actorMessage, receive);
+    return this._send0(actorMessage, options);
   }
 
   /**
@@ -242,12 +244,16 @@ class ForkedActor extends Actor {
    * Sends an arbitrary message to a forked actor.
    *
    * @param {Object} msg Message to send.
-   * @param {Boolean} [receive] Receive flag.
+   * @param {Object} [options] Operation options.
+   * - {Boolean} receive Receive flag.
+   * - {String} [actorId] ID of a remote actor to send message to (either self or parent).
    * @returns {*} Promise that yields a message response promise, if a receive flag is on. A promise
    * yields undefined if a receive flag is off.
    * @protected
    */
-  _send0(msg, receive) {
+  _send0(msg, options) {
+    options = options || {};
+
     return new P((resolve, reject) => {
       var msgId = msg.id;
 
@@ -255,11 +261,11 @@ class ForkedActor extends Actor {
         msg.id = msgId = this.idCounter++;
       }
 
-      msg.actorId = this.getId();
+      msg.actorId = options.actorId || this.getId();
 
       var ret;
 
-      if (receive) {
+      if (options.receive) {
         var pending = P.pending();
 
         this.responsePromises[msgId] = pending;

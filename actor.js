@@ -2,6 +2,7 @@
 
 var common = require('../saymon-common.js');
 var ActorLogger = require('./utils/actor-logger.js');
+var ParentActorStub = require('./parent-actor-stub.js');
 var P = require('bluebird');
 var _ = require('underscore');
 
@@ -89,10 +90,10 @@ class Actor {
   /**
    * Synchronously returns this actor's parent.
    *
-   * @returns {Actor} This actor's parent.
+   * @returns {ParentActorStub} This actor's parent reference.
    */
   getParent() {
-    return this.parent;
+    return new ParentActorStub(this.parent);
   }
 
   /**
@@ -119,7 +120,7 @@ class Actor {
     if (this._checkForward(topic)) {
       this.getLog().debug('Forwarding message to parent, topic=', topic, 'message=', message);
 
-      return this.parent.send.apply(this.parent, arguments);
+      return this.getParent().send.apply(this.getParent(), arguments);
     }
 
     // Allow additional arguments.
@@ -146,7 +147,7 @@ class Actor {
     if (this._checkForward(topic)) {
       this.getLog().debug('Forwarding message to parent, topic=', topic, 'message=', message);
 
-      return this.parent.sendAndReceive.apply(this.parent, arguments);
+      return this.getParent().sendAndReceive.apply(this.getParent(), arguments);
     }
 
     // Allow additional arguments.

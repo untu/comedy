@@ -67,8 +67,9 @@ process.once('message', msg => {
       });
     })
     .catch(err => {
-      process.send({ error: 'Failed to create forked actor: ' + err });
+      log.error('Failed to create forked actor:', err.stack);
 
+      process.send({ error: 'Failed to create forked actor: ' + err });
       process.exit(1);
     });
 });
