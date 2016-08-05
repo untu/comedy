@@ -272,7 +272,8 @@ class ActorSystem {
               debug: this.options.debug,
               parent: {
                 id: parent.getId()
-              }
+              },
+              logLevel: this.log.getLevel()
             }
           };
 

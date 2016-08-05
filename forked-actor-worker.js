@@ -2,6 +2,7 @@
 
 require('ts-node/register'); // TypeScript support.
 var ActorSystem = require('./actor-system.js');
+var Logger = require('../utils/logger.js');
 
 process.once('message', msg => {
   if (msg.type != 'create-actor') return;
@@ -39,6 +40,12 @@ process.once('message', msg => {
     marshallers = compileBehaviour(msg.body.marshallers);
   }
 
+  var log = new Logger();
+
+  if (msg.body.logLevel) {
+    log.setLevel(msg.body.logLevel);
+  }
+
   var system = new ActorSystem({
     context: context,
     marshallers: marshallers,
@@ -46,7 +53,8 @@ process.once('message', msg => {
     test: msg.body.test,
     debug: msg.body.debug,
     forked: msg.body.parent,
-    root: compiledBeh
+    root: compiledBeh,
+    log: log
   });
 
   system.rootActor()
