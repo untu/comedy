@@ -476,11 +476,15 @@ class ActorSystem {
   /**
    * Serializes a given actor behaviour definition for transferring to other process.
    *
-   * @param {Object|Function} behaviour Actor behaviour definition.
+   * @param {Object|Function|Array} behaviour Actor behaviour definition.
    * @returns {String} Serialized actor behaviour.
    * @private
    */
   _serializeBehaviour(behaviour) {
+    if (_.isArray(behaviour)) {
+      return toSource(_.map(behaviour, item => this._serializeBehaviour(item)));
+    }
+
     if (common.isPlainObject(behaviour)) return toSource(behaviour);
 
     if (_.isFunction(behaviour)) { // Class-defined behaviour.
