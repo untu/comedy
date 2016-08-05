@@ -1,7 +1,10 @@
 'use strict';
 
+/* eslint no-eval: "off" */
+
 require('babel-polyfill');
 require('ts-node/register'); // TypeScript support.
+var _ = require('underscore');
 var ActorSystem = require('./actor-system.js');
 var Logger = require('../utils/logger.js');
 
@@ -83,12 +86,18 @@ process.once('message', msg => {
  */
 function compileBehaviour(behaviour) {
   try {
-    if (behaviour[0] == '{' || behaviour[0] == '[') {
+    if (behaviour[0] == '{') {
       // Plain object defined behaviour => wrap in braces.
-      behaviour = '(' + behaviour + ')';
+      return eval(`(${behaviour})`);
+    }
+    else if (behaviour[0] == '[') {
+      // Behaviour array => first deserialize array, then behaviours inside.
+      var behArr = eval(`(${behaviour})`);
+
+      return _.map(behArr, item => compileBehaviour(item));
     }
 
-    return eval(behaviour); // eslint-disable-line
+    return eval(behaviour);
   }
   catch (err) {
     process.send({ error: 'Compilation error: ' + err });
