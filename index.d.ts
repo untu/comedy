@@ -1,6 +1,8 @@
 import P = require('bluebird');
 
 export interface Logger {
+  isDebug(): boolean;
+
   debug(...messages: any[]): void;
 
   info(...messages: any[]): void;
