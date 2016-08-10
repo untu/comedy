@@ -17,7 +17,11 @@ export interface Actor {
 
   getParent(): Actor;
 
+  createChild(behaviour: ActorBehaviour|Object, options?: Object): P<Actor>;
+
   send(topic: string, ...message: any[]): P<void>;
+
+  sendAndReceive(topic: string, ...message: any[]): P<any>;
 }
 
 export interface ActorBehaviour {
@@ -25,3 +29,11 @@ export interface ActorBehaviour {
 
   destroy(): P<void>;
 }
+
+export interface ActorSystem {
+  rootActor(): P<Actor>;
+
+  destroy(): P<void>;
+}
+
+export default function(options: Object): ActorSystem;
