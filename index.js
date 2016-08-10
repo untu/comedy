@@ -16,6 +16,9 @@ module.exports = function(options) {
   return new ActorSystem(options);
 };
 
+// Explicitly-named function alias for creating actor system.
+module.exports.createSystem = module.exports;
+
 module.exports.rootActor = function() {
   return ActorSystem.default().rootActor();
 };

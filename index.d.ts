@@ -36,4 +36,4 @@ export interface ActorSystem {
   destroy(): P<void>;
 }
 
-export default function(options: Object): ActorSystem;
+export function createSystem(options: Object): ActorSystem;
