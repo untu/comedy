@@ -417,7 +417,7 @@ class ActorSystem {
     }
 
     if (type.constructor) {
-      return type.constructor.typeName || type.constructor.name;
+      return _.result(type.constructor, 'typeName') || type.constructor.name;
     }
   }
 
