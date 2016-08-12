@@ -96,13 +96,18 @@ class ActorSystem {
             marshaller0 = _.clone(marshaller);
           }
 
-          var type = this._readProperty(marshaller0, 'type');
-          var typeName = _.isString(type) ? type : this._typeName(type);
+          var types = this._readProperty(marshaller0, 'type');
 
-          if (!typeName) throw new Error('Failed to determine type name for marshaller: ' + marshaller0);
+          _.isArray(types) || (types = [types]);
 
-          marshaller0.type = typeName;
-          memo[typeName] = marshaller0;
+          _.each(types, type => {
+            var typeName = _.isString(type) ? type : this._typeName(type);
+
+            if (!typeName) throw new Error('Failed to determine type name for marshaller: ' + marshaller0);
+
+            marshaller0.type = typeName;
+            memo[typeName] = marshaller0;
+          });
 
           return memo;
         }, {});
