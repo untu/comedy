@@ -550,6 +550,14 @@ class ActorSystem {
       expressions.push(`_inherits(${clsName}, ${baseName});`);
     }
 
+    var staticMemberNames = Object.getOwnPropertyNames(behaviour);
+
+    _.each(staticMemberNames, memberName => {
+      if (memberName != 'length' && memberName != 'prototype' && memberName != 'name') {
+        expressions.push(`${clsName}.${memberName} = ${behaviour[memberName].toString()};\n`);
+      }
+    });
+
     var membersNames = Object.getOwnPropertyNames(behaviour.prototype);
 
     _.each(membersNames, memberName => {
