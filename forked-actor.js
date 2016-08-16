@@ -58,8 +58,8 @@ class ForkedActor extends Actor {
 
             var message = msg.body.message;
 
-            if (msg.body.marshalledWith) {
-              var marshaller = this.system.getMarshaller(msg.body.marshalledWith);
+            if (msg.body.marshalledType) {
+              var marshaller = this.system.getMarshaller(msg.body.marshalledType);
 
               message = marshaller.unmarshall(message);
             }
@@ -216,7 +216,7 @@ class ForkedActor extends Actor {
 
     if (marshaller) {
       actorMessage.body.message = marshaller.marshall(message);
-      actorMessage.body.marshalledWith = marshaller.type;
+      actorMessage.body.marshalledType = marshaller.type;
     }
 
     return this._send0(actorMessage, options);
