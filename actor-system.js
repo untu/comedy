@@ -389,11 +389,11 @@ class ActorSystem {
    * @private
    */
   _actorName(Behaviour) {
-    // Take 'name' field, if present.
-    if (Behaviour.name) return _.result(Behaviour, 'name');
-
     // Use 'getName' getter, if present.
     if (_.isFunction(Behaviour.getName)) return Behaviour.getName();
+
+    // Take 'name' field, if present.
+    if (Behaviour.name) return _.result(Behaviour, 'name');
 
     // Use class name, if present.
     var typeName = this._typeName(Behaviour);
