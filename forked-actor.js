@@ -143,6 +143,11 @@ class ForkedActor extends Actor {
             log.warn('Ignoring message of an unknown type:', msg);
           }
         });
+
+        // Remove message listener once child process has exited or crashed.
+        this.bus.once('exit', () => {
+          this.bus.removeAllListeners('message');
+        });
       });
   }
 
