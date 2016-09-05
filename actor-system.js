@@ -7,6 +7,7 @@ var Logger = require('../utils/logger.js');
 var InMemoryActor = require('./in-memory-actor.js');
 var ForkedActorParent = require('./forked-actor-parent.js');
 var ForkedActorChild = require('./forked-actor-child.js');
+var ForkedActorStub = require('./forked-actor-stub.js');
 var RootActor = require('./root-actor.js');
 var RoundRobinBalancerActor = require('./standard/round-robin-balancer-actor.js');
 var childProcess = require('child_process');
@@ -206,7 +207,7 @@ class ActorSystem {
         return this.createInMemoryActor(Behaviour, parent, actorName);
 
       case 'forked':
-        return this.createForkedActor(Behaviour, parent, actorName);
+        return this.createForkedActor(Behaviour, parent, actorName, options);
 
       default:
         return P.resolve().throw(new Error('Unknown actor mode: ' + options.mode));
@@ -240,9 +241,12 @@ class ActorSystem {
    * @param {Object} behaviour Actor behaviour definition.
    * @param {Actor} parent Actor parent.
    * @param {String} [actorName] Actor name.
+   * @param {Object} [options] Operation options.
    * @returns {P} Promise that yields a newly-created actor.
    */
-  createForkedActor(behaviour, parent, actorName) {
+  createForkedActor(behaviour, parent, actorName, options) {
+    options = options || {};
+
     return P.resolve()
       .then(() => {
         var psArgs = [];
@@ -298,12 +302,12 @@ class ActorSystem {
               if (msg.type != 'actor-created' || !msg.body || !msg.body.id)
                 return reject(new Error('Unexpected response for "create-actor" message.'));
 
-              actor = new ForkedActorParent(
+              actor = new ForkedActorStub(new ForkedActorParent(
                 this,
                 parent,
                 workerProcess,
                 msg.body.id,
-                actorName);
+                actorName));
 
               resolve(actor);
             });
@@ -315,23 +319,47 @@ class ActorSystem {
           });
 
           // Kill child process if self process is killed.
-          process.once('SIGINT', () => {
+          var sigintHandler = () => {
             this.log.info('Received SIGINT, exiting');
 
             process.exit(0);
-          });
-          process.once('SIGTERM', () => {
+          };
+          var sigtermHandler = () => {
             this.log.info('Received SIGTERM, exiting');
 
             process.exit(0);
-          });
-          process.once('exit', () => {
+          };
+          var exitHandler = () => {
             if (actor) {
               this.log.debug('Process exiting, killing forked actor ' + actor);
 
               workerProcess.kill();
             }
-          });
+          };
+          process.once('SIGINT', sigintHandler);
+          process.once('SIGTERM', sigtermHandler);
+          process.once('exit', exitHandler);
+
+          // Actor respawn support.
+          if (options.onCrash == 'respawn') {
+            workerProcess.once('exit', () => {
+              if (!actor) return;
+
+              this.log.warn('Actor ' + actor + ' has crashed, respawning...');
+
+              process.removeListener('SIGINT', sigintHandler);
+              process.removeListener('SIGTERM', sigtermHandler);
+              process.removeListener('exit', exitHandler);
+
+              this.createForkedActor(behaviour, parent, actorName, _.extend({}, options, { id: actor.getId() }))
+                .tap(newActor => newActor.initialize())
+                .then(newActor => {
+                  this.log.info('Actor ' + actor + ' successfully respawned.');
+
+                  actor.setWrapped(newActor.getWrapped());
+                });
+            });
+          }
         });
       });
   }
