@@ -174,7 +174,7 @@ class ActorSystem {
   createActor(Behaviour, parent, options) {
     options = options || {};
 
-    var actorName = this._actorName(Behaviour);
+    var actorName = options.name || this._actorName(Behaviour);
 
     // Determine actor configuration.
     if (this.config && actorName) {
@@ -204,10 +204,10 @@ class ActorSystem {
     // Actor creation.
     switch (options.mode || 'in-memory') {
       case 'in-memory':
-        return this.createInMemoryActor(Behaviour, parent, actorName);
+        return this.createInMemoryActor(Behaviour, parent, { name: actorName });
 
       case 'forked':
-        return this.createForkedActor(Behaviour, parent, actorName, options);
+        return this.createForkedActor(Behaviour, parent, _.extend({ name: actorName }, options));
 
       default:
         return P.resolve().throw(new Error('Unknown actor mode: ' + options.mode));
@@ -219,10 +219,11 @@ class ActorSystem {
    *
    * @param {Object|Function} Behaviour Actor behaviour definition.
    * @param {Actor} parent Actor parent.
-   * @param {String} [actorName] Actor name.
+   * @param {Object} options Operation options.
+   * - {String} name Actor name.
    * @returns {*} Promise that yields a newly-created actor.
    */
-  createInMemoryActor(Behaviour, parent, actorName) {
+  createInMemoryActor(Behaviour, parent, options) {
     return P.resolve()
       .then(() => {
         var behaviour0 = Behaviour;
@@ -231,7 +232,7 @@ class ActorSystem {
           behaviour0 = this._injectResources(Behaviour);
         }
 
-        return new InMemoryActor(this, parent, behaviour0, actorName);
+        return new InMemoryActor(this, parent, behaviour0, options.name);
       });
   }
 
@@ -240,18 +241,17 @@ class ActorSystem {
    *
    * @param {Object} behaviour Actor behaviour definition.
    * @param {Actor} parent Actor parent.
-   * @param {String} [actorName] Actor name.
    * @param {Object} [options] Operation options.
    * @returns {P} Promise that yields a newly-created actor.
    */
-  createForkedActor(behaviour, parent, actorName, options) {
+  createForkedActor(behaviour, parent, options) {
     options = options || {};
 
     return P.resolve()
       .then(() => {
         var psArgs = [];
 
-        actorName && psArgs.push(actorName);
+        options.name && psArgs.push(options.name);
 
         // Handle debugging: increment debugger port for child process.
         var execArgv = _.map(process.execArgv, arg => {
@@ -307,7 +307,7 @@ class ActorSystem {
                 parent,
                 workerProcess,
                 msg.body.id,
-                actorName));
+                options.name));
 
               resolve(actor);
             });
@@ -351,7 +351,7 @@ class ActorSystem {
               process.removeListener('SIGTERM', sigtermHandler);
               process.removeListener('exit', exitHandler);
 
-              this.createForkedActor(behaviour, parent, actorName, _.extend({}, options, { id: actor.getId() }))
+              this.createForkedActor(behaviour, parent, _.extend({}, options, { id: actor.getId() }))
                 .tap(newActor => newActor.initialize())
                 .then(newActor => {
                   this.log.info('Actor ' + actor + ' successfully respawned.');
