@@ -73,6 +73,24 @@ class ForkedActorStub {
     return this.actor.sendAndReceive(...args);
   }
 
+  /**
+   * Outputs actor tree for this actor.
+   *
+   * @returns {P} Operation promise that yields actor tree data object.
+   */
+  tree() {
+    return this.actor.tree();
+  }
+
+  /**
+   * Destroys this actor.
+   *
+   * @returns {P} Operation promise.
+   */
+  destroy() {
+    return this.actor.destroy();
+  }
+
   toString() {
     return this.actor.toString();
   }
