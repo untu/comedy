@@ -25,9 +25,9 @@ export interface Actor {
 }
 
 export interface ActorBehaviour {
-  initialize(selfActor: Actor): P<void>;
+  initialize(selfActor: Actor): P<void>|void;
 
-  destroy(): P<void>;
+  destroy(): P<void>|void;
 }
 
 export interface ActorSystem {
