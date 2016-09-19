@@ -2,6 +2,7 @@
 
 /* eslint no-path-concat: "off" */
 
+require('ts-node/register'); // TypeScript support.
 var common = require('../saymon-common.js');
 var Logger = require('../utils/logger.js');
 var InMemoryActor = require('./in-memory-actor.js');
@@ -429,7 +430,16 @@ class ActorSystem {
    * @private
    */
   _loadBehaviour(path) {
-    return P.resolve().then(() => this.require(path));
+    return P.resolve().then(() => {
+      var ret = this.require(path);
+
+      // TypeScript default export support.
+      if (ret.default) {
+        ret = ret.default;
+      }
+
+      return ret;
+    });
   }
 
   /**
