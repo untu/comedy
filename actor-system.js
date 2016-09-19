@@ -60,7 +60,11 @@ class ActorSystem {
     
     if (options.test) this.log.setLevel(this.log.levels().Error); // Only output errors in tests.
     
-    if (options.debug) this.log.setLevel(this.log.levels().Debug); // Overrides test option.
+    if (options.debug) {
+      this.log.setLevel(this.log.levels().Debug); // Overrides test option.
+
+      P.longStackTraces();
+    }
 
     var initRet = _.isFunction(this.context.initialize) && this.context.initialize(this._selfProxy());
     var contextPromise = P.resolve().then(() => initRet);
