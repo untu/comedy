@@ -166,7 +166,7 @@ class ActorSystem {
   /**
    * Creates an actor.
    *
-   * @param {Object} Behaviour Actor behaviour.
+   * @param {Object|String} Behaviour Actor behaviour object or module path.
    * @param {Actor} parent Actor parent.
    * @param {Object} [options] Actor creation options.
    * @returns {*} Promise that yields a created actor.
@@ -174,44 +174,55 @@ class ActorSystem {
   createActor(Behaviour, parent, options) {
     options = options || {};
 
-    var actorName = options.name || this._actorName(Behaviour);
+    return P.resolve()
+      .then(() => {
+        if (_.isString(Behaviour)) {
+          // Module path is specified => load actor module.
+          return this._loadBehaviour(Behaviour).then(loadedBehaviour => {
+            Behaviour = loadedBehaviour;
+          });
+        }
+      })
+      .then(() => {
+        var actorName = options.name || this._actorName(Behaviour);
 
-    // Determine actor configuration.
-    if (this.config && actorName) {
-      var actorConfig = this.config[s.decapitalize(actorName)];
+        // Determine actor configuration.
+        if (this.config && actorName) {
+          var actorConfig = this.config[s.decapitalize(actorName)];
 
-      options = _.extend({ mode: 'in-memory' }, actorConfig, options);
-    }
+          options = _.extend({ mode: 'in-memory' }, actorConfig, options);
+        }
 
-    // Perform clusterization, if needed.
-    if (options.clusterSize > 1) {
-      return P.resolve()
-        .then(() => {
-          var balancerActor = new RoundRobinBalancerActor(this, parent);
+        // Perform clusterization, if needed.
+        if (options.clusterSize > 1) {
+          return P.resolve()
+            .then(() => {
+              var balancerActor = new RoundRobinBalancerActor(this, parent);
 
-          var childPromises = _.times(options.clusterSize, () =>
-            balancerActor.createChild(Behaviour, _.extend({}, options, { clusterSize: 1 })));
+              var childPromises = _.times(options.clusterSize, () =>
+                balancerActor.createChild(Behaviour, _.extend({}, options, { clusterSize: 1 })));
 
-          return P.all(childPromises).return(balancerActor);
-        });
-    }
-    
-    if (this.options.forceInMemory && options.mode != 'in-memory') {
-      this.log.warn('Forcing in-memory mode due to forceInMemory flag for actor:', actorName);
-      options = _.extend({}, options, { mode: 'in-memory' });
-    }
+              return P.all(childPromises).return(balancerActor);
+            });
+        }
 
-    // Actor creation.
-    switch (options.mode || 'in-memory') {
-      case 'in-memory':
-        return this.createInMemoryActor(Behaviour, parent, { name: actorName });
+        if (this.options.forceInMemory && options.mode != 'in-memory') {
+          this.log.warn('Forcing in-memory mode due to forceInMemory flag for actor:', actorName);
+          options = _.extend({}, options, { mode: 'in-memory' });
+        }
 
-      case 'forked':
-        return this.createForkedActor(Behaviour, parent, _.extend({ name: actorName }, options));
+        // Actor creation.
+        switch (options.mode || 'in-memory') {
+          case 'in-memory':
+            return this.createInMemoryActor(Behaviour, parent, { name: actorName });
 
-      default:
-        return P.resolve().throw(new Error('Unknown actor mode: ' + options.mode));
-    }
+          case 'forked':
+            return this.createForkedActor(Behaviour, parent, _.extend({ name: actorName }, options));
+
+          default:
+            return P.resolve().throw(new Error('Unknown actor mode: ' + options.mode));
+        }
+      });
   }
 
   /**
@@ -407,6 +418,17 @@ class ActorSystem {
           return this.context.destroy(this._selfProxy());
         }
       });
+  }
+
+  /**
+   * Loads actor behaviour from a given module.
+   *
+   * @param {String} path Actor behaviour module path.
+   * @returns {P} Operation promise, which yields an actor behaviour.
+   * @private
+   */
+  _loadBehaviour(path) {
+    return P.resolve().then(() => this.require(path));
   }
 
   /**
