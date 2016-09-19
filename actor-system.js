@@ -178,13 +178,13 @@ class ActorSystem {
       .then(() => {
         if (_.isString(Behaviour)) {
           // Module path is specified => load actor module.
-          return this._loadBehaviour(Behaviour).then(loadedBehaviour => {
-            Behaviour = loadedBehaviour;
-          });
+          return this._loadBehaviour(Behaviour);
         }
+
+        return Behaviour;
       })
-      .then(() => {
-        var actorName = options.name || this._actorName(Behaviour);
+      .then(Behaviour0 => {
+        var actorName = options.name || this._actorName(Behaviour0);
 
         // Determine actor configuration.
         if (this.config && actorName) {
@@ -200,7 +200,7 @@ class ActorSystem {
               var balancerActor = new RoundRobinBalancerActor(this, parent);
 
               var childPromises = _.times(options.clusterSize, () =>
-                balancerActor.createChild(Behaviour, _.extend({}, options, { clusterSize: 1 })));
+                balancerActor.createChild(Behaviour0, _.extend({}, options, { clusterSize: 1 })));
 
               return P.all(childPromises).return(balancerActor);
             });
@@ -214,7 +214,7 @@ class ActorSystem {
         // Actor creation.
         switch (options.mode || 'in-memory') {
           case 'in-memory':
-            return this.createInMemoryActor(Behaviour, parent, { name: actorName });
+            return this.createInMemoryActor(Behaviour0, parent, { name: actorName });
 
           case 'forked':
             return this.createForkedActor(Behaviour, parent, _.extend({ name: actorName }, options));
@@ -250,7 +250,7 @@ class ActorSystem {
   /**
    * Creates a forked actor.
    *
-   * @param {Object} behaviour Actor behaviour definition.
+   * @param {Object|String} behaviour Actor behaviour definition or module path.
    * @param {Actor} parent Actor parent.
    * @param {Object} [options] Operation options.
    * @returns {P} Promise that yields a newly-created actor.
@@ -283,7 +283,8 @@ class ActorSystem {
           var createMsg = {
             type: 'create-actor',
             body: {
-              behaviour: this._serializeBehaviour(behaviour),
+              behaviour: _.isString(behaviour) ? behaviour : this._serializeBehaviour(behaviour),
+              behaviourFormat: _.isString(behaviour) ? 'modulePath' : 'serialized',
               context: this._serializeBehaviour(this.contextBehaviour),
               config: this.config,
               test: this.options.test,

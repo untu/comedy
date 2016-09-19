@@ -31,7 +31,10 @@ process.once('message', msg => {
     return;
   }
 
-  var compiledBeh = compileBehaviour(beh);
+  if (msg.body.behaviourFormat == 'serialized') {
+    beh = compileBehaviour(beh);
+  }
+
   var context = {};
 
   if (msg.body.context) {
@@ -57,7 +60,7 @@ process.once('message', msg => {
     test: msg.body.test,
     debug: msg.body.debug,
     forked: msg.body.parent,
-    root: compiledBeh,
+    root: beh,
     log: log
   });
 
