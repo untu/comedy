@@ -457,6 +457,9 @@ class ActorSystem {
     // Use 'getName' getter, if present.
     if (_.isFunction(Behaviour.getName)) return Behaviour.getName();
 
+    // Take 'actorName' field, if present.
+    if (Behaviour.actorName) return _.result(Behaviour, 'actorName');
+
     // Take 'name' field, if present.
     if (Behaviour.name) return _.result(Behaviour, 'name');
 
