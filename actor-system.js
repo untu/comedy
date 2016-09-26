@@ -44,16 +44,6 @@ class ActorSystem {
   constructor(options) {
     options = options || {};
 
-    this.contextBehaviour = options.context || {};
-    this.marshallers = {};
-
-    if (_.isFunction(this.contextBehaviour)) {
-      this.context = new this.contextBehaviour(); // eslint-disable-line
-    }
-    else {
-      this.context = this.contextBehaviour;
-    }
-
     this.debugPortCounter = 1;
     this.log = options.log || new Logger();
     this.options = _.clone(options);
@@ -66,8 +56,14 @@ class ActorSystem {
       P.longStackTraces();
     }
 
-    var initRet = _.isFunction(this.context.initialize) && this.context.initialize(this._selfProxy());
-    var contextPromise = P.resolve().then(() => initRet);
+    var contextPromise = this._createContext(options.context || {})
+      .then(context => {
+        this.context = context;
+
+        if (_.isFunction(this.context.initialize)) {
+          return this.context.initialize(this._selfProxy());
+        }
+      });
 
     if (options.root) {
       // Create root with custom behaviour.
@@ -88,6 +84,8 @@ class ActorSystem {
       // Create default root.
       this.rootActorPromise = contextPromise.return(new RootActor(this, { forked: !!options.forked }));
     }
+
+    this.marshallers = {};
 
     // Initialize marshallers.
     if (options.marshallers) {
@@ -650,6 +648,32 @@ class ActorSystem {
     return {
       require: this.require.bind(this)
     };
+  }
+
+  /**
+   * Creates a context described by a given behaviour.
+   *
+   * @param {Function|Object|String} Behaviour Behaviour describing context.
+   * @returns {P} Operation promise, which yields a created context instance.
+   * @private
+   */
+  _createContext(Behaviour) {
+    return P.resolve()
+      .then(() => {
+        if (_.isString(Behaviour)) {
+          return this._loadBehaviour(Behaviour);
+        }
+
+        return Behaviour;
+      })
+      .then(Behaviour0 => {
+        if (_.isFunction(Behaviour0)) {
+          return new Behaviour0();
+        }
+        else {
+          return Behaviour0;
+        }
+      });
   }
 
   /**
