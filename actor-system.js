@@ -649,7 +649,8 @@ class ActorSystem {
    */
   _selfProxy() {
     return {
-      require: this.require.bind(this)
+      require: this.require.bind(this),
+      getLog: this.getLog.bind(this)
     };
   }
 
