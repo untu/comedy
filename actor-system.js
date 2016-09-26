@@ -56,7 +56,8 @@ class ActorSystem {
       P.longStackTraces();
     }
 
-    var contextPromise = this._createContext(options.context || {})
+    this.contextBehaviour = options.context || {};
+    var contextPromise = this._createContext(this.contextBehaviour)
       .then(context => {
         this.context = context;
 
@@ -288,7 +289,9 @@ class ActorSystem {
             body: {
               behaviour: _.isString(behaviour) ? behaviour : this._serializeBehaviour(behaviour),
               behaviourFormat: _.isString(behaviour) ? 'modulePath' : 'serialized',
-              context: this._serializeBehaviour(this.contextBehaviour),
+              context: _.isString(this.contextBehaviour) ? this.contextBehaviour :
+                this._serializeBehaviour(this.contextBehaviour),
+              contextFormat: _.isString(this.contextBehaviour) ? 'modulePath' : 'serialized',
               config: this.config,
               test: this.options.test,
               debug: this.options.debug,

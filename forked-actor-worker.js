@@ -38,7 +38,12 @@ process.once('message', msg => {
   var context = {};
 
   if (msg.body.context) {
-    context = compileBehaviour(msg.body.context);
+    if (msg.body.contextFormat == 'serialized') {
+      context = compileBehaviour(msg.body.context);
+    }
+    else {
+      context = msg.body.context;
+    }
   }
 
   var marshallers;
