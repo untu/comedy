@@ -1,0 +1,22 @@
+{
+  "name": "comedy",
+  "version": "0.0.0",
+  "description": "Node.js actor framework.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/untu/comedy.git"
+  },
+  "keywords": [
+    "actors"
+  ],
+  "author": "Untu Inc.",
+  "license": "EPL-1.0",
+  "bugs": {
+    "url": "https://github.com/untu/comedy/issues"
+  },
+  "homepage": "https://github.com/untu/comedy#readme"
+}
