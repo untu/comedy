@@ -1,10 +1,14 @@
+/*
+ * ~ Copyright (c) 2014-2016 ROSSINNO, LTD.
+ */
+
 'use strict';
 
 /**
  * Exports default actor system.
  */
 
-var ActorSystem = require('./actor-system.js');
+var ActorSystem = require('./lib/actor-system.js');
 
 /**
  * Creates a new actor system with specified options.
