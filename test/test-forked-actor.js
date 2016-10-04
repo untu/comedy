@@ -3,7 +3,7 @@
 /* eslint require-jsdoc: "off" */
 
 var actors = require('../index');
-var st = require('../../saymon-test.js');
+var tu = require('../lib/utils/test.js');
 var expect = require('chai').expect;
 var fs = require('fs');
 var P = require('bluebird');
@@ -65,7 +65,7 @@ describe('ForkedActor', function() {
       expect(expectedErr).to.be.instanceof(Error);
 
       // The process should be stopped eventually.
-      yield st.waitForCondition(() => !fs.existsSync('/proc/' + forkedPid));
+      yield tu.waitForCondition(() => !fs.existsSync('/proc/' + forkedPid));
     }));
 
     it('should be able to import modules in forked process', P.coroutine(function*() {

@@ -1,0 +1,76 @@
+{
+  "extends": "google",
+  "installedESLint": true,
+  "plugins": [
+    "jsdoc"
+  ],
+  "env": {
+    "browser": true,
+    "node": true,
+    "mocha": true,
+    "es6": true,
+    "amd": true
+  },
+  "rules": {
+    "max-len": ["warn", {
+      "code": 120,
+      "tabWidth": 2,
+      "ignoreComments": false
+    }],
+    "require-jsdoc": [
+      "warn",
+      {
+        "require": {
+          "FunctionDeclaration": true,
+          "ClassDeclaration": true
+        }
+      }
+    ],
+    "jsdoc/check-param-names": 1,
+    "jsdoc/newline-after-description": 1,
+    "jsdoc/require-description-complete-sentence": 1,
+    "jsdoc/require-param": 1,
+    "jsdoc/require-param-description": 1,
+    "jsdoc/require-returns-description": 1,
+    "valid-jsdoc": ["warn", {
+      "prefer": { "return": "returns" },
+      "preferType": {
+        "object": "Object",
+        "number": "Number",
+        "int": "Number",
+        "string": "String",
+        "boolean": "Boolean",
+        "array": "Array",
+        "function": "Function"
+      },
+      "requireReturn": false,
+      "requireReturnType": true,
+      "requireParamDescription": true,
+      "requireReturnDescription": true
+    }],
+    "object-curly-spacing": ["warn", "always"],
+    "generator-star-spacing": ["warn", { "before": false, "after": false }],
+    "space-before-blocks": [
+      "warn",
+      "always"
+    ],
+    "no-trailing-spaces": "off",
+    "eqeqeq": "off",
+    "no-implicit-coercion": "off",
+    "brace-style": ["warn", "stroustrup", { "allowSingleLine": true }],
+    "no-else-return": "off",
+    "radix": "off",
+    "max-nested-callbacks": "off",
+    "arrow-parens": "off",
+    "eol-last": "off",
+    "quote-props": "off",
+    "default-case": "off",
+    "camelcase": "off",
+    "no-unused-expressions": "off",
+    "no-return-assign": "off",
+    "no-negated-condition": "off",
+    "no-new": "off",
+    "no-lonely-if": "off",
+    "dot-notation": "off"
+  }
+}

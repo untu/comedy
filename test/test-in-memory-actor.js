@@ -4,7 +4,7 @@
 
 var actors = require('../index');
 var Actor = require('../lib/actor.js');
-var st = require('../../saymon-test.js');
+var tu = require('../lib/utils/test.js');
 var expect = require('chai').expect;
 var P = require('bluebird');
 
@@ -12,7 +12,7 @@ var rootActor;
 
 describe('InMemoryActor', function() {
   beforeEach(function() {
-    return actors({ log: st.logStub() }).rootActor().then(rootActor0 => {
+    return actors({ log: tu.logStub() }).rootActor().then(rootActor0 => {
       rootActor = rootActor0;
     });
   });
