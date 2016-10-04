@@ -10,13 +10,20 @@ var P = require('bluebird');
 
 P.promisifyAll(fs);
 
+var system;
 var rootActor;
 
 describe('ForkedActor', function() {
-  before(function() {
-    return actors({ test: true }).rootActor().then(rootActor0 => {
+  beforeEach(function() {
+    system = actors({ test: true });
+
+    return system.rootActor().then(rootActor0 => {
       rootActor = rootActor0;
     });
+  });
+
+  afterEach(function() {
+    return system.destroy();
   });
 
   describe('sendAndReceive()', function() {
