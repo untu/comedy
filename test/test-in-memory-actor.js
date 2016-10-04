@@ -8,13 +8,20 @@ var tu = require('../lib/utils/test.js');
 var expect = require('chai').expect;
 var P = require('bluebird');
 
+var system;
 var rootActor;
 
 describe('InMemoryActor', function() {
   beforeEach(function() {
-    return actors({ log: tu.logStub() }).rootActor().then(rootActor0 => {
+    system = actors({ log: tu.logStub() });
+
+    return system.rootActor().then(rootActor0 => {
       rootActor = rootActor0;
     });
+  });
+
+  afterEach(function() {
+    return system.destroy();
   });
 
   describe('send()', function() {

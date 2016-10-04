@@ -6,9 +6,17 @@ var expect = require('chai').expect;
 var actors = require('../index');
 var P = require('bluebird');
 
+var testSystem;
+
 describe('ActorSystem', function() {
+  afterEach(function() {
+    if (testSystem) {
+      return testSystem.destroy();
+    }
+  });
+
   it('should allow creating actor system with given class-defined context', function() {
-    var testSystem = actors({
+    testSystem = actors({
       context: {
         initialize: function() {
           this.parameter = 'My value';
@@ -28,7 +36,7 @@ describe('ActorSystem', function() {
   });
 
   it('should allow creating actor system with given module-defined context', function() {
-    var testSystem = actors({
+    testSystem = actors({
       context: '/test-resources/actors/test-actor-context',
       test: true
     });
@@ -50,7 +58,7 @@ describe('ActorSystem', function() {
       }
     }
 
-    var testSystem = actors({ context: MyContext, test: true });
+    testSystem = actors({ context: MyContext, test: true });
 
     return testSystem.rootActor()
       .then(rootActor => {
@@ -59,7 +67,7 @@ describe('ActorSystem', function() {
   });
 
   it('should re-create context in forked systems', function() {
-    var testSystem = actors({
+    testSystem = actors({
       context: {
         initialize: function() {
           this.parameter = 'Bob';
@@ -99,7 +107,7 @@ describe('ActorSystem', function() {
       }
     }
 
-    var testSystem = actors({ context: MyContext, test: true });
+    testSystem = actors({ context: MyContext, test: true });
 
     return testSystem.rootActor()
       .then(rootActor => rootActor.createChild({
@@ -118,7 +126,7 @@ describe('ActorSystem', function() {
   });
 
   it('should re-create module-defined context in forked systems', function() {
-    var testSystem = actors({
+    testSystem = actors({
       context: '/test-resources/actors/test-actor-context',
       test: true
     });
@@ -164,7 +172,7 @@ describe('ActorSystem', function() {
       }
     }
 
-    var testSystem = actors({ context: MyContext, test: true });
+    testSystem = actors({ context: MyContext, test: true });
 
     return testSystem.rootActor()
       .then(rootActor => rootActor.createChild(MyActor))
@@ -189,7 +197,7 @@ describe('ActorSystem', function() {
       }
     }
 
-    var testSystem = actors({ context: {}, test: true });
+    testSystem = actors({ context: {}, test: true });
     var error = false;
 
     return testSystem.rootActor()
@@ -205,7 +213,7 @@ describe('ActorSystem', function() {
 
   it('should destroy all actors and call proper hooks upon destruction', P.coroutine(function*() {
     var hookList = [];
-    var testSystem = actors({
+    testSystem = actors({
       context: {
         destroy: () => hookList.push('context')
       },
