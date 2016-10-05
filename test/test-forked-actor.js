@@ -248,6 +248,38 @@ describe('ForkedActor', function() {
 
       expect(result).to.be.equal('Hello ' + process.pid);
     }));
+
+    it('should support custom module-based object marshallers in class form', P.coroutine(function*() {
+      class TestMessageClass {
+        static typeName() {
+          return 'TestMessageClass';
+        }
+
+        constructor(pid) {
+          this.pid = pid;
+        }
+
+        getPid() {
+          return this.pid;
+        }
+      }
+
+      var testSystem = actors({
+        test: true,
+        marshallers: ['/test-resources/actors/test-message-class-marshaller']
+      });
+
+      var rootActor = yield testSystem.rootActor();
+      var child = yield rootActor.createChild(
+        {
+          sayHello: (msg) => 'Hello ' + msg.getPid()
+        },
+        { mode: 'forked' });
+
+      var result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid));
+
+      expect(result).to.be.equal('Hello ' + process.pid);
+    }));
   });
 
   describe('createChild()', function() {
