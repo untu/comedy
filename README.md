@@ -1,4 +1,4 @@
-# Comedy
+# Comedy [![Build Status](https://travis-ci.org/untu/comedy.svg?branch=master)](https://travis-ci.org/untu/comedy)
 
 Comedy is a Node.js actor framework.
 
