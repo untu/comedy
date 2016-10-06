@@ -70,4 +70,47 @@ single `to` argument, prints a message to console and does not respond anything.
 
 ### Class-Defined Actors
 
+In previous section we've used plain-object actor definition to create our hello world actor.
+Another way to define actor behaviour is to use a class:
+
+```javascript
+var actors = require('comedy');
+
+/**
+ * Actor definition class.
+ */
+class MyActor {
+  sayHello(to) {
+    console.log(`Hello, ${to}!`);
+  }
+}
+
+var myActorPromise = actors()
+  .rootActor() // Get a root actor reference.
+  .then(rootActor => {
+    // Create a class-defined child actor.
+    return rootActor.createChild(MyActor);
+  });
+
+myActorPromise.then(myActor => {
+  // Our actor is ready, we can send messages to it.
+  myActor.send('sayHello', 'world');
+});
+```
+
+This example does exactly the same as previous one. The difference is that we have defined our
+actor behaviour using a JavaScript class. In this definition, each class method becomes a 
+message handler. An instance of `MyActor` class is created together with an actor instance
+during actor creation.
+
+The class definition option may be better for several reasons:
+
+- When using classes for defining actor behaviour, you take full advantage of the object-oriented
+programming and useful class properties such as inheritance and data encapsulation.
+- Your existing application is likely to be already described in terms of classes and their relations.
+Given that, it's easy to use any of your existing classes as an actor definition without probably
+modifying anything inside this class.
+
+### Module-Defined Actors
+
 To be continued...
