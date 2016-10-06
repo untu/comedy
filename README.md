@@ -85,17 +85,13 @@ class MyActor {
   }
 }
 
-var myActorPromise = actors()
+actors()
   .rootActor() // Get a root actor reference.
-  .then(rootActor => {
-    // Create a class-defined child actor.
-    return rootActor.createChild(MyActor);
+  .then(rootActor => rootActor.createChild(MyActor)) // Create a class-defined child actor.
+  .then(myActor => {
+    // Our actor is ready, we can send messages to it.
+    myActor.send('sayHello', 'world');
   });
-
-myActorPromise.then(myActor => {
-  // Our actor is ready, we can send messages to it.
-  myActor.send('sayHello', 'world');
-});
 ```
 
 This example does exactly the same as previous one. The difference is that we have defined our
