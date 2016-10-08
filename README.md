@@ -109,4 +109,66 @@ modifying anything inside this class.
 
 ### Module-Defined Actors
 
+If your class is defined in a separate file, making a module (which is most likely the case), you
+can simply a specify a path to this module to `createChild()` method.
+
+Let's say, our `MyActor` class from previous example is defined in a separate module called
+`MyActor.js` that resides in `actors` folder:
+
+*actors/MyActor.js:*
+
+```javascript
+/**
+ * Actor definition class.
+ */
+class MyActor {
+  sayHello(to) {
+    console.log(`Hello, ${to}!`);
+  }
+}
+
+module.exports = MyActor;
+```
+
+Then we can reference it in `createChild()` method by simply specifying a module path:
+
+```javascript
+var actors = require('comedy');
+
+actors()
+  .rootActor() // Get a root actor reference.
+  .then(rootActor => rootActor.createChild('/actors/MyActor')) // Create a module-defined child actor.
+  .then(myActor => {
+    // Our actor is ready, we can send messages to it.
+    myActor.send('sayHello', 'world');
+  });
+```
+
+This example would again print "Hello world!".
+
+When we put a slash at the start of our module path, the module is looked-up relative
+to the project root (a folder where the `package.json` file is).
+
+##### Important note about code transfer
+
+Though module-defined actor may seem like a mere shortcut for specifying a direct class
+reference, it has a subtle difference in case of creating forked actors (separate-process
+actors, see below), that you should be aware of. That is: when you create a forked
+(separate-process) actor with class-defined behaviour, Comedy serializes the code of your
+class definition and passes it to a child actor process, where it is being compiled. This
+means that you cannot reference external variables (such as module imports) from your class,
+because these external variables won't be recognized by a child process and actor definition
+compilation will fail (you can import modules inside your class definition, however, and that
+will work).
+
+When using module-defined actors, you have no such problem, because in this case Comedy
+simply passes a module path to a child process, where it is then imported using a regular
+Node.js module resolution process.
+
+Given the above, module path is a preferred way of specifying actor definition to `createChild()`
+method. Class and plain-object definitions may still be a good option when a definition is
+simple and self-contained and you don't want to bother creating a separate file for it.
+
+## Scaling
+
 To be continued...
