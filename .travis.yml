@@ -4,4 +4,6 @@ node_js:
   - "6"
 script:
   - npm run validate
-  - npm test
+  - npm run coverage
+after_success:
+  - bash <(curl -s https://codecov.io/bash)

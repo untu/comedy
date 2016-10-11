@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "validate": "grunt validate",
-    "test": "mocha -R spec --harmony --recursive --timeout 10000"
+    "test": "mocha -R spec --harmony --recursive --timeout 10000",
+    "coverage": "nodejs --harmony node_modules/.bin/istanbul cover node_modules/.bin/_mocha"
   },
   "repository": {
     "type": "git",
@@ -30,6 +31,7 @@
     "grunt-cli": "^1.2.0",
     "grunt-eslint": "^19.0.0",
     "grunt-tslint": "^3.2.1",
+    "istanbul": "^0.4.5",
     "load-grunt-tasks": "^3.5.2",
     "mocha": "^3.1.0",
     "tslint": "^3.15.1"
