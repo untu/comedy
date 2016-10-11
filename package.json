@@ -6,7 +6,7 @@
   "scripts": {
     "validate": "grunt validate",
     "test": "mocha -R spec --harmony --recursive --timeout 10000",
-    "coverage": "node --harmony node_modules/.bin/istanbul cover node_modules/.bin/_mocha"
+    "coverage": "node --harmony node_modules/.bin/istanbul cover node_modules/.bin/_mocha -- -R spec --recursive --timeout 10000"
   },
   "repository": {
     "type": "git",
