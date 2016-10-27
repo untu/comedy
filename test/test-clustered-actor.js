@@ -107,7 +107,13 @@ describe('ClusteredActor', function() {
 
     var metrics = yield router.metrics();
 
-    expect(_.keys(metrics).length).to.be.equal(3);
-    expect(_.values(metrics)).to.be.deep.equal([{ count: 1 }, { count: 1 }, { count: 1 }]);
+    expect(_.keys(metrics).length).to.be.equal(4);
+    expect(_.values(metrics)).to.have.deep.members([
+      { count: 1 },
+      { count: 1 },
+      { count: 1 },
+      { count: 3 }
+    ]);
+    expect(metrics.summary).to.be.deep.equal({ count: 3 });
   }));
 });
