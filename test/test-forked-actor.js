@@ -14,6 +14,7 @@ var tu = require('../lib/utils/test.js');
 var expect = require('chai').expect;
 var fs = require('fs');
 var P = require('bluebird');
+var _ = require('underscore');
 
 P.promisifyAll(fs);
 
@@ -423,5 +424,21 @@ describe('ForkedActor', function() {
             });
         });
     });
+  });
+
+  describe('createChildren()', function() {
+    it('should create module actor children from a specified directory', P.coroutine(function*() {
+      var childActors = yield rootActor.createChildren('/test-resources/actors/child-actors', { mode: 'forked' });
+
+      expect(childActors.length).to.be.equal(2);
+
+      var childActorNames = _.map(childActors, actor => actor.getName());
+
+      expect(childActorNames).to.have.members(['ChildActor1', 'ChildActor2']);
+
+      var childActorReplies = yield P.map(childActors, actor => actor.sendAndReceive('hello'));
+
+      expect(childActorReplies).to.have.members(['Hello from ChildActor1', 'Hello from ChildActor2']);
+    }));
   });
 });
