@@ -44,4 +44,46 @@ describe('ClusteredActor', function() {
       expect(results[idx]).to.be.equal(results[idx + 3]);
     });
   }));
+
+  it('should correctly receive messages to parent reference from children', P.coroutine(function*() {
+    /**
+     * Test child behaviour class.
+     */
+    class ChildBehaviour {
+      initialize(selfActor) {
+        this.parent = selfActor.getParent();
+      }
+
+      hello() {
+        return this.parent.sendAndReceive('helloReceived')
+          .return('Hello!');
+      }
+    }
+
+    /**
+     * Test parent behaviour class.
+     */
+    class ParentBehaviour {
+      constructor() {
+        this.helloReceivedCount = 0;
+      }
+
+      helloReceived() {
+        this.helloReceivedCount++;
+      }
+
+      getHelloReceivedCount() {
+        return this.helloReceivedCount;
+      }
+    }
+
+    var parent = yield rootActor.createChild(ParentBehaviour);
+    var router = yield parent.createChild(ChildBehaviour, { clusterSize: 2 });
+
+    yield router.sendAndReceive('hello');
+
+    var helloReceivedCount = yield parent.sendAndReceive('getHelloReceivedCount');
+
+    expect(helloReceivedCount).to.be.equal(1);
+  }));
 });
