@@ -107,7 +107,7 @@ describe('ClusteredActor', function() {
 
     var metrics = yield router.metrics();
 
-    expect(_.keys(metrics)).to.be.equal(3);
+    expect(_.keys(metrics).length).to.be.equal(3);
     expect(_.values(metrics)).to.be.deep.equal([{ count: 1 }, { count: 1 }, { count: 1 }]);
   }));
 });
