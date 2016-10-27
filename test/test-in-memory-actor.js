@@ -14,6 +14,7 @@ var Actor = require('../lib/actor.js');
 var tu = require('../lib/utils/test.js');
 var expect = require('chai').expect;
 var P = require('bluebird');
+var _ = require('underscore');
 
 var system;
 var rootActor;
@@ -208,6 +209,22 @@ describe('InMemoryActor', function() {
             });
         });
     });
+  });
+
+  describe('createChildren()', function() {
+    it('should create module actor children from a specified directory', P.coroutine(function*() {
+      var childActors = yield rootActor.createChildren('/test-resources/actors/child-actors');
+
+      expect(childActors.length).to.be.equal(2);
+
+      var childActorNames = _.map(childActors, actor => actor.getName());
+
+      expect(childActorNames).to.have.members(['ChildActor1', 'ChildActor2']);
+
+      var childActorReplies = yield P.map(childActors, actor => actor.sendAndReceive('hello'));
+
+      expect(childActorReplies).to.have.members(['Hello from ChildActor1', 'Hello from ChildActor2']);
+    }));
   });
 
   describe('forwardToParent()', function() {
