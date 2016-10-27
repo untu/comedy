@@ -12,14 +12,20 @@ var expect = require('chai').expect;
 var P = require('bluebird');
 var _ = require('underscore');
 
-var system = actors({ test: true });
+var system;
 var rootActor;
 
 describe('ClusteredActor', function() {
-  before(function() {
+  beforeEach(function() {
+    system = actors({ test: true });
+
     return system.rootActor().then(rootActor0 => {
       rootActor = rootActor0;
     });
+  });
+
+  afterEach(function() {
+    return system.destroy();
   });
 
   it('should properly clusterize with round robin balancing strategy', P.coroutine(function*() {
@@ -85,5 +91,23 @@ describe('ClusteredActor', function() {
     var helloReceivedCount = yield parent.sendAndReceive('getHelloReceivedCount');
 
     expect(helloReceivedCount).to.be.equal(1);
+  }));
+
+  it('should gather metrics from clustered child actors', P.coroutine(function*() {
+    /**
+     * Test child behaviour class.
+     */
+    class ChildBehaviour {
+      metrics() {
+        return { count: 1 };
+      }
+    }
+
+    var router = yield rootActor.createChild(ChildBehaviour, { mode: 'forked', clusterSize: 3 });
+
+    var metrics = yield router.metrics();
+
+    expect(_.keys(metrics)).to.be.equal(3);
+    expect(_.values(metrics)).to.be.deep.equal([{ count: 1 }, { count: 1 }, { count: 1 }]);
   }));
 });
