@@ -69,7 +69,7 @@ describe('Actor configuration', function() {
           },
           children: [
             {
-              name: 'RoundRobinBalancer',
+              name: 'testGenOneRoundRobinBalancer',
               location: {
                 hostname: hostname,
                 pid: process.pid
@@ -152,7 +152,7 @@ describe('Actor configuration', function() {
           name: TestRoot.name,
           children: [
             {
-              name: 'RoundRobinBalancer',
+              name: 'testGenOneRoundRobinBalancer',
               children: [
                 {
                   name: 'testGenOne'
