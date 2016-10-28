@@ -441,4 +441,47 @@ describe('ForkedActor', function() {
       expect(childActorReplies).to.have.members(['Hello from ChildActor1', 'Hello from ChildActor2']);
     }));
   });
+
+  describe('forwardToChild()', function() {
+    it('should forward messages with given topics to a given child actor', P.coroutine(function*() {
+      var child2Mailbox = [];
+      var parent = yield rootActor.createChild({
+        initialize: selfActor => {
+          // Create first child that receives 'hello' messages and sends 'tell...' messages to parent.
+          var child1Promise = selfActor
+            .createChild({
+              initialize: selfActor => {
+                this.parent = selfActor.getParent();
+              },
+
+              hello: msg => {
+                return this.parent.sendAndReceive('tellChild2', msg);
+              }
+            }, { forked: true })
+            .then(child1 => {
+              // Forward 'hello' messages to this child.
+              return selfActor.forwardToChild(child1, 'hello');
+            });
+
+          // Create second child that receives 'tell...' messages and writes to mailbox.
+          var child2Promise = selfActor
+            .createChild({
+              tellChild2: msg => {
+                child2Mailbox.push(msg);
+              }
+            }, { forked: true })
+            .then(child2 => {
+              // Forward 'hello...' messages to this child.
+              return selfActor.forwardToChild(child2, /^tell.*/);
+            });
+
+          return P.join(child1Promise, child2Promise);
+        }
+      });
+
+      yield parent.sendAndReceive('hello', 'World!');
+
+      expect(child2Mailbox).to.have.members(['World!']);
+    }));
+  });
 });
