@@ -281,7 +281,7 @@ describe('InMemoryActor', function() {
             })
             .then(child1 => {
               // Forward 'hello' messages to this child.
-              selfActor.forwardToChild('hello', child1);
+              return selfActor.forwardToChild(child1, 'hello');
             });
 
           // Create second child that receives 'tell...' messages and writes to mailbox.
@@ -293,7 +293,7 @@ describe('InMemoryActor', function() {
             })
             .then(child2 => {
               // Forward 'hello...' messages to this child.
-              selfActor.forwardToChild(/^tell.*/, child2);
+              return selfActor.forwardToChild(child2, /^tell.*/);
             });
 
           return P.join(child1Promise, child2Promise);
