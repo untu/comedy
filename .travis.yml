@@ -1,3 +1,9 @@
 language: node_js
 node_js:
   - "4.6.0"
+  - "6"
+script:
+  - npm run validate
+  - npm run coverage
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
