@@ -263,6 +263,49 @@ describe('InMemoryActor', function() {
     }));
   });
 
+  describe('forwardToChild()', function() {
+    it('should forward messages with given topics to a given child actor', P.coroutine(function*() {
+      var child2Mailbox = [];
+      var parent = yield rootActor.createChild({
+        initialize: selfActor => {
+          // Create first child that receives 'hello' messages and sends 'tell...' messages to parent.
+          var child1Promise = selfActor
+            .createChild({
+              initialize: selfActor => {
+                this.parent = selfActor.getParent();
+              },
+
+              hello: msg => {
+                return this.parent.sendAndReceive('tellChild2', msg);
+              }
+            })
+            .then(child1 => {
+              // Forward 'hello' messages to this child.
+              selfActor.forwardToChild('hello', child1);
+            });
+
+          // Create second child that receives 'tell...' messages and writes to mailbox.
+          var child2Promise = selfActor
+            .createChild({
+              tellChild2: msg => {
+                child2Mailbox.push(msg);
+              }
+            })
+            .then(child2 => {
+              // Forward 'hello...' messages to this child.
+              selfActor.forwardToChild(/^tell.*/, child2);
+            });
+
+          return P.join(child1Promise, child2Promise);
+        }
+      });
+
+      yield parent.sendAndReceive('hello', 'World!');
+
+      expect(child2Mailbox).to.have.members(['World!']);
+    }));
+  });
+
   describe('destroy()', function() {
     it('should call destroy() method in behaviour object', P.coroutine(function*() {
       var destroyed = false;
