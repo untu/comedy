@@ -281,6 +281,16 @@ describe('ForkedActor', function() {
 
       expect(result).to.be.equal('Hello ' + process.pid);
     }));
+
+    it('should support variable arguments', P.coroutine(function*() {
+      var child = yield rootActor.createChild({
+        hello: (from, to) => `Hello from ${from} to ${to}.`
+      }, { mode: 'forked' });
+
+      var result = yield child.sendAndReceive('hello', 'Bob', 'Alice');
+
+      expect(result).to.be.equal('Hello from Bob to Alice.');
+    }));
   });
 
   describe('createChild()', function() {
