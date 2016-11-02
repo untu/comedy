@@ -136,7 +136,7 @@ describe('InMemoryActor', function() {
         .catch(done);
     });
 
-    it('should allow additional arguments', function() {
+    it('should support variable arguments', function() {
       return rootActor
         .createChild({
           sayHello: (to, from) => 'Hello to ' + to + ' from ' + from
