@@ -281,6 +281,42 @@ describe('ForkedActor', function() {
 
       expect(result).to.be.equal('Hello ' + process.pid);
     }));
+
+    it('should support variable arguments', P.coroutine(function*() {
+      var child = yield rootActor.createChild({
+        hello: (from, to) => `Hello from ${from} to ${to}.`
+      }, { mode: 'forked' });
+
+      var result = yield child.sendAndReceive('hello', 'Bob', 'Alice');
+
+      expect(result).to.be.equal('Hello from Bob to Alice.');
+    }));
+  });
+
+  describe('send()', function() {
+    it('should support variable arguments', P.coroutine(function*() {
+      var replyDfd = P.pending();
+      var parent = yield rootActor.createChild({
+        helloReply: function(from, to) {
+          replyDfd.resolve(`Hello reply from ${from} to ${to}.`);
+        }
+      }, { mode: 'in-memory' });
+      var child = yield parent.createChild({
+        initialize: function(selfActor) {
+          this.parent = selfActor.getParent();
+        },
+
+        hello: function(from, to) {
+          this.parent.send('helloReply', to, from);
+        }
+      }, { mode: 'forked' });
+
+      yield child.send('hello', 'Bob', 'Alice');
+
+      var result = yield replyDfd.promise;
+
+      expect(result).to.be.equal('Hello reply from Alice to Bob.');
+    }));
   });
 
   describe('createChild()', function() {
