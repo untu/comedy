@@ -520,4 +520,42 @@ describe('ForkedActor', function() {
       expect(child2Mailbox).to.have.members(['World!']);
     }));
   });
+
+  describe('metrics()', function() {
+    it('should collect metrics from target actor and all the actor sub-tree', P.coroutine(function*() {
+      var parent = yield rootActor.createChild({
+        metrics: function() {
+          return {
+            parentMetric: 111
+          };
+        }
+      });
+      yield parent.createChild({
+        metrics: function() {
+          return {
+            childMetric: 222
+          };
+        }
+      }, { name: 'Child1', mode: 'forked' });
+      yield parent.createChild({
+        metrics: function() {
+          return {
+            childMetric: 333
+          };
+        }
+      }, { name: 'Child2', mode: 'forked' });
+
+      var metrics = yield parent.metrics();
+
+      expect(metrics).to.be.deep.equal({
+        parentMetric: 111,
+        Child1: {
+          childMetric: 222
+        },
+        Child2: {
+          childMetric: 333
+        }
+      });
+    }));
+  });
 });
