@@ -1,3 +1,5 @@
+### v 0.0.3:
+
 ### v 0.0.2:
 - Added `additionalRequires` actor system option, which allows requiring additional
 modules in forked process.
