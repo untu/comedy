@@ -218,38 +218,38 @@ But here we specify an additional option: `{ mode: 'forked' }`, that tells the a
 that this actor should be run in a separate process ("forked" mode). Then, once child
 actor is created, we send a message with `sayHello` topic and wait for response using
 `sendAndReceive` method. For a message body we, again, use self process PID. Once the
- response from child actor is received, we print it to console and destroy the actor
- system.
- 
- The output for this example should contain a string like:
+response from child actor is received, we print it to console and destroy the actor
+system.
+
+The output for this example should contain a string like:
 
     Actor replied: Hello 15327 from 15338!
     
- As you see, the self PID that we send and the self PID that `MyActor` replies with
- are different, which means that they are run in separate processes. The process where
- `MyActor` is run will be a child of a process, where an actor system is created, and
- the messaging between actors turns from method invocation to an inter-process communication.
+As you see, the self PID that we send and the self PID that `MyActor` replies with
+are different, which means that they are run in separate processes. The process where
+`MyActor` is run will be a child of a process, where an actor system is created, and
+the messaging between actors turns from method invocation to an inter-process communication.
+
+If you switch to in-memory mode by changing `mode` option value from "forked" to "in-memory"
+(which is a default and is equivalent to just omitting the options in `createChild` method),
+then both root actor and `MyActor` actor will be run in the same process, the messaging
+between actors will boil down to method invocation and the PIDs in the resulting message
+will be the same.
  
- If you switch to in-memory mode by changing `mode` option value from "forked" to "in-memory"
- (which is a default and is equivalent to just omitting the options in `createChild` method),
- then both root actor and `MyActor` actor will be run in the same process, the messaging
- between actors will boil down to method invocation and the PIDs in the resulting message
- will be the same.
+```javascript
+actorSystem
+ .rootActor()
+ // ...
+ .then(rootActor => rootActor.createChild(MyActor, { mode: 'in-memory' }))
+ // ...
+```
  
- ```javascript
- actorSystem
-   .rootActor()
-   // ...
-   .then(rootActor => rootActor.createChild(MyActor, { mode: 'in-memory' }))
-   // ...
- ```
+    Actor replied: Hello 19585 from 19585!
  
-     Actor replied: Hello 19585 from 19585!
- 
- ### Using configuration file
- 
- To be continued...
- 
- ### Scaling to multiple instances
- 
- To be continued...
+### Using configuration file
+
+To be continued...
+
+### Scaling to multiple instances
+
+To be continued...
