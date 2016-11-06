@@ -171,4 +171,85 @@ simple and self-contained and you don't want to bother creating a separate file 
 
 ## Scaling
 
-To be continued...
+The whole point of actors is the ability to scale on demand. You can turn any actor to a standalone
+process and let it utilize additional CPU core. This is done by just using a configuration property,
+which can be specified both programmaticaly and using a configuration file. Let's see the programmatic
+example first.
+
+### Programmatic configuration
+
+The following example runs `MyActor` actor as a separate operating system process.
+
+```javascript
+var actors = require('comedy');
+
+/**
+ * Actor definition class.
+ */
+class MyActor {
+  sayHello(to) {
+    // Reply with a message, containing self PID.
+    return `Hello ${to} from ${process.pid}!`;
+  }
+}
+
+// Create an actor system.
+var actorSystem = actors();
+
+actorSystem
+  // Get a root actor reference.
+  .rootActor()
+  // Create a class-defined child actor, that is run in a separate process (forked mode).
+  .then(rootActor => rootActor.createChild(MyActor, { mode: 'forked' }))
+  // Send a message to our forked actor with a self process PID.
+  .then(myActor => myActor.sendAndReceive('sayHello', process.pid))
+  .then(reply => {
+    // Output result.
+    console.log(`Actor replied: ${reply}`);
+  })
+  // Destroy the system, killing all actor processes.
+  .finally(() => actorSystem.destroy());
+```
+
+In the example above we define `MyActor` with a `sayHello` message handler, which replies
+with a string containing the self process PID. Then, like in previous examples, we create
+an actor system, get a root actor, and create a child actor with `MyActor` definition.
+But here we specify an additional option: `{ mode: 'forked' }`, that tells the actor system
+that this actor should be run in a separate process ("forked" mode). Then, once child
+actor is created, we send a message with `sayHello` topic and wait for response using
+`sendAndReceive` method. For a message body we, again, use self process PID. Once the
+ response from child actor is received, we print it to console and destroy the actor
+ system.
+ 
+ The output for this example should contain a string like:
+
+    Actor replied: Hello 15327 from 15338!
+    
+ As you see, the self PID that we send and the self PID that `MyActor` replies with
+ are different, which means that they are run in separate processes. The process where
+ `MyActor` is run will be a child of a process, where an actor system is created, and
+ the messaging between actors turns from method invocation to an inter-process communication.
+ 
+ If you switch to in-memory mode by changing `mode` option value from "forked" to "in-memory"
+ (which is a default and is equivalent to just omitting the options in `createChild` method),
+ then both root actor and `MyActor` actor will be run in the same process, the messaging
+ between actors will boil down to method invocation and the PIDs in the resulting message
+ will be the same.
+ 
+ ```javascript
+ actorSystem
+   .rootActor()
+   // ...
+   .then(rootActor => rootActor.createChild(MyActor, { mode: 'in-memory' }))
+   // ...
+ ```
+ 
+     Actor replied: Hello 19585 from 19585!
+ 
+ ### Using configuration file
+ 
+ To be continued...
+ 
+ ### Scaling to multiple instances
+ 
+ To be continued...
