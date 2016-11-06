@@ -248,7 +248,44 @@ actorSystem
  
 ### Using configuration file
 
-To be continued...
+An alternative for using programmatic actor configuration is a configuration file.
+It is a JSON file with an actor name to options mapping, like the one below:
+
+```json
+{
+  "MyActor": {
+    "mode": "in-memory"
+  },
+  "MyAnotherActor": {
+    "mode": "forked"
+  }
+}
+```
+
+The above file states that actor with name `MyActor` should be run in in-memory mode, while
+actor named `MyAnotherActor` should be run in forked mode. If you name this file `actors.json`
+and place it at the root of your project (a directory where your `package.json` file is),
+Comedy will automatically pick this file and use the actor configuration from there.
+
+You can also put your actor configuration file wherever you want and give it arbitrary name,
+but in this case you should explicitly specify a path to your actor configuration file
+when creating the actor system:
+
+```javascript
+var actorSystem = actors({
+  config: '/path/to/your/actor-configuration.json'
+});
+```
+
+You can use both the default `actors.json` configuration file and your custom configuration
+file, in which case the configuration from the default `actors.json` file is extended with
+the custom configuration (what is missing in custom configuration is looked up in default).
+
+Please note that for a given actor programmatic configuration takes precedence over file
+configuration: only those configuration properties that are missing in programmatic
+configuration are taken from file configuration. So, for example, if you have programmaticaly
+specified that the actor should run in in-memory mode, there is no way to override it
+using the file configuration.
 
 ### Scaling to multiple instances
 
