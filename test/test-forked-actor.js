@@ -291,6 +291,38 @@ describe('ForkedActor', function() {
 
       expect(result).to.be.equal('Hello from Bob to Alice.');
     }));
+
+    it('should be able to marshall each variable argument with a custom marshaller', P.coroutine(function*() {
+      class TestMessageClass {
+        static typeName() {
+          return 'TestMessageClass';
+        }
+
+        constructor(pid) {
+          this.pid = pid;
+        }
+
+        getPid() {
+          return this.pid;
+        }
+      }
+
+      var testSystem = actors({
+        test: true,
+        marshallers: ['/test-resources/actors/test-message-class-marshaller']
+      });
+
+      var rootActor = yield testSystem.rootActor();
+      var child = yield rootActor.createChild(
+        {
+          sayHello: (msg, from) => `Hello ${msg.getPid()} from ${from}`
+        },
+        { mode: 'forked' });
+
+      var result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid), 'Test');
+
+      expect(result).to.be.equal(`Hello ${process.pid} from Test`);
+    }));
   });
 
   describe('send()', function() {
