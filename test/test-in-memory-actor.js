@@ -21,7 +21,10 @@ var rootActor;
 
 describe('InMemoryActor', function() {
   beforeEach(function() {
-    system = actors({ log: tu.logStub() });
+    system = actors({
+      log: tu.logStub(),
+      additionalRequires: 'ts-node/register'
+    });
 
     return system.rootActor().then(rootActor0 => {
       rootActor = rootActor0;

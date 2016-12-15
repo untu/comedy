@@ -23,7 +23,10 @@ var rootActor;
 
 describe('ForkedActor', function() {
   beforeEach(function() {
-    system = actors({ test: true });
+    system = actors({
+      test: true,
+      additionalRequires: 'ts-node/register'
+    });
 
     return system.rootActor().then(rootActor0 => {
       rootActor = rootActor0;
