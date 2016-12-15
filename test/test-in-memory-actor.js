@@ -35,35 +35,72 @@ describe('InMemoryActor', function() {
     return system.destroy();
   });
 
-  it('should not receive messages until initialized', P.coroutine(function*() {
-    var helloReceivedBeforeInitialized = false;
+  describe('initialize()', function() {
+    it('should not receive messages until initialized', P.coroutine(function*() {
+      var helloReceivedBeforeInitialized = false;
 
-    class LongStartingActor {
-      initialize(selfActor) {
-        this.initialized = false;
+      class LongStartingActor {
+        initialize(selfActor) {
+          this.initialized = false;
 
-        return selfActor
-          .createChild({
-            initialize: function(selfActor) {
-              return selfActor.getParent().send('hello', 'Child');
-            }
-          })
-          .then(() => {
-            this.initialized = true;
-          });
+          return selfActor
+            .createChild({
+              initialize: function(selfActor) {
+                return selfActor.getParent().send('hello', 'Child');
+              }
+            })
+            .then(() => {
+              this.initialized = true;
+            });
+        }
+
+        hello(to) {
+          helloReceivedBeforeInitialized = !this.initialized;
+
+          return `Hello to ${to}`;
+        }
       }
 
-      hello(to) {
-        helloReceivedBeforeInitialized = !this.initialized;
+      yield rootActor.createChild(LongStartingActor);
 
-        return `Hello to ${to}`;
+      expect(helloReceivedBeforeInitialized).to.be.equal(false);
+    }));
+
+    it('should throw error for sendAndReceive during initialization', P.coroutine(function*() {
+      class LongStartingActor {
+        initialize(selfActor) {
+          this.initialized = false;
+
+          return selfActor
+            .createChild({
+              initialize: function(selfActor) {
+                return selfActor.getParent().sendAndReceive('hello', 'Child');
+              }
+            })
+            .then(() => {
+              this.initialized = true;
+            });
+        }
+
+        hello(to) {
+          return `Hello to ${to}`;
+        }
       }
-    }
 
-    yield rootActor.createChild(LongStartingActor);
+      var error;
 
-    expect(helloReceivedBeforeInitialized).to.be.equal(false);
-  }));
+      try {
+        yield rootActor.createChild(LongStartingActor);
+      }
+      catch (err) {
+        error = err;
+
+        expect(err.message).to.match(/Actor is being initialized/);
+      }
+
+      expect(error).to.be.defined;
+    }));
+  });
 
   describe('send()', function() {
     it('should send a message to an actor', function() {
