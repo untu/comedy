@@ -189,7 +189,7 @@ var actors = require('comedy');
 class MyActor {
   sayHello(to) {
     // Reply with a message, containing self PID.
-    return `Hello ${to} from ${process.pid}!`;
+    return `Hello to ${to} from ${process.pid}!`;
   }
 }
 
@@ -223,7 +223,7 @@ system.
 
 The output for this example should contain a string like:
 
-    Actor replied: Hello 15327 from 15338!
+    Actor replied: Hello to 15327 from 15338!
     
 As you see, the self PID that we send and the self PID that `MyActor` replies with
 are different, which means that they are run in separate processes. The process where
@@ -244,7 +244,7 @@ actorSystem
  // ...
 ```
  
-    Actor replied: Hello 19585 from 19585!
+    Actor replied: Hello to 19585 from 19585!
  
 ### Using configuration file
 
@@ -288,5 +288,72 @@ specified that the actor should run in in-memory mode, there is no way to overri
 using the file configuration.
 
 ### Scaling to multiple instances
+
+Besides forking just one single instance of your actor to a separate process, you can spawn
+multiple instances of your actor to multiple separate processes by simply using a 
+configuration property. This configuration property is named `clusterSize`. Here is an example:
+
+```javascript
+var actors = require('comedy');
+var P = require('bluebird');
+
+/**
+ * Actor definition class.
+ */
+class MyActor {
+  sayHello(to) {
+    // Reply with a message, containing self PID.
+    return `Hello to ${to} from ${process.pid}!`;
+  }
+}
+
+// Create an actor system.
+var actorSystem = actors();
+
+actorSystem
+  // Get a root actor reference.
+  .rootActor()
+  // Create a class-defined child actor.
+  .then(rootActor => rootActor.createChild(MyActor, {
+    mode: 'forked', // Spawn separate process.
+    clusterSize: 3 // Spawn 3 instances of this actor to load-balance over.
+  }))
+  .then(myActor => {
+    // Sequentially send 6 messages to our newly-created actor cluster.
+    // The messages will be load-balanced between 3 forked actors using
+    // the default balancing strategy (round-robin).
+    return P.each([1, 2, 3, 4, 5, 6], number => {
+      return myActor.sendAndReceive('sayHello', `${process.pid}-${number}`)
+        .then(reply => {
+          console.log(`Actor replied: ${reply}`);
+        });
+    });
+  })
+  .finally(() => actorSystem.destroy());
+```
+
+The output for this example will look something like this:
+
+    Actor replied: Hello to 15400-1 from 15410!
+    Actor replied: Hello to 15400-2 from 15416!
+    Actor replied: Hello to 15400-3 from 15422!
+    Actor replied: Hello to 15400-4 from 15410!
+    Actor replied: Hello to 15400-5 from 15416!
+    Actor replied: Hello to 15400-6 from 15422!
+    
+As you see, the root actor messages are being round-robin-balanced between 3 child instances of `MyActor` actor.
+
+The `clusterSize` configuration property can be as well used in JSON configuration:
+
+```json
+{
+  "MyActor": {
+    "mode": "forked",
+    "clusterSize": 3
+  }
+}
+```
+
+## Actor Lifecycle
 
 To be continued...
