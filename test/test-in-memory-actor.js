@@ -35,6 +35,36 @@ describe('InMemoryActor', function() {
     return system.destroy();
   });
 
+  it('should put received messages in the queue until initialized', P.coroutine(function*() {
+    var helloReceivedBeforeInitialized = false;
+
+    class LongStartingActor {
+      initialize(selfActor) {
+        this.initialized = false;
+
+        return selfActor
+          .createChild({
+            initialize: function(selfActor) {
+              return selfActor.getParent().send('hello', 'Child');
+            }
+          })
+          .then(() => {
+            this.initialized = true;
+          });
+      }
+
+      hello(to) {
+        helloReceivedBeforeInitialized = !this.initialized;
+
+        return `Hello to ${to}`;
+      }
+    }
+
+    yield rootActor.createChild(LongStartingActor);
+
+    expect(helloReceivedBeforeInitialized).to.be.equal(false);
+  }));
+
   describe('send()', function() {
     it('should send a message to an actor', function() {
       var externalState = 0;
