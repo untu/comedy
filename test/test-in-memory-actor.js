@@ -35,7 +35,7 @@ describe('InMemoryActor', function() {
     return system.destroy();
   });
 
-  it('should put received messages in the queue until initialized', P.coroutine(function*() {
+  it('should not receive messages until initialized', P.coroutine(function*() {
     var helloReceivedBeforeInitialized = false;
 
     class LongStartingActor {
