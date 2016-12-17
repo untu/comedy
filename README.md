@@ -356,4 +356,63 @@ The `clusterSize` configuration property can be as well used in JSON configurati
 
 ## Actor Lifecycle
 
+Like plain objects, actors live and die. The difference is that an actor instance can be created in a separate
+process or even on a separate machine, which is why actor creation and destruction is asynchronous.
+
+An actor lifecycle is represented by the diagram below:
+
+![Actor Lifecycle](docs/images/actor-lifecycle.png)
+
+As you can see from this diagram, an actor passes several states along it's life. These are:
+
+- Initializing
+- Working
+- Destroying
+- Destroyed
+
+Some of the above state transitions can be handled by *lifecycle hooks* - special methods in actor
+definition, which are all optional.
+
+These lifecycle hooks are covered in the following sections.
+
+### initialize() lifecycle hook
+
+After an actor instance is created, an actor immediately enters Initializing state. At this point, Comedy
+first ensures an actor definition instance is created, and then attempts to call an `initialize()` method
+of an actor definition instance.
+
+If an `initialize()` method is absent, an actor immediately enters Working state and is ready to handle
+incoming messages.
+
+If an `initialize()` method is present in actor definition, Comedy calls this method passing a self
+actor instance reference as an input parameter, and looks at return value. If a return value is a `Promise`,
+an actor initialization is considered asynchronous and an actor enters Working state only when
+a returned promise is resolved. In other cases actor enters Working state immediately after `initialize()`
+returns.
+
+If `initialize()` throws exception or a promise returned from `initialize()` is rejected, the actor initialization
+is considered failed, and an actor enters Destroying state, which basically starts actor destruction process
+(this will be covered later).
+
+With `initialize()` lifecycle hook you can initialize all the things needed for you actor to work. Very often
+you will create child actors exactly in `initialize()`:
+
+```javascript
+class MyActor {
+  initialize(selfActor) {
+    // Create child actor.
+    return selfActor.createChild(MyChildActor)
+      .then(childActor => {
+        // Save created child actor to instance field.
+        this.childActor = childActor;
+      });
+  }
+}
+```
+
+In the example above, `MyActor` will only start handling incoming messages once it's child actor is created
+and fully initialized.
+
+### destroy() lifecycle hook
+
 To be continued...
