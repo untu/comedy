@@ -437,3 +437,7 @@ The algorithm of actor destruction is the following:
  Children are destroyed simultaneously.
 3. Call `destroy()` lifecycle hook on self actor definition instance.
 4. Once `destroy()` finishes, enter Destroyed state, notify parent and remove actor from memory.
+
+## Logging
+
+To be continued...
