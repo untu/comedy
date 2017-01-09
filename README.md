@@ -440,4 +440,65 @@ The algorithm of actor destruction is the following:
 
 ## Logging
 
+Your actor system can quickly become complex enough to require logging facility to trace messages between
+actors as well as individual actor workflow.
+
+Comedy comes with a built-in logging facility that lets you write log messages with various severity levels
+and distinguish log messages from different actors in a single log output.
+
+A logging is done with a `Logger` instance, that can be retrieved for an actor system or for a particular
+actor using `getLog()` method.
+
+```javascript
+var actors = require('comedy');
+
+// Create an actor system.
+var actorSystem = actors();
+
+/**
+ * Example actor definition.
+ */
+class MyActor {
+  initialize(selfActor) {
+    // Output actor-level log message.
+    selfActor.getLog().info('MyActor initialized.');
+  }
+}
+
+actorSystem
+  .rootActor()
+  .then(rootActor => {
+    // Output system-level log message.
+    actorSystem.getLog().info('Actor system initialized. Creating MyActor actor...');
+
+    return rootActor.createChild(MyActor);
+  });
+```
+
+This example will output something like:
+
+```
+Mon Jan 09 2017 17:44:16 GMT+0300 (MSK) - info: Actor system initialized. Creating MyActor actor...
+Mon Jan 09 2017 17:44:16 GMT+0300 (MSK) - info: InMemoryActor(5873a1c0705ebd2a663c3eeb, MyActor): MyActor initialized.
+```
+
+The first, system-level message, is prefixed with a current date-time and a log level label.
+The second, actor-level message, additionally prefixed with a description of an actor that writes the message. This
+prefixing is done automatically.
+
+An actor description has the form:
+
+    ActorInstanceClassName(actorId, actorName)
+
+It is exactly what you get when calling and `Actor.toString()` method.
+
+An actor instance class name reveals the underlying actor instance implementation, which depends on an actor mode,
+and can be one of `InMemoryActor`, `ForkedActorParent` or `ForkedActorChild`. An actor ID is generated automatically
+for a given actor instance and is unique across the system.
+
+You can specify your own logger implementation by using `log` actor system creation option, but this is an advanced
+topic that will be covered later.
+
+## Resource management
+
 To be continued...
