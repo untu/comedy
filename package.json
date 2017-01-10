@@ -3,6 +3,13 @@
   "version": "0.0.3-SNAPSHOT",
   "description": "Node.js actor framework.",
   "main": "index.js",
+  "files": [
+    "lib/",
+    "index.js",
+    "index.d.ts",
+    "LICENSE.txt",
+    "README.md"
+  ],
   "scripts": {
     "validate": "grunt validate",
     "test": "mocha -R spec --recursive --timeout 10000",
