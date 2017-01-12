@@ -495,6 +495,28 @@ describe('ForkedActor', function() {
             });
         });
     });
+
+    it('should be able to pass custom parameters to child actor', P.coroutine(function*() {
+      class MyActor {
+        initialize(selfActor) {
+          this.helloResponse = selfActor.getCustomParameters().helloResponse;
+        }
+
+        hello() {
+          return this.helloResponse;
+        }
+      }
+
+      // Create child actor with custom parameter.
+      var childActor = yield rootActor.createChild(MyActor, {
+        mode: 'forked',
+        customParameters: { helloResponse: 'Hi there!' }
+      });
+
+      var response = yield childActor.sendAndReceive('hello');
+
+      expect(response).to.be.equal('Hi there!');
+    }));
   });
 
   describe('createChildren()', function() {
