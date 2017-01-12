@@ -308,7 +308,7 @@ describe('InMemoryActor', function() {
       }
 
       // Create child actor with custom parameter.
-      var childActor = rootActor.createChild(MyActor, { customParameters: { helloResponse: 'Hi there!' } });
+      var childActor = yield rootActor.createChild(MyActor, { customParameters: { helloResponse: 'Hi there!' } });
 
       var response = yield childActor.sendAndReceive('hello');
 
