@@ -1,3 +1,6 @@
+### v 0.1.0:
+- Added support for custom actor parameters.
+
 ### v 0.0.3:
 - Bug fixes.
 
