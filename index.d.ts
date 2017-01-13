@@ -24,14 +24,14 @@ export interface Actor {
 
   getParent(): Actor;
 
-  createChild(behaviour: ActorBehaviour|Object, options?: Object): P<Actor>;
+  createChild(behaviour: ActorDefinition|Object, options?: Object): P<Actor>;
 
   send(topic: string, ...message: any[]): P<void>;
 
   sendAndReceive(topic: string, ...message: any[]): P<any>;
 }
 
-export interface ActorBehaviour {
+export interface ActorDefinition {
   initialize(selfActor: Actor): P<void>|void;
 
   destroy(): P<void>|void;
