@@ -1,6 +1,6 @@
 {
   "name": "comedy",
-  "version": "0.1.0",
+  "version": "0.1.1-SNAPSHOT",
   "description": "Node.js actor framework.",
   "main": "index.js",
   "files": [
