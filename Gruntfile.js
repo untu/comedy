@@ -20,7 +20,8 @@ module.exports = function(grunt) {
       },
       target: [
         '**/*.js',
-        '!**/node_modules/**'
+        '!**/node_modules/**',
+        '!coverage/**'
       ]
     },
     // TSLint code validation.
