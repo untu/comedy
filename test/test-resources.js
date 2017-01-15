@@ -16,7 +16,7 @@ describe('Resource injection', function() {
      * Test resource.
      */
     class MessageResource {
-      getName() {
+      static getName() {
         return 'message-text';
       }
 
@@ -49,7 +49,7 @@ describe('Resource injection', function() {
 
     var actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor));
 
-    var response = yield actor.send('hello');
+    var response = yield actor.sendAndReceive('hello');
 
     expect(response).to.be.equal('Hi there!');
   }));
