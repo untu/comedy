@@ -44,7 +44,7 @@ describe('Resource injection', function() {
 
     system = actors({
       test: true,
-      resources: MessageResource
+      resources: [MessageResource]
     });
 
     var actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor));
