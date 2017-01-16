@@ -219,6 +219,36 @@ describe('Resource injection', function() {
     expect(response).to.be.equal('Hi there!');
   }));
 
+  it('should support module-defined resources for forked actor', P.coroutine(function*() {
+    /**
+     * Test actor, that uses test resource.
+     */
+    class MyActor {
+      static inject() {
+        return ['MessageResource'];
+      }
+
+      constructor(message) {
+        this.message = message;
+      }
+
+      hello() {
+        return this.message;
+      }
+    }
+
+    system = actors({
+      test: true,
+      resources: ['/test-resources/test-message-resource']
+    });
+
+    var actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor, { mode: 'forked' }));
+
+    var response = yield actor.sendAndReceive('hello');
+
+    expect(response).to.be.equal('Hi there!');
+  }));
+
   it('should support TypeScript module-defined resources', function() {
     throw new Error('TODO');
   });
