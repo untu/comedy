@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2016 Untu, Inc.
+ * This code is licensed under Eclipse Public License - v 1.0.
+ * The full license text can be found in LICENSE.txt file and
+ * on the Eclipse official site (https://www.eclipse.org/legal/epl-v10.html).
+ */
+
 'use strict';
 
 var actors = require('../index');
@@ -54,9 +61,48 @@ describe('Resource injection', function() {
     expect(response).to.be.equal('Hi there!');
   }));
 
-  it('should inject resource into a forked actor', function() {
-    throw new Error('TODO');
-  });
+  it('should inject resource into a forked actor', P.coroutine(function*() {
+    /**
+     * Test resource.
+     */
+    class MessageResource {
+      static getName() {
+        return 'message-text';
+      }
+
+      getResource() {
+        return 'Hi there!';
+      }
+    }
+
+    /**
+     * Test actor, that uses test resource.
+     */
+    class MyActor {
+      static inject() {
+        return ['message-text'];
+      }
+
+      constructor(message) {
+        this.message = message;
+      }
+
+      hello() {
+        return this.message;
+      }
+    }
+
+    system = actors({
+      test: true,
+      resources: [MessageResource]
+    });
+
+    var actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor, { mode: 'forked' }));
+
+    var response = yield actor.sendAndReceive('hello');
+
+    expect(response).to.be.equal('Hi there!');
+  }));
 
   it('should run resource lifecycle hooks', function() {
     throw new Error('TODO');
