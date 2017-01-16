@@ -1,3 +1,6 @@
+### v 0.2.0:
+- Separate resource definitions support.
+
 ### v 0.1.0:
 - Added support for custom actor parameters.
 
