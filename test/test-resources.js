@@ -108,8 +108,11 @@ describe('Resource injection', function() {
     expect(response).to.be.equal('Hi there!');
   }));
 
-  it('should run resource lifecycle hooks', P.coroutine(function*() {
-    var destroyed = false;
+  it('should run resource lifecycle hooks for used resources', P.coroutine(function*() {
+    var messageResourceInitialized = false;
+    var messageResourceDestroyed = false;
+    var unusedResourceInitialized = false;
+    var unusedResourceDestroyed = false;
 
     /**
      * Test resource.
@@ -121,14 +124,32 @@ describe('Resource injection', function() {
 
       initialize() {
         this.text = 'Hi there!';
+        messageResourceInitialized = true;
       }
 
       destroy() {
-        destroyed = true;
+        messageResourceDestroyed = true;
       }
 
       getResource() {
         return this.text;
+      }
+    }
+
+    /**
+     * Test unused resource.
+     */
+    class UnusedResource {
+      static getName() {
+        return 'unused';
+      }
+
+      initialize() {
+        unusedResourceInitialized = true;
+      }
+
+      destroy() {
+        unusedResourceDestroyed = true;
       }
     }
 
@@ -151,7 +172,7 @@ describe('Resource injection', function() {
 
     var system = actors({
       test: true,
-      resources: [MessageResource]
+      resources: [MessageResource, UnusedResource]
     });
 
     var actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor));
@@ -162,12 +183,11 @@ describe('Resource injection', function() {
 
     yield system.destroy();
 
-    expect(destroyed).to.be.equal(true);
+    expect(messageResourceInitialized).to.be.equal(true);
+    expect(messageResourceDestroyed).to.be.equal(true);
+    expect(unusedResourceInitialized).to.be.equal(false);
+    expect(unusedResourceDestroyed).to.be.equal(false);
   }));
-
-  it('should not initialize an unused resource', function() {
-    throw new Error('TODO');
-  });
 
   it('should support module-defined resources', function() {
     throw new Error('TODO');
