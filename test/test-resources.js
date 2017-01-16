@@ -14,9 +14,13 @@ var P = require('bluebird');
 var system;
 
 describe('Resource injection', function() {
-  afterEach(function() {
-    return system && system.destroy();
-  });
+  afterEach(P.coroutine(function*() {
+    if (system) {
+      yield system.destroy();
+    }
+
+    system = null;
+  }));
 
   it('should inject resource into an in-memory actor', P.coroutine(function*() {
     /**
@@ -104,9 +108,62 @@ describe('Resource injection', function() {
     expect(response).to.be.equal('Hi there!');
   }));
 
-  it('should run resource lifecycle hooks', function() {
-    throw new Error('TODO');
-  });
+  it('should run resource lifecycle hooks', P.coroutine(function*() {
+    var destroyed = false;
+
+    /**
+     * Test resource.
+     */
+    class MessageResource {
+      static getName() {
+        return 'message-text';
+      }
+
+      initialize() {
+        this.text = 'Hi there!';
+      }
+
+      destroy() {
+        destroyed = true;
+      }
+
+      getResource() {
+        return this.text;
+      }
+    }
+
+    /**
+     * Test actor, that uses test resource.
+     */
+    class MyActor {
+      static inject() {
+        return ['message-text'];
+      }
+
+      constructor(message) {
+        this.message = message;
+      }
+
+      hello() {
+        return this.message;
+      }
+    }
+
+    var system = actors({
+      test: true,
+      resources: [MessageResource]
+    });
+
+    var actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor));
+
+    var response = yield actor.sendAndReceive('hello');
+
+    expect(response).to.be.equal('Hi there!');
+
+    yield system.destroy();
+
+    expect(destroyed).to.be.equal(true);
+  }));
 
   it('should not initialize an unused resource', function() {
     throw new Error('TODO');
