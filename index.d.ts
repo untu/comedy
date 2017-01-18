@@ -22,6 +22,8 @@ export interface Actor {
 
   getParent(): Actor;
 
+  getCustomParameters(): Object|null;
+
   createChild(behaviour: ActorDefinition|Object, options?: Object): Promise<Actor>;
 
   send(topic: string, ...message: any[]): Promise<void>;
