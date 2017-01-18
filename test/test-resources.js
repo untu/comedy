@@ -10,6 +10,7 @@
 var actors = require('../index');
 var expect = require('chai').expect;
 var P = require('bluebird');
+var _ = require('underscore');
 
 var system;
 
@@ -305,6 +306,39 @@ describe('Resource injection', function() {
     });
 
     var actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor, { mode: 'forked' }));
+
+    var response = yield actor.sendAndReceive('hello');
+
+    expect(response).to.be.equal('Hi there!');
+  }));
+
+  it('should support plain-object resources', P.coroutine(function*() {
+    /**
+     * Test actor, that uses test resource.
+     */
+    class MyActor {
+      static inject() {
+        return ['message-text'];
+      }
+
+      constructor(message) {
+        this.message = message;
+      }
+
+      hello() {
+        return this.message;
+      }
+    }
+
+    system = actors({
+      test: true,
+      resources: [{
+        getName: _.constant('message-text'),
+        getResource: _.constant('Hi there!')
+      }]
+    });
+
+    var actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor));
 
     var response = yield actor.sendAndReceive('hello');
 
