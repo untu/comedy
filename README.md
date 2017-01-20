@@ -501,4 +501,14 @@ topic that will be covered later.
 
 ## Resource management
 
-To be continued...
+Actors are not always completely self-contained. It's not unusual for an actor to require some external re-usable
+resource to operate. A typical example of such resource is a connection to a database. Database connection (or 
+connection pool) is a kind of a resource that you might want to be re-used by multiple actors within the same process,
+but also want it to be re-created for each forked process, spawned by a forked actor. Comedy lets you implement such
+behaviour with *resources* facility.
+
+Here is a simple resource usage example:
+
+```javascript
+
+```
