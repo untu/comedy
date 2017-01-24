@@ -647,9 +647,15 @@ Tue Jan 24 2017 11:51:36 GMT+0300 (MSK) - info: MongoDB connection resource succ
 
 ```
 
-You can see that MongoDB resource has been created before test actor runs it's logic and is then destroyed. Like
-actors, resources have lifecycle. A resource is created and initialized once a first actor, that is dependent on
-this resource, is created. All resources are then destroyed during actor system destruction.
+You can see that MongoDB resource has been created before test actor runs it's logic and is then destroyed.
+
+Like actors, resources have lifecycle. A resource is created and initialized once a first actor, that is dependent on
+this resource, is created. A resource dependency is declared within an actor definition by creating an `inject()`
+static method, that returns an array of names of resources, which actor requires. Each resource is then injected to an
+actor definition constructor parameter with corresponding index upon actor instance creation. A value to inject is 
+taken from `getResource()` method of corresponding resource definition.
+
+All created resources are destroyed during actor system destruction.
 
 If none of the created actors needs a specific resource, it is never created. If we comment-out `TestActor`-related
 lines in our example, we will not see MongoDB resource creation and destruction messages - a connection to MongoDB
@@ -724,3 +730,73 @@ Tue Jan 24 2017 12:21:40 GMT+0300 (MSK) - info: MongoDB connection resource succ
 ```
 
 As you see, MongoDB connection resource was created only once.
+
+One final experiment we will do is creating 2 forked actors. In this case, a new instance of resource will
+be created for each actor, because they run in separate processes. In the parent process, however, the MongoDB
+resource instance won't be created, because no actor in parent process needs it.
+
+```javascript
+system
+  .rootActor()
+  // Create 2 forked test actors.
+  .then(rootActor => rootActor.createChild(TestActor, { mode: 'forked', clusterSize: 2 }))
+  // Send a 'dumpCollection' message and wait for processing to finish.
+  .then(testActor => testActor.sendAndReceive('dumpCollection', 'test'))
+  // Destroy the system.
+  .finally(() => system.destroy());
+```
+
+For the above example we will need to slightly rework our `MongoDbConnectionResource`: because it is declared in
+the system by using class name, not resource path, it will be serialized and sent to forked process and then compiled
+there. Because `MongoDbConnectionResource` uses external variable, that is not serialized (`mongodb`), we will get
+compilation error. A recommended way to go here is to move resource definition to a separate file and the declare
+resource using a module path. But here we will modify our class to require `mongodb` package inside `initialize()`
+method:
+
+```javascript
+class MongoDbConnectionResource {
+  // ...
+  
+  initialize(system) {
+    var mongodb = require('mongodb');
+
+    this.log = system.getLog();
+    this.log.info('Initializing MongoDB connection resource...');
+
+    return mongodb.MongoClient.connect('mongodb://localhost:27017/test')
+      .then(connection => {
+        this.log.info('MongoDB connection resource successfully initialized.');
+
+        this.connection = connection;
+      })
+  }
+  
+  // ...
+}
+```
+
+Now, after running our modified example, we will get the following output:
+
+```
+Tue Jan 24 2017 12:29:28 GMT+0300 (MSK) - info: Initializing MongoDB connection resource...
+Tue Jan 24 2017 12:29:28 GMT+0300 (MSK) - info: Initializing MongoDB connection resource...
+Tue Jan 24 2017 12:29:28 GMT+0300 (MSK) - info: MongoDB connection resource successfully initialized.
+Tue Jan 24 2017 12:29:28 GMT+0300 (MSK) - info: MongoDB connection resource successfully initialized.
+Tue Jan 24 2017 12:29:28 GMT+0300 (MSK) - info: ForkedActorChild(58871e7872a8482cdc429be7, TestActor): Collection "test", item #0: {
+  "_id": "58861b5072b7a3ff497763e4",
+  "name": "Alice"
+}
+Tue Jan 24 2017 12:29:28 GMT+0300 (MSK) - info: ForkedActorChild(58871e7872a8482cdc429be7, TestActor): Collection "test", item #1: {
+  "_id": "58861b5072b7a3ff497763e5",
+  "name": "Bob"
+}
+Tue Jan 24 2017 12:29:28 GMT+0300 (MSK) - info: ForkedActorChild(58871e7872a8482cdc429be7, TestActor): Collection "test", item #2: {
+  "_id": "58861b5072b7a3ff497763e6",
+  "name": "Carol"
+}
+Tue Jan 24 2017 12:29:28 GMT+0300 (MSK) - info: Actor process exited, actor ForkedActorParent(58871e7872a8482cdc429be7, TestActor)
+Tue Jan 24 2017 12:29:28 GMT+0300 (MSK) - info: Actor process exited, actor ForkedActorParent(58871e78a30d3b2ce25f3727, TestActor)
+```
+
+As you see, 2 instances of MongoDB connection resource are created, one for each forked actor. A database collection
+is dumped once by a first actor that receives the `dumpCollection` message (default round-robin balancing strategy).
