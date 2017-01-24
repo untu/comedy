@@ -800,3 +800,7 @@ Tue Jan 24 2017 12:29:28 GMT+0300 (MSK) - info: Actor process exited, actor Fork
 
 As you see, 2 instances of MongoDB connection resource are created, one for each forked actor. A database collection
 is dumped once by a first actor that receives the `dumpCollection` message (default round-robin balancing strategy).
+
+## Actor Metrics
+
+To be continued...
