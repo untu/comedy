@@ -310,4 +310,34 @@ describe('Resource injection', function() {
 
     expect(response).to.be.equal('Hi there!');
   }));
+
+  it('should support resource module directory specification', P.coroutine(function*() {
+    /**
+     * Test actor, that uses test resource.
+     */
+    class MyActor {
+      static inject() {
+        return ['MessageResource'];
+      }
+
+      constructor(message) {
+        this.message = message;
+      }
+
+      hello() {
+        return this.message;
+      }
+    }
+
+    system = actors({
+      test: true,
+      resources: '/test-resources/'
+    });
+
+    var actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor));
+
+    var response = yield actor.sendAndReceive('hello');
+
+    expect(response).to.be.equal('Hi there!');
+  }));
 });
