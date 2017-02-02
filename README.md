@@ -7,6 +7,26 @@ in terms of actors, you can scale arbitrary parts of the application to multiple
 single host (by spawning sub-processes) or even to multiple hosts in your network by simply
  modifying the configuration and without changing a single line of code.
 
+<!-- toc -->
+
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+  * [Class-Defined Actors](#class-defined-actors)
+  * [Module-Defined Actors](#module-defined-actors)
+      - [Important note about code transfer](#important-note-about-code-transfer)
+- [Scaling](#scaling)
+  * [Programmatic configuration](#programmatic-configuration)
+  * [Using configuration file](#using-configuration-file)
+  * [Scaling to multiple instances](#scaling-to-multiple-instances)
+- [Actor Lifecycle](#actor-lifecycle)
+  * [initialize() lifecycle hook](#initialize-lifecycle-hook)
+  * [destroy() lifecycle hook](#destroy-lifecycle-hook)
+- [Logging](#logging)
+- [Resource management](#resource-management)
+- [Actor Metrics](#actor-metrics)
+
+<!-- tocstop -->
+
 ## Installation
 
 Comedy is installed with NPM by running:
