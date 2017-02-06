@@ -7,6 +7,26 @@ in terms of actors, you can scale arbitrary parts of the application to multiple
 single host (by spawning sub-processes) or even to multiple hosts in your network by simply
  modifying the configuration and without changing a single line of code.
 
+<!-- toc -->
+
+- [Installation](#installation)
+- [Quick Start](#quick-start)
+  * [Class-Defined Actors](#class-defined-actors)
+  * [Module-Defined Actors](#module-defined-actors)
+      - [Important note about code transfer](#important-note-about-code-transfer)
+- [Scaling](#scaling)
+  * [Programmatic configuration](#programmatic-configuration)
+  * [Using configuration file](#using-configuration-file)
+  * [Scaling to multiple instances](#scaling-to-multiple-instances)
+- [Actor Lifecycle](#actor-lifecycle)
+  * [initialize() lifecycle hook](#initialize-lifecycle-hook)
+  * [destroy() lifecycle hook](#destroy-lifecycle-hook)
+- [Logging](#logging)
+- [Resource management](#resource-management)
+- [Actor Metrics](#actor-metrics)
+
+<!-- tocstop -->
+
 ## Installation
 
 Comedy is installed with NPM by running:
@@ -499,7 +519,58 @@ for a given actor instance and is unique across the system.
 You can specify your own logger implementation by using `log` actor system creation option, but this is an advanced
 topic that will be covered later.
 
-## Resource management
+### Setting the log level
+
+In some cases you might not want Comedy to do logging at all. In others you may want extended debug-level logging.
+
+The log level is configured using `setLevel()` method of `Logger` instance.
+
+There are 5 log levels in Comedy logger (each one includes all previous):
+
+1. Silent. No log messages are written.
+2. Error. Error messages are written.
+3. Warn. Warning messages are written.
+4. Info. Information messages are written. These messages are typically interesting for system administrators.
+5. Debug. Debug messages are written. These are messages that are only interesting for application developers
+and include some information about Comedy internals.
+
+Here is an example of how you would configure logging level for the whole actor system:
+
+```javascript
+// Create an actor system.
+var actorSystem = actors();
+
+// Set Silent logging level - no messages from Comedy will be written.
+actorSystem.getLog().setLevel(1);
+```
+
+You can also use log level constants:
+
+```javascript
+// Create an actor system.
+var actorSystem = actors();
+
+// Get system-level logger.
+var logger = actorSystem.getLog();
+
+// Set Debug log level.
+logger.setLevel(logger.levels().Debug);
+```
+
+In a similar way, you can configure log level for a particular actor:
+
+```javascript
+class MyActor {
+  initialize(selfActor) {
+    var logger = selfActor.getLog();
+    logger.setLevel(logger.levels().Debug);
+  }
+
+  // ...
+}
+```
+
+## Resource Management
 
 Actors are not always completely self-contained. It's not unusual for an actor to require some external re-usable
 resource to operate. A typical example of such resource is a connection to a database. Database connection (or 

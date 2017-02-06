@@ -13,7 +13,8 @@
   "scripts": {
     "validate": "grunt validate",
     "test": "mocha -R spec --recursive --timeout 10000",
-    "coverage": "istanbul cover node_modules/.bin/_mocha -- -R spec --recursive --timeout 10000"
+    "coverage": "istanbul cover node_modules/.bin/_mocha -- -R spec --recursive --timeout 10000",
+    "docs": "markdown-toc -i README.md "
   },
   "repository": {
     "type": "git",
@@ -40,6 +41,7 @@
     "grunt-tslint": "^3.2.1",
     "istanbul": "^0.4.5",
     "load-grunt-tasks": "^3.5.2",
+    "markdown-toc": "^1.1.0",
     "mocha": "^3.1.0",
     "tslint": "^3.15.1"
   },
