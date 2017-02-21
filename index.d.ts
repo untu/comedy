@@ -26,6 +26,8 @@ export interface Actor {
 
   createChild(behaviour: ActorDefinition|Object, options?: Object): Promise<Actor>;
 
+  createChildren(modulePath: string): Promise<Actor[]>;
+
   send(topic: string, ...message: any[]): Promise<void>;
 
   sendAndReceive(topic: string, ...message: any[]): Promise<any>;
