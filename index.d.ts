@@ -31,6 +31,8 @@ export interface Actor {
   send(topic: string, ...message: any[]): Promise<void>;
 
   sendAndReceive(topic: string, ...message: any[]): Promise<any>;
+
+  forwardToParent(...topics: Array<string|RegExp>): void;
 }
 
 export interface ActorDefinition {
