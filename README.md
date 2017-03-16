@@ -22,7 +22,8 @@ single host (by spawning sub-processes) or even to multiple hosts in your networ
   * [initialize() lifecycle hook](#initialize-lifecycle-hook)
   * [destroy() lifecycle hook](#destroy-lifecycle-hook)
 - [Logging](#logging)
-- [Resource management](#resource-management)
+  * [Setting the log level](#setting-the-log-level)
+- [Resource Management](#resource-management)
 - [Actor Metrics](#actor-metrics)
 
 <!-- tocstop -->
