@@ -334,30 +334,35 @@ describe('ForkedActor', function() {
 
       server.listen(8888);
 
-      var child = yield rootActor.createChild({
-        setServer: function(server) {
-          this.server = server;
+      try {
+        var child = yield rootActor.createChild({
+          setServer: function(server) {
+            this.server = server;
 
-          // Handle HTTP requests.
-          this.server.on('request', (req, res) => {
-            res.writeHead(200, { 'Content-Type': 'text/plain' });
-            res.end('Hello!');
+            require('server-destroy')(this.server);
+
+            // Handle HTTP requests.
+            this.server.on('request', (req, res) => {
+              res.writeHead(200, { 'Content-Type': 'text/plain' });
+              res.end('Hello!');
+            });
+          }
+        }, { mode: 'forked' });
+
+        yield child.sendAndReceive('setServer', server);
+
+        yield request('http://127.0.0.1:8888')
+          .get('/')
+          .expect(200)
+          .then(res => {
+            expect(res.text).to.be.equal('Hello!');
           });
-        },
-
-        destroy: function() {
-          this.server && this.server.close();
-        }
-      }, { mode: 'forked' });
-
-      yield child.sendAndReceive('setServer', server);
-
-      yield request('http://127.0.0.1:8888')
-        .get('/')
-        .expect(200)
-        .then(res => {
-          expect(res.text).to.be.equal('Hello!');
+      }
+      finally {
+        yield P.fromCallback(cb => {
+          server.close(cb);
         });
+      }
     }));
   });
 
@@ -556,28 +561,35 @@ describe('ForkedActor', function() {
 
       server.listen(8888);
 
-      yield rootActor.createChild({
-        initialize: function(selfActor) {
-          this.server = selfActor.getCustomParameters().server;
+      try {
+        yield rootActor.createChild({
+          initialize: function(selfActor) {
+            this.server = selfActor.getCustomParameters().server;
 
-          // Handle HTTP requests.
-          this.server.on('request', (req, res) => {
-            res.writeHead(200, { 'Content-Type': 'text/plain' });
-            res.end('Hello!');
+            // Handle HTTP requests.
+            this.server.on('request', (req, res) => {
+              res.writeHead(200, { 'Content-Type': 'text/plain' });
+              res.end('Hello!');
+            });
+          },
+
+          destroy: function() {
+            this.server && this.server.close();
+          }
+        }, { mode: 'forked', customParameters: { server: server } });
+
+        yield request('http://127.0.0.1:8888')
+          .get('/')
+          .expect(200)
+          .then(res => {
+            expect(res.text).to.be.equal('Hello!');
           });
-        },
-
-        destroy: function() {
-          this.server && this.server.close();
-        }
-      }, { mode: 'forked', customParameters: { server: server } });
-
-      yield request('http://127.0.0.1:8888')
-        .get('/')
-        .expect(200)
-        .then(res => {
-          expect(res.text).to.be.equal('Hello!');
+      }
+      finally {
+        yield P.fromCallback(cb => {
+          server.close(cb);
         });
+      }
     }));
   });
 
