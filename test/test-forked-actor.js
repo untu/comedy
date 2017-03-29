@@ -336,12 +336,20 @@ describe('ForkedActor', function() {
 
       var child = yield rootActor.createChild({
         setServer: function(server) {
-          this.server = server;
+          this.server = require('http').createServer();
 
-          server.once('request', (req, res) => {
+          // Wrap net.Server into http.Server.
+          this.server.listen(server);
+
+          // Handle HTTP requests.
+          this.server.on('request', (req, res) => {
             res.writeHead(200, { 'Content-Type': 'text/plain' });
             res.end('Hello!');
           });
+        },
+
+        destroy: function() {
+          this.server && this.server.close();
         }
       }, { mode: 'forked' });
 
@@ -351,7 +359,7 @@ describe('ForkedActor', function() {
         .get('/')
         .expect(200)
         .then(res => {
-          expect(res.body).to.be.equal('Hello!');
+          expect(res.text).to.be.equal('Hello!');
         });
     }));
   });
