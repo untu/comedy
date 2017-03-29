@@ -337,12 +337,8 @@ describe('ForkedActor', function() {
       try {
         var child = yield rootActor.createChild({
           setServer: function(server) {
-            this.server = server;
-
-            require('server-destroy')(this.server);
-
             // Handle HTTP requests.
-            this.server.on('request', (req, res) => {
+            server.on('request', (req, res) => {
               res.writeHead(200, { 'Content-Type': 'text/plain' });
               res.end('Hello!');
             });
@@ -564,17 +560,13 @@ describe('ForkedActor', function() {
       try {
         yield rootActor.createChild({
           initialize: function(selfActor) {
-            this.server = selfActor.getCustomParameters().server;
+            var server = selfActor.getCustomParameters().server;
 
             // Handle HTTP requests.
-            this.server.on('request', (req, res) => {
+            server.on('request', (req, res) => {
               res.writeHead(200, { 'Content-Type': 'text/plain' });
               res.end('Hello!');
             });
-          },
-
-          destroy: function() {
-            this.server && this.server.close();
           }
         }, { mode: 'forked', customParameters: { server: server } });
 
