@@ -13,6 +13,8 @@ var actors = require('../index');
 var tu = require('../lib/utils/test.js');
 var expect = require('chai').expect;
 var fs = require('fs');
+var http = require('http');
+var request = require('supertest');
 var P = require('bluebird');
 var _ = require('underscore');
 
@@ -325,6 +327,32 @@ describe('ForkedActor', function() {
       var result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid), 'Test');
 
       expect(result).to.be.equal(`Hello ${process.pid} from Test`);
+    }));
+
+    it('should support server object transfer', P.coroutine(function*() {
+      var server = http.createServer();
+
+      server.listen(8888);
+
+      var child = yield rootActor.createChild({
+        setServer: function(server) {
+          this.server = server;
+
+          server.once('request', (req, res) => {
+            res.writeHead(200, { 'Content-Type': 'text/plain' });
+            res.end('Hello!');
+          });
+        }
+      }, { mode: 'forked' });
+
+      yield child.sendAndReceive('setServer', server);
+
+      yield request('http://127.0.0.1:8888')
+        .get('/')
+        .expect(200)
+        .then(res => {
+          expect(res.body).to.be.equal('Hello!');
+        });
     }));
   });
 
