@@ -329,17 +329,14 @@ describe('ForkedActor', function() {
       expect(result).to.be.equal(`Hello ${process.pid} from Test`);
     }));
 
-    it('should support server object transfer', P.coroutine(function*() {
+    it('should support http.Server object transfer', P.coroutine(function*() {
       var server = http.createServer();
 
       server.listen(8888);
 
       var child = yield rootActor.createChild({
         setServer: function(server) {
-          this.server = require('http').createServer();
-
-          // Wrap net.Server into http.Server.
-          this.server.listen(server);
+          this.server = server;
 
           // Handle HTTP requests.
           this.server.on('request', (req, res) => {
