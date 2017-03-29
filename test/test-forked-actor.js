@@ -550,6 +550,35 @@ describe('ForkedActor', function() {
 
       expect(response).to.be.equal('Hi there!');
     }));
+
+    it('should be able to pass http.Server object as custom parameter to child actor', P.coroutine(function*() {
+      var server = http.createServer();
+
+      server.listen(8888);
+
+      yield rootActor.createChild({
+        initialize: function(selfActor) {
+          this.server = selfActor.getCustomParameters().server;
+
+          // Handle HTTP requests.
+          this.server.on('request', (req, res) => {
+            res.writeHead(200, { 'Content-Type': 'text/plain' });
+            res.end('Hello!');
+          });
+        },
+
+        destroy: function() {
+          this.server && this.server.close();
+        }
+      }, { mode: 'forked', customParameters: { server: server } });
+
+      yield request('http://127.0.0.1:8888')
+        .get('/')
+        .expect(200)
+        .then(res => {
+          expect(res.text).to.be.equal('Hello!');
+        });
+    }));
   });
 
   describe('createChildren()', function() {
