@@ -21,7 +21,10 @@ var rootActor;
 
 describe('InMemoryActor', function() {
   beforeEach(function() {
-    system = actors({ log: tu.logStub() });
+    system = actors({
+      log: tu.logStub(),
+      additionalRequires: 'ts-node/register'
+    });
 
     return system.rootActor().then(rootActor0 => {
       rootActor = rootActor0;
@@ -30,6 +33,73 @@ describe('InMemoryActor', function() {
 
   afterEach(function() {
     return system.destroy();
+  });
+
+  describe('initialize()', function() {
+    it('should not receive messages until initialized', P.coroutine(function*() {
+      var helloReceivedBeforeInitialized = false;
+
+      class LongStartingActor {
+        initialize(selfActor) {
+          this.initialized = false;
+
+          return selfActor
+            .createChild({
+              initialize: function(selfActor) {
+                return selfActor.getParent().send('hello', 'Child');
+              }
+            })
+            .then(() => {
+              this.initialized = true;
+            });
+        }
+
+        hello(to) {
+          helloReceivedBeforeInitialized = !this.initialized;
+
+          return `Hello to ${to}`;
+        }
+      }
+
+      yield rootActor.createChild(LongStartingActor);
+
+      expect(helloReceivedBeforeInitialized).to.be.equal(false);
+    }));
+
+    it('should throw error for sendAndReceive during initialization', P.coroutine(function*() {
+      class LongStartingActor {
+        initialize(selfActor) {
+          this.initialized = false;
+
+          return selfActor
+            .createChild({
+              initialize: function(selfActor) {
+                return selfActor.getParent().sendAndReceive('hello', 'Child');
+              }
+            })
+            .then(() => {
+              this.initialized = true;
+            });
+        }
+
+        hello(to) {
+          return `Hello to ${to}`;
+        }
+      }
+
+      var error;
+
+      try {
+        yield rootActor.createChild(LongStartingActor);
+      }
+      catch (err) {
+        error = err;
+
+        expect(err.message).to.match(/Actor is being initialized/);
+      }
+
+      expect(error).to.be.defined;
+    }));
   });
 
   describe('send()', function() {
@@ -136,7 +206,7 @@ describe('InMemoryActor', function() {
         .catch(done);
     });
 
-    it('should allow additional arguments', function() {
+    it('should support variable arguments', function() {
       return rootActor
         .createChild({
           sayHello: (to, from) => 'Hello to ' + to + ' from ' + from
@@ -225,6 +295,25 @@ describe('InMemoryActor', function() {
 
       expect(childActorReplies).to.have.members(['Hello from ChildActor1', 'Hello from ChildActor2']);
     }));
+
+    it('should be able to pass custom parameters to child actor', P.coroutine(function*() {
+      class MyActor {
+        initialize(selfActor) {
+          this.helloResponse = selfActor.getCustomParameters().helloResponse;
+        }
+
+        hello() {
+          return this.helloResponse;
+        }
+      }
+
+      // Create child actor with custom parameter.
+      var childActor = yield rootActor.createChild(MyActor, { customParameters: { helloResponse: 'Hi there!' } });
+
+      var response = yield childActor.sendAndReceive('hello');
+
+      expect(response).to.be.equal('Hi there!');
+    }));
   });
 
   describe('forwardToParent()', function() {
@@ -303,6 +392,44 @@ describe('InMemoryActor', function() {
       yield parent.sendAndReceive('hello', 'World!');
 
       expect(child2Mailbox).to.have.members(['World!']);
+    }));
+  });
+
+  describe('metrics()', function() {
+    it('should collect metrics from target actor and all the actor sub-tree', P.coroutine(function*() {
+      var parent = yield rootActor.createChild({
+        metrics: function() {
+          return {
+            parentMetric: 111
+          };
+        }
+      });
+      yield parent.createChild({
+        metrics: function() {
+          return {
+            childMetric: 222
+          };
+        }
+      }, { name: 'Child1' });
+      yield parent.createChild({
+        metrics: function() {
+          return {
+            childMetric: 333
+          };
+        }
+      }, { name: 'Child2' });
+
+      var metrics = yield parent.metrics();
+
+      expect(metrics).to.be.deep.equal({
+        parentMetric: 111,
+        Child1: {
+          childMetric: 222
+        },
+        Child2: {
+          childMetric: 333
+        }
+      });
     }));
   });
 

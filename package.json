@@ -1,10 +1,20 @@
 {
   "name": "comedy",
-  "version": "0.0.2-SNAPSHOT",
+  "version": "0.2.1-SNAPSHOT",
   "description": "Node.js actor framework.",
   "main": "index.js",
+  "files": [
+    "lib/",
+    "index.js",
+    "index.d.ts",
+    "LICENSE.txt",
+    "README.md"
+  ],
   "scripts": {
-    "test": "mocha -R spec --harmony --recursive --timeout 10000"
+    "validate": "grunt validate",
+    "test": "mocha -R spec --recursive --timeout 10000",
+    "coverage": "istanbul cover node_modules/.bin/_mocha -- -R spec --recursive --timeout 10000",
+    "docs": "markdown-toc -i README.md "
   },
   "repository": {
     "type": "git",
@@ -25,6 +35,13 @@
     "eslint": "3.1.1",
     "eslint-config-google": "0.6.0",
     "eslint-plugin-jsdoc": "2.3.1",
+    "grunt": "^1.0.1",
+    "grunt-cli": "^1.2.0",
+    "grunt-eslint": "^19.0.0",
+    "grunt-tslint": "^3.2.1",
+    "istanbul": "^0.4.5",
+    "load-grunt-tasks": "^3.5.2",
+    "markdown-toc": "^1.1.0",
     "mocha": "^3.1.0",
     "tslint": "^3.15.1"
   },

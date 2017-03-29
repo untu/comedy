@@ -23,7 +23,10 @@ var rootActor;
 
 describe('ForkedActor', function() {
   beforeEach(function() {
-    system = actors({ test: true });
+    system = actors({
+      test: true,
+      additionalRequires: 'ts-node/register'
+    });
 
     return system.rootActor().then(rootActor0 => {
       rootActor = rootActor0;
@@ -281,6 +284,74 @@ describe('ForkedActor', function() {
 
       expect(result).to.be.equal('Hello ' + process.pid);
     }));
+
+    it('should support variable arguments', P.coroutine(function*() {
+      var child = yield rootActor.createChild({
+        hello: (from, to) => `Hello from ${from} to ${to}.`
+      }, { mode: 'forked' });
+
+      var result = yield child.sendAndReceive('hello', 'Bob', 'Alice');
+
+      expect(result).to.be.equal('Hello from Bob to Alice.');
+    }));
+
+    it('should be able to marshall each variable argument with a custom marshaller', P.coroutine(function*() {
+      class TestMessageClass {
+        static typeName() {
+          return 'TestMessageClass';
+        }
+
+        constructor(pid) {
+          this.pid = pid;
+        }
+
+        getPid() {
+          return this.pid;
+        }
+      }
+
+      var testSystem = actors({
+        test: true,
+        marshallers: ['/test-resources/actors/test-message-class-marshaller']
+      });
+
+      var rootActor = yield testSystem.rootActor();
+      var child = yield rootActor.createChild(
+        {
+          sayHello: (msg, from) => `Hello ${msg.getPid()} from ${from}`
+        },
+        { mode: 'forked' });
+
+      var result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid), 'Test');
+
+      expect(result).to.be.equal(`Hello ${process.pid} from Test`);
+    }));
+  });
+
+  describe('send()', function() {
+    it('should support variable arguments', P.coroutine(function*() {
+      var replyDfd = P.pending();
+      var parent = yield rootActor.createChild({
+        helloReply: function(from, to) {
+          replyDfd.resolve(`Hello reply from ${from} to ${to}.`);
+        }
+      }, { mode: 'in-memory' });
+      var child = yield parent.createChild({
+        initialize: function(selfActor) {
+          this.parent = selfActor.getParent();
+        },
+
+        hello: function(from, to) {
+          this.parent.send('helloReply', to, from);
+        }
+      }, { mode: 'forked' });
+
+      yield child.send('hello', 'Bob', 'Alice');
+
+      var result = yield replyDfd.promise;
+
+      expect(result).to.be.equal('Hello reply from Alice to Bob.');
+    }));
   });
 
   describe('createChild()', function() {
@@ -424,6 +495,28 @@ describe('ForkedActor', function() {
             });
         });
     });
+
+    it('should be able to pass custom parameters to child actor', P.coroutine(function*() {
+      class MyActor {
+        initialize(selfActor) {
+          this.helloResponse = selfActor.getCustomParameters().helloResponse;
+        }
+
+        hello() {
+          return this.helloResponse;
+        }
+      }
+
+      // Create child actor with custom parameter.
+      var childActor = yield rootActor.createChild(MyActor, {
+        mode: 'forked',
+        customParameters: { helloResponse: 'Hi there!' }
+      });
+
+      var response = yield childActor.sendAndReceive('hello');
+
+      expect(response).to.be.equal('Hi there!');
+    }));
   });
 
   describe('createChildren()', function() {
@@ -482,6 +575,44 @@ describe('ForkedActor', function() {
       yield parent.sendAndReceive('hello', 'World!');
 
       expect(child2Mailbox).to.have.members(['World!']);
+    }));
+  });
+
+  describe('metrics()', function() {
+    it('should collect metrics from target actor and all the actor sub-tree', P.coroutine(function*() {
+      var parent = yield rootActor.createChild({
+        metrics: function() {
+          return {
+            parentMetric: 111
+          };
+        }
+      });
+      yield parent.createChild({
+        metrics: function() {
+          return {
+            childMetric: 222
+          };
+        }
+      }, { name: 'Child1', mode: 'forked' });
+      yield parent.createChild({
+        metrics: function() {
+          return {
+            childMetric: 333
+          };
+        }
+      }, { name: 'Child2', mode: 'forked' });
+
+      var metrics = yield parent.metrics();
+
+      expect(metrics).to.be.deep.equal({
+        parentMetric: 111,
+        Child1: {
+          childMetric: 222
+        },
+        Child2: {
+          childMetric: 333
+        }
+      });
     }));
   });
 });

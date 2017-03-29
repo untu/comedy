@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "sourceMap": true,
+    "inlineSources": true,
+    "newLine": "lf",
+    "outDir": "target"
+  },
+  "exclude": [
+    "node_modules",
+    "target",
+    "coverage"
+  ]
+}

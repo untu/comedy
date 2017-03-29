@@ -5,8 +5,6 @@
  * on the Eclipse official site (https://www.eclipse.org/legal/epl-v10.html).
  */
 
-import P = require('bluebird');
-
 export interface Logger {
   isDebug(): boolean;
 
@@ -24,23 +22,37 @@ export interface Actor {
 
   getParent(): Actor;
 
-  createChild(behaviour: ActorBehaviour|Object, options?: Object): P<Actor>;
+  getCustomParameters(): Object|null;
 
-  send(topic: string, ...message: any[]): P<void>;
+  createChild(behaviour: ActorDefinition|Object, options?: Object): Promise<Actor>;
 
-  sendAndReceive(topic: string, ...message: any[]): P<any>;
+  createChildren(modulePath: string): Promise<Actor[]>;
+
+  send(topic: string, ...message: any[]): Promise<void>;
+
+  sendAndReceive(topic: string, ...message: any[]): Promise<any>;
+
+  forwardToParent(...topics: Array<string|RegExp>): void;
 }
 
-export interface ActorBehaviour {
-  initialize(selfActor: Actor): P<void>|void;
+export interface ActorDefinition {
+  initialize(selfActor: Actor): Promise<void>|void;
 
-  destroy(): P<void>|void;
+  destroy(): Promise<void>|void;
+}
+
+export interface ResourceDefinition<T> {
+  initialize(system: ActorSystem): Promise<void>|void;
+
+  destroy(): Promise<void>|void;
+
+  getResource(): T;
 }
 
 export interface ActorSystem {
-  rootActor(): P<Actor>;
+  rootActor(): Promise<Actor>;
 
-  destroy(): P<void>;
+  destroy(): Promise<void>;
 }
 
 export function createSystem(options: Object): ActorSystem;

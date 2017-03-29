@@ -8,12 +8,22 @@
 'use strict';
 
 /**
- * Test child actor.
+ * Test module-defined resource.
  */
-class ChildActor2 {
-  hello() {
-    return 'Hello from ChildActor2';
+class MessageResource {
+  /**
+   * Initialization hook.
+   */
+  initialize() {
+    this.text = 'Hi there!';
+  }
+
+  /**
+   * @returns {String} Message text.
+   */
+  getResource() {
+    return this.text;
   }
 }
 
-module.exports = ChildActor2;
+module.exports = MessageResource;
