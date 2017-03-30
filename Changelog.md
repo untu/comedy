@@ -1,3 +1,6 @@
+### v 0.2.1:
+- Added net.Server and http.Server marshalling support.
+
 ### v 0.2.0:
 - Separate resource definitions support.
 - Bug fixes.
