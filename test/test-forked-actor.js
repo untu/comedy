@@ -624,6 +624,46 @@ describe('ForkedActor', function() {
         });
       }
     }));
+
+    it('should be able to pass net.Server object as custom parameter to child actor', P.coroutine(function*() {
+      var server = net.createServer();
+
+      yield P.fromCallback(cb => {
+        server.listen(8889, '127.0.0.1', cb);
+      });
+
+      try {
+        yield rootActor.createChild({
+          initialize: function(selfActor) {
+            var server = selfActor.getCustomParameters().server;
+
+            // Send hello message on connection.
+            server.on('connection', socket => {
+              socket.end('Hello!');
+            });
+          }
+        }, { mode: 'forked', customParameters: { server: server } });
+
+        var serverMessage = yield P.fromCallback(cb => {
+          var clientSocket = net.connect(8889, '127.0.0.1', (err) => {
+            if (err) return cb(err);
+          });
+
+          clientSocket.setEncoding('UTF8');
+
+          clientSocket.on('data', data => {
+            cb(null, data);
+          });
+        });
+
+        expect(serverMessage).to.be.equal('Hello!');
+      }
+      finally {
+        yield P.fromCallback(cb => {
+          server.close(cb);
+        });
+      }
+    }));
   });
 
   describe('createChildren()', function() {
