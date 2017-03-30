@@ -14,6 +14,7 @@ var tu = require('../lib/utils/test.js');
 var expect = require('chai').expect;
 var fs = require('fs');
 var http = require('http');
+var net = require('net');
 var request = require('supertest');
 var P = require('bluebird');
 var _ = require('underscore');
@@ -353,6 +354,46 @@ describe('ForkedActor', function() {
           .then(res => {
             expect(res.text).to.be.equal('Hello!');
           });
+      }
+      finally {
+        yield P.fromCallback(cb => {
+          server.close(cb);
+        });
+      }
+    }));
+
+    it('should support net.Server object transfer', P.coroutine(function*() {
+      var server = net.createServer();
+
+      yield P.fromCallback(cb => {
+        server.listen(8889, '127.0.0.1', cb);
+      });
+
+      try {
+        var child = yield rootActor.createChild({
+          setServer: function(server) {
+            // Send hello message on connection.
+            server.on('connection', socket => {
+              socket.end('Hello!');
+            });
+          }
+        }, { mode: 'forked' });
+
+        yield child.sendAndReceive('setServer', server);
+
+        var serverMessage = yield P.fromCallback(cb => {
+          var clientSocket = net.connect(8889, '127.0.0.1', (err) => {
+            if (err) return cb(err);
+          });
+
+          clientSocket.setEncoding('UTF8');
+
+          clientSocket.on('data', data => {
+            cb(null, data);
+          });
+        });
+
+        expect(serverMessage).to.be.equal('Hello!');
       }
       finally {
         yield P.fromCallback(cb => {
