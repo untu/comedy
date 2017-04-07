@@ -875,4 +875,104 @@ is dumped once by a first actor that receives the `dumpCollection` message (defa
 
 ## Actor Metrics
 
+When an actor is up and running, it can be configured to output a number of useful metrics for monitoring.
+
+```javascript
+var actors = require('comedy');
+
+/**
+ * Sample actor.
+ */
+class MyActor {
+  // ...Some useful code.
+
+  metrics() {
+    return {
+      requestsPerSecond: Math.floor(Math.random() * 100) // Some real value should be here.
+    };
+  }
+}
+
+actors()
+  .rootActor() // Get a root actor reference.
+  .then(rootActor => rootActor.createChild(MyActor)) // Create a child actor.
+  .then(myActor => myActor.metrics()) // Query actor metrics.
+  .then(metrics => {
+    console.log('Actor metrics:', metrics); // Output actor metrics.
+  });
+```
+
+An example above will output something like:
+
+```
+Actor metrics: { requestPerSecond: 47 }
+```
+
+What we did in the example above is we've defined a `metrics` method in `MyActor` actor definition class and then
+called `metrics` method on `MyActor` actor instance. This method returns a promise with actor metrics object,
+containing the metrics we've returned from `metrics` method.
+
+"Wait!" - you'd say - "Why are we using a special `metrics` method for getting these metrics? Why don't we just send
+a 'metrics' message? Won't the result be the same?"
+
+In this case - yes, the result will be exactly the same. But a `metrics` method has one additional useful property,
+for which you'll definitely want to use it: it automatically collects metrics from all child actors recursively as
+well.
+
+Consider another example:
+
+```javascript
+var actors = require('comedy');
+
+/**
+ * Sample actor.
+ */
+class MyActor {
+  initialize(selfActor) {
+    return selfActor.createChild(MyChildActor); // Create a child actor.
+  }
+
+  // ...Some useful code.
+
+  metrics() {
+    return {
+      requestsPerSecond: Math.floor(Math.random() * 100) // Some real value should be here.
+    };
+  }
+}
+
+/**
+ * Sample child actor.
+ */
+class MyChildActor {
+  // ...Some useful code.
+
+  metrics() {
+    return {
+      ignoredMessages: 0
+    };
+  }
+}
+
+actors()
+  .rootActor() // Get a root actor reference.
+  .then(rootActor => rootActor.createChild(MyActor)) // Create a child actor.
+  .then(myActor => myActor.metrics()) // Query actor metrics.
+  .then(metrics => {
+    console.log('Actor metrics:', metrics); // Output actor metrics.
+  });
+```
+
+This example's output will be similar to:
+
+```
+Actor metrics: { requestsPerSecond: 68, MyChildActor: { ignoredMessages: 0 } }
+```
+
+We've received metrics for `MyActor` as well as it's child actor, though we didn't change our calling code. When using
+`metrics` method, metric aggregation happens automatically, so each actor only needs to output it's own metrics
+from `metrics` message handler.
+
+## Message Marshalling
+
 To be continued...
