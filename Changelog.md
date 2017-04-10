@@ -1,5 +1,6 @@
 ### v 0.2.1:
 - Added net.Server and http.Server marshalling support.
+- Fixed 'channel closed' errors on second and subsequent respawns.
 
 ### v 0.2.0:
 - Separate resource definitions support.
