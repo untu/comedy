@@ -530,33 +530,21 @@ describe('ForkedActor', function() {
       // Wait for forked actor to initialize first time.
       yield dfd.promise;
 
-      // Create new promise.
-      dfd = P.pending();
+      for (var i = 0; i < 3; i++) {
+        // Create new promise.
+        dfd = P.pending();
 
-      // Kill forked actor.
-      yield forkedChild.send('kill');
+        // Kill forked actor.
+        yield forkedChild.send('kill');
 
-      // Wait for forked actor to respawn.
-      yield dfd.promise;
+        // Wait for forked actor to respawn.
+        yield dfd.promise;
 
-      // Ping forked actor.
-      var resp = yield forkedChild.sendAndReceive('ping');
+        // Ping forked actor.
+        var resp = yield forkedChild.sendAndReceive('ping');
 
-      expect(resp).to.be.equal('pong');
-
-      // Create new promise.
-      dfd = P.pending();
-
-      // Kill forked actor.
-      yield forkedChild.send('kill');
-
-      // Wait for forked actor to respawn.
-      yield dfd.promise;
-
-      // Ping forked actor.
-      resp = yield forkedChild.sendAndReceive('ping');
-
-      expect(resp).to.be.equal('pong');
+        expect(resp).to.be.equal('pong');
+      }
     }));
 
     it('should be able to load an actor from a given module', function() {
