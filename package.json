@@ -47,6 +47,7 @@
     "mocha": "^3.1.0",
     "np": "^2.13.1",
     "supertest": "^3.0.0",
+    "toobusy-js": "^0.5.1",
     "tslint": "^3.15.1"
   },
   "dependencies": {
