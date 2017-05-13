@@ -51,7 +51,7 @@ class ForkedMessagingNativeSerializationBenchmark extends AbstractThroughputBenc
     return this.system.destroy();
   }
 
-  request() {
+  iteration() {
     return this.actor.sendAndReceive('test', {
       command: 'test-command',
       parameters: {
@@ -68,10 +68,10 @@ var bm = new ForkedMessagingNativeSerializationBenchmark();
 
 bm.runWithWarmUp({ concurrencyLevel: 16 }).then(result => {
   console.log({
-    'Total roundtrips': result.numberOfRequests,
+    'Total roundtrips': result.numberOfIterations,
     'Total test time (seconds)': Math.round(result.totalTime / 1000),
-    'Average throughput (roundtrips per second)': Math.round(result.numberOfRequests / (result.totalTime / 1000)),
-    'Average response time (milliseconds)': Math.round(result.totalTime / result.numberOfRequests),
+    'Average throughput (roundtrips per second)': Math.round(result.numberOfIterations / (result.totalTime / 1000)),
+    'Average response time (milliseconds)': Math.round(result.totalTime / result.numberOfIterations),
     'Errors': result.error && result.error.message || 'no',
     'Average memory usage': result.averageMemoryUsage
   });

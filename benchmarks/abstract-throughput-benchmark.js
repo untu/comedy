@@ -14,20 +14,12 @@ var _ = require('underscore');
 var tooBusy = require('toobusy-js');
 
 /**
- * Abstract throughput benchmark, that sends sequential requests and measures
+ * Abstract throughput benchmark, that runs some number of parallel iterations
+ * (the number is set by concurrencyLevel option) and measures
  * throughput with a given metric. Displays average throughput while running.
- * Subclasses should implement request logic.
+ * Subclasses should implement iteration logic.
  */
 class AbstractThroughputBenchmark {
-  /**
-   * @param {String} [metricName] Throughput metric name (numberOfRequests by default).
-   * @param {String} [unit] Throughput metric unit (requests by default).
-   */
-  constructor(metricName, unit) {
-    this.metricName = metricName;
-    this.unit = unit || 'requests';
-  }
-
   /**
    * Initial setup before test run. May return promise, if setup is asynchronous.
    */
@@ -39,13 +31,12 @@ class AbstractThroughputBenchmark {
   tearDown() {}
 
   /**
-   * Actual request implementation.
+   * Benchmark iteration implementation.
    *
-   * @returns {P} Request promise, that yields a value of a throughput metric
-   * for this request.
+   * @returns {P} Iteration promise.
    */
-  request() {
-    return common.abstractMethodError('request');
+  iteration() {
+    return common.abstractMethodError('iteration');
   }
 
   /**
@@ -65,7 +56,7 @@ class AbstractThroughputBenchmark {
     var startTime = _.now();
     var curMetricValue = 0;
     var curResult = {
-      numberOfRequests: 0,
+      numberOfIterations: 0,
       totalTime: 0,
       error: false
     };
@@ -80,14 +71,14 @@ class AbstractThroughputBenchmark {
     var resultRecHandle = setInterval(() => {
       curResult.totalTime = Date.now() - startTime;
 
-      var metricValue = curResult.numberOfRequests;
+      var metricValue = curResult.numberOfIterations;
 
       if (this.metricName) {
         metricValue = curMetricValue;
       }
 
       console.log('Average throughput: ' +
-        Math.round(metricValue / (curResult.totalTime / 1000)) + ' ' + this.unit + ' per second');
+        Math.round(metricValue / (curResult.totalTime / 1000)) + ' iterations per second');
 
       if (tooBusy.lag() > 3000) {
         console.log('WARNING: event loop lag is ' + tooBusy.lag() + 'ms');
@@ -113,10 +104,10 @@ class AbstractThroughputBenchmark {
       return _.extend({}, result0, { averageMemoryUsage: avgMemUsage });
     };
 
-    var requestLoop = () => {
+    var iterationLoop = () => {
       return new P(resolve => {
-        var requestLoop0 = () => {
-          this.request()
+        var iterationLoop0 = () => {
+          this.iteration()
             .then(reqResult => {
               if (_.isUndefined(reqResult)) {
                 reqResult = 1;
@@ -124,17 +115,17 @@ class AbstractThroughputBenchmark {
 
               curMetricValue += reqResult;
 
-              curResult.numberOfRequests++;
+              curResult.numberOfIterations++;
 
               if (stop) {
                 resolve();
               }
               else {
-                requestLoop0();
+                iterationLoop0();
               }
             })
             .catch(err => {
-              console.log('Request error:', err);
+              console.log('Iteration error:', err);
 
               curResult.error = err;
 
@@ -142,17 +133,17 @@ class AbstractThroughputBenchmark {
                 resolve();
               }
               else {
-                requestLoop0();
+                iterationLoop0();
               }
             });
         };
 
-        requestLoop0();
+        iterationLoop0();
       });
     };
 
     var runBenchmark = () => {
-      return _.times(concurrencyLevel, () => requestLoop());
+      return _.times(concurrencyLevel, () => iterationLoop());
     };
 
     return P.resolve()
@@ -178,7 +169,7 @@ class AbstractThroughputBenchmark {
    *
    * @param {Object} [options] Benchmark options.
    * - {Number} runTime Benchmark run time in milliseconds. Default is 1 minute.
-   * - {Number} concurrencyLevel How many requests to send in parallel. Default is 64.
+   * - {Number} concurrencyLevel How many iterations to run in parallel. Default is 64.
    * @returns {P} Run promise, that is fulfilled when test run has finished.
    * The promise yields the benchmark result object.
    */
