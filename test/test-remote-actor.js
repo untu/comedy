@@ -13,6 +13,7 @@ var P = require('bluebird');
 
 var system;
 var rootActor;
+var remoteSystem;
 
 describe('RemoteActor', function() {
   beforeEach(function() {
@@ -21,13 +22,20 @@ describe('RemoteActor', function() {
       additionalRequires: 'ts-node/register'
     });
 
+    remoteSystem = actors({
+      test: true,
+      additionalRequires: 'ts-node/register'
+    });
+
     return system.rootActor().then(rootActor0 => {
       rootActor = rootActor0;
+
+      return remoteSystem.listen();
     });
   });
 
   afterEach(function() {
-    return system.destroy();
+    return P.join(system.destroy(), remoteSystem.destroy());
   });
 
   describe('sendAndReceive', function() {
