@@ -33,22 +33,21 @@ describe('RemoteActor', function() {
   describe('sendAndReceive', function() {
     it('should perform message exchange with remote actor', P.coroutine(function*() {
       var behaviour = {
-        getPid: () => {
-          return process.pid;
+        sayHello: (to) => {
+          return `Hello, ${to}!`;
         }
       };
 
       var remoteChild = yield rootActor.createChild(behaviour, { mode: 'remote', host: '127.0.0.1' });
-      var remotePid = yield remoteChild.sendAndReceive('getPid');
+      var response = yield remoteChild.sendAndReceive('sayHello', 'Bob');
 
-      expect(remotePid).to.be.a.number;
-      expect(remotePid).to.be.not.equal(process.pid);
+      expect(response).to.be.equal('Hello, Bob!');
 
       // Destroy remote actor.
       yield remoteChild.destroy();
 
       // From this point, any additional communication should not be possible.
-      var expectedErr = yield remoteChild.sendAndReceive('getPid').catch(err => err);
+      var expectedErr = yield remoteChild.sendAndReceive('sayHello', 'Jack').catch(err => err);
 
       expect(expectedErr).to.be.instanceof(Error);
     }));
