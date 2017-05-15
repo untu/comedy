@@ -59,5 +59,7 @@ describe('RemoteActor', function() {
 
       expect(expectedErr).to.be.instanceof(Error);
     }));
+
+    it('should correctly fail if wrong host is specified');
   });
 });
