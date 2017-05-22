@@ -60,9 +60,9 @@ describe('RemoteActor', function() {
       expect(expectedErr).to.be.instanceof(Error);
     }));
 
-    it('should correctly fail if wrong host is specified', P.coroutine(function*() {
+    it('should correctly fail if wrong port is specified', P.coroutine(function*() {
       var expectedErr = yield rootActor
-        .createChild({}, { mode: 'remote', host: '1.1.1.1' })
+        .createChild({}, { mode: 'remote', host: '127.0.0.1', port: 6262 })
         .catch(err => err);
 
       expect(expectedErr).to.be.instanceof(Error);
