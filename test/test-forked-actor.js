@@ -686,20 +686,19 @@ describe('ForkedActor', function() {
 
   describe('forwardToChild()', function() {
     it('should forward messages with given topics to a given child actor', P.coroutine(function*() {
-      var child2Mailbox = [];
       var parent = yield rootActor.createChild({
         initialize: selfActor => {
           // Create first child that receives 'hello' messages and sends 'tell...' messages to parent.
           var child1Promise = selfActor
             .createChild({
-              initialize: selfActor => {
+              initialize: function(selfActor) {
                 this.parent = selfActor.getParent();
               },
 
-              hello: msg => {
+              hello: function(msg) {
                 return this.parent.sendAndReceive('tellChild2', msg);
               }
-            }, { forked: true })
+            }, { mode: 'forked' })
             .then(child1 => {
               // Forward 'hello' messages to this child.
               return selfActor.forwardToChild(child1, 'hello');
@@ -708,13 +707,21 @@ describe('ForkedActor', function() {
           // Create second child that receives 'tell...' messages and writes to mailbox.
           var child2Promise = selfActor
             .createChild({
-              tellChild2: msg => {
-                child2Mailbox.push(msg);
+              initialize: function() {
+                this.mailbox = [];
+              },
+
+              tellChild2: function(msg) {
+                this.mailbox.push(msg);
+              },
+
+              getMailbox: function() {
+                return this.mailbox;
               }
-            }, { forked: true })
+            }, { mode: 'forked' })
             .then(child2 => {
-              // Forward 'hello...' messages to this child.
-              return selfActor.forwardToChild(child2, /^tell.*/);
+              // Forward 'tell...' and 'getMailbox' messages to this child.
+              return selfActor.forwardToChild(child2, /^tell.*/, 'getMailbox');
             });
 
           return P.join(child1Promise, child2Promise);
@@ -722,6 +729,8 @@ describe('ForkedActor', function() {
       });
 
       yield parent.sendAndReceive('hello', 'World!');
+
+      var child2Mailbox = yield parent.sendAndReceive('getMailbox');
 
       expect(child2Mailbox).to.have.members(['World!']);
     }));
