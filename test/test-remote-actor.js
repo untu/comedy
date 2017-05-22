@@ -468,45 +468,6 @@ describe('RemoteActor', function() {
         .then(result => expect(result).to.be.equal('Hello from TestActor'));
     });
 
-    it('should support crashed actor respawn', P.coroutine(function*() {
-      var dfd = P.pending();
-      var localChild = yield rootActor.createChild({
-        forkedReady: () => {
-          dfd.resolve();
-        }
-      }, { mode: 'in-memory' });
-      var forkedChild = yield localChild.createChild({
-        initialize: (selfActor) => {
-          process.nextTick(() => selfActor.getParent().send('forkedReady'));
-        },
-
-        kill: () => {
-          process.exit(1);
-        },
-
-        ping: () => 'pong'
-      }, { mode: 'remote', host: '127.0.0.1', onCrash: 'respawn' });
-
-      // Wait for forked actor to initialize first time.
-      yield dfd.promise;
-
-      for (var i = 0; i < 3; i++) {
-        // Create new promise.
-        dfd = P.pending();
-
-        // Kill forked actor.
-        yield forkedChild.send('kill');
-
-        // Wait for forked actor to respawn.
-        yield dfd.promise;
-
-        // Ping forked actor.
-        var resp = yield forkedChild.sendAndReceive('ping');
-
-        expect(resp).to.be.equal('pong');
-      }
-    }));
-
     it('should be able to load an actor from a given module', function() {
       return rootActor
         .createChild('/test-resources/actors/test-actor', { mode: 'remote', host: '127.0.0.1' })
