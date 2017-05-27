@@ -24,12 +24,14 @@ describe('RemoteActor', function() {
   beforeEach(function() {
     system = actors({
       test: true,
-      additionalRequires: 'ts-node/register'
+      additionalRequires: 'ts-node/register',
+      pingTimeout: 2000
     });
 
     remoteSystem = actors({
       test: true,
-      additionalRequires: 'ts-node/register'
+      additionalRequires: 'ts-node/register',
+      pingTimeout: 2000
     });
 
     return system.rootActor().then(rootActor0 => {
@@ -471,13 +473,13 @@ describe('RemoteActor', function() {
     it('should support crashed actor respawn', P.coroutine(function*() {
       var dfd = P.pending();
       var localChild = yield rootActor.createChild({
-        forkedReady: () => {
+        remoteReady: () => {
           dfd.resolve();
         }
       }, { mode: 'in-memory' });
       var remoteChild = yield localChild.createChild({
         initialize: (selfActor) => {
-          process.nextTick(() => selfActor.getParent().send('forkedReady'));
+          process.nextTick(() => selfActor.getParent().send('remoteReady'));
         },
 
         kill: () => {
@@ -490,7 +492,7 @@ describe('RemoteActor', function() {
       // Wait for forked actor to initialize first time.
       yield dfd.promise;
 
-      for (var i = 0; i < 3; i++) {
+      for (var i = 0; i < 2; i++) {
         // Create new promise.
         dfd = P.pending();
 
