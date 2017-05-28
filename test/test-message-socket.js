@@ -78,7 +78,35 @@ describe('MessageSocket', function() {
     client.on('error', done);
   });
 
-  it('should correctly receive 2 messages in 3 chunks');
+  it('should correctly receive 2 messages in 3 chunks', done => {
+    server = net.createServer(socket => {
+      var serverMessageSocket = new MessageSocket(socket);
+
+      serverMessageSocket.once('message', msg => {
+        expect(msg).to.be.deep.equal({ text: 'Sun is shining!' });
+
+        serverMessageSocket.once('message', msg => {
+          expect(msg).to.be.deep.equal({ text: 'The weather is sweet!' });
+
+          done();
+        });
+      });
+    });
+
+    server.listen(6363);
+    server.on('error', done);
+
+    client = net.createConnection(6363, () => {
+      var clientMessageSocket = new MessageSocket(client);
+      var packet1 = clientMessageSocket.makePacket({ text: 'Sun is shining!' });
+      var packet2 = clientMessageSocket.makePacket({ text: 'The weather is sweet!' });
+      var jointPacket = Buffer.concat([packet1, packet2]);
+      var chunks = splitBuffer(jointPacket, 3);
+
+      _.each(chunks, chunk => client.write(chunk));
+    });
+    client.on('error', done);
+  });
 });
 
 /**
