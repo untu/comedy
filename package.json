@@ -1,6 +1,6 @@
 {
   "name": "comedy",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Node.js actor framework.",
   "main": "index.js",
   "files": [
@@ -13,7 +13,7 @@
   "scripts": {
     "validate": "grunt validate",
     "test": "mocha -R spec --recursive --timeout 10000",
-    "coverage": "istanbul cover node_modules/.bin/_mocha -- -R spec --recursive --timeout 10000",
+    "coverage": "istanbul cover node_modules/.bin/_mocha -- -R spec --recursive --timeout 20000",
     "docs": "markdown-toc -i README.md",
     "version": "npm run docs",
     "release": "np"
@@ -47,6 +47,7 @@
     "mocha": "^3.1.0",
     "np": "^2.13.1",
     "supertest": "^3.0.0",
+    "toobusy-js": "^0.5.1",
     "tslint": "^3.15.1"
   },
   "dependencies": {

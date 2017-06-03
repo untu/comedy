@@ -25,6 +25,7 @@ single host (by spawning sub-processes) or even to multiple hosts in your networ
   * [Setting the log level](#setting-the-log-level)
 - [Resource Management](#resource-management)
 - [Actor Metrics](#actor-metrics)
+- [Message Marshalling](#message-marshalling)
 
 <!-- tocstop -->
 

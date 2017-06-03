@@ -13,41 +13,75 @@ var actors = require('../index');
 var tu = require('../lib/utils/test.js');
 var expect = require('chai').expect;
 var fs = require('fs');
-var http = require('http');
-var net = require('net');
-var request = require('supertest');
 var P = require('bluebird');
 var _ = require('underscore');
 
-P.promisifyAll(fs);
-
 var system;
 var rootActor;
+var remoteSystem;
 
-describe('ForkedActor', function() {
+describe('RemoteActor', function() {
   beforeEach(function() {
     system = actors({
       test: true,
-      additionalRequires: 'ts-node/register'
+      additionalRequires: 'ts-node/register',
+      pingTimeout: 2000
+    });
+
+    remoteSystem = actors({
+      test: true,
+      additionalRequires: 'ts-node/register',
+      pingTimeout: 2000
     });
 
     return system.rootActor().then(rootActor0 => {
       rootActor = rootActor0;
+
+      return remoteSystem.listen();
     });
   });
 
   afterEach(function() {
-    return system.destroy();
+    return P.join(system.destroy(), remoteSystem.destroy());
   });
 
-  describe('sendAndReceive()', function() {
+  describe('sendAndReceive', function() {
+    it('should perform message exchange with remote actor', P.coroutine(function*() {
+      var behaviour = {
+        sayHello: (to) => {
+          return `Hello, ${to}!`;
+        }
+      };
+
+      var remoteChild = yield rootActor.createChild(behaviour, { mode: 'remote', host: '127.0.0.1' });
+      var response = yield remoteChild.sendAndReceive('sayHello', 'Bob');
+
+      expect(response).to.be.equal('Hello, Bob!');
+
+      // Destroy remote actor.
+      yield remoteChild.destroy();
+
+      // From this point, any additional communication should not be possible.
+      var expectedErr = yield remoteChild.sendAndReceive('sayHello', 'Jack').catch(err => err);
+
+      expect(expectedErr).to.be.instanceof(Error);
+    }));
+
+    it('should correctly fail if wrong port is specified', P.coroutine(function*() {
+      var expectedErr = yield rootActor
+        .createChild({}, { mode: 'remote', host: '127.0.0.1', port: 6262 })
+        .catch(err => err);
+
+      expect(expectedErr).to.be.instanceof(Error);
+    }));
+
     it('should throw error if handler threw error', function(done) {
       rootActor
         .createChild({
           myMessage: () => {
             throw new Error('Sorry!');
           }
-        }, { mode: 'forked' })
+        }, { mode: 'remote', host: '127.0.0.1' })
         .then(testActor => testActor.sendAndReceive('myMessage', 'Hi!'))
         .then(() => {
           done('Expected error!');
@@ -59,37 +93,37 @@ describe('ForkedActor', function() {
         .catch(done);
     });
 
-    it('should fork a sub-process and perform message exchange', P.coroutine(function*() {
+    it('should correctly manage remote actor process', P.coroutine(function*() {
       var behaviour = {
         getPid: () => {
           return process.pid;
         }
       };
 
-      var forkedChild = yield rootActor.createChild(behaviour, { mode: 'forked' });
-      var forkedPid = yield forkedChild.sendAndReceive('getPid');
+      var remoteChild = yield rootActor.createChild(behaviour, { mode: 'remote', host: '127.0.0.1' });
+      var remotePid = yield remoteChild.sendAndReceive('getPid');
 
-      expect(forkedPid).to.be.a.number;
-      expect(forkedPid).to.be.not.equal(process.pid);
+      expect(remotePid).to.be.a.number;
+      expect(remotePid).to.be.not.equal(process.pid);
 
-      // Check that child process is running.
-      var psExists = fs.existsSync('/proc/' + forkedPid);
+      // Check that remote process is running.
+      var psExists = fs.existsSync('/proc/' + remotePid);
 
       expect(psExists).to.be.equal(true);
 
-      // Destroy forked actor.
-      yield forkedChild.destroy();
+      // Destroy remote actor.
+      yield remoteChild.destroy();
 
       // From this point, any additional communication should not be possible.
-      var expectedErr = yield forkedChild.sendAndReceive('getPid').catch(err => err);
+      var expectedErr = yield remoteChild.sendAndReceive('getPid').catch(err => err);
 
       expect(expectedErr).to.be.instanceof(Error);
 
       // The process should be stopped eventually.
-      yield tu.waitForCondition(() => !fs.existsSync('/proc/' + forkedPid));
+      yield tu.waitForCondition(() => !fs.existsSync('/proc/' + remotePid));
     }));
 
-    it('should be able to import modules in forked process', P.coroutine(function*() {
+    it('should be able to import modules in remote process', P.coroutine(function*() {
       // Use module import in behaviour.
       var behaviour = {
         sayHello: () => {
@@ -99,8 +133,8 @@ describe('ForkedActor', function() {
         }
       };
 
-      var forkedChild = yield rootActor.createChild(behaviour, { mode: 'forked' });
-      var result = yield forkedChild.sendAndReceive('sayHello');
+      var remoteChild = yield rootActor.createChild(behaviour, { mode: 'remote', host: '127.0.0.1' });
+      var result = yield remoteChild.sendAndReceive('sayHello');
 
       expect(result).to.be.equal('Hello!');
     }));
@@ -123,7 +157,7 @@ describe('ForkedActor', function() {
         };
 
         rootActor.createChild(parentBehaviour)
-          .then(parent => parent.createChild(childBehaviour, { mode: 'forked' }))
+          .then(parent => parent.createChild(childBehaviour, { mode: 'remote', host: '127.0.0.1' }))
           .then(child => child.sendAndReceive('sayHello'))
           .catch(reject);
       });
@@ -161,7 +195,7 @@ describe('ForkedActor', function() {
         };
 
         rootActor.createChild(parentBehaviour)
-          .then(parent => parent.createChild(childBehaviour, { mode: 'forked' }))
+          .then(parent => parent.createChild(childBehaviour, { mode: 'remote', host: '127.0.0.1' }))
           .then(child => child.sendAndReceive('sayHello'))
           .catch(reject);
       });
@@ -202,7 +236,7 @@ describe('ForkedActor', function() {
         {
           sayHello: (msg) => 'Hello ' + msg.getPid()
         },
-        { mode: 'forked' });
+        { mode: 'remote', host: '127.0.0.1' });
 
       var result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid));
 
@@ -249,7 +283,7 @@ describe('ForkedActor', function() {
         {
           sayHello: (msg) => 'Hello ' + msg.getPid()
         },
-        { mode: 'forked' });
+        { mode: 'remote', host: '127.0.0.1' });
 
       var result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid));
 
@@ -281,7 +315,7 @@ describe('ForkedActor', function() {
         {
           sayHello: (msg) => 'Hello ' + msg.getPid()
         },
-        { mode: 'forked' });
+        { mode: 'remote', host: '127.0.0.1' });
 
       var result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid));
 
@@ -291,7 +325,7 @@ describe('ForkedActor', function() {
     it('should support variable arguments', P.coroutine(function*() {
       var child = yield rootActor.createChild({
         hello: (from, to) => `Hello from ${from} to ${to}.`
-      }, { mode: 'forked' });
+      }, { mode: 'remote', host: '127.0.0.1' });
 
       var result = yield child.sendAndReceive('hello', 'Bob', 'Alice');
 
@@ -323,83 +357,11 @@ describe('ForkedActor', function() {
         {
           sayHello: (msg, from) => `Hello ${msg.getPid()} from ${from}`
         },
-        { mode: 'forked' });
+        { mode: 'remote', host: '127.0.0.1' });
 
       var result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid), 'Test');
 
       expect(result).to.be.equal(`Hello ${process.pid} from Test`);
-    }));
-
-    it('should support http.Server object transfer', P.coroutine(function*() {
-      var server = http.createServer();
-
-      server.listen(8888);
-
-      try {
-        var child = yield rootActor.createChild({
-          setServer: function(server) {
-            // Handle HTTP requests.
-            server.on('request', (req, res) => {
-              res.writeHead(200, { 'Content-Type': 'text/plain' });
-              res.end('Hello!');
-            });
-          }
-        }, { mode: 'forked' });
-
-        yield child.sendAndReceive('setServer', server);
-
-        yield request('http://127.0.0.1:8888')
-          .get('/')
-          .expect(200)
-          .then(res => {
-            expect(res.text).to.be.equal('Hello!');
-          });
-      }
-      finally {
-        yield P.fromCallback(cb => {
-          server.close(cb);
-        });
-      }
-    }));
-
-    it('should support net.Server object transfer', P.coroutine(function*() {
-      var server = net.createServer();
-
-      yield P.fromCallback(cb => {
-        server.listen(8889, '127.0.0.1', cb);
-      });
-
-      try {
-        var child = yield rootActor.createChild({
-          setServer: function(server) {
-            // Send hello message on connection.
-            server.on('connection', socket => {
-              socket.end('Hello!');
-            });
-          }
-        }, { mode: 'forked' });
-
-        yield child.sendAndReceive('setServer', server);
-
-        var serverMessage = yield P.fromCallback(cb => {
-          var clientSocket = net.connect(8889, '127.0.0.1', (err) => {
-            if (err) return cb(err);
-          });
-
-          clientSocket.setEncoding('UTF8');
-
-          clientSocket.on('data', data => {
-            cb(null, data);
-          });
-        });
-
-        expect(serverMessage).to.be.equal('Hello!');
-      }
-      finally {
-        yield P.fromCallback(cb => {
-          server.close(cb);
-        });
-      }
     }));
   });
 
@@ -419,7 +381,7 @@ describe('ForkedActor', function() {
         hello: function(from, to) {
           this.parent.send('helloReply', to, from);
         }
-      }, { mode: 'forked' });
+      }, { mode: 'remote', host: '127.0.0.1' });
 
       yield child.send('hello', 'Bob', 'Alice');
 
@@ -444,7 +406,7 @@ describe('ForkedActor', function() {
       }
 
       return rootActor
-        .createChild(TestActor, { mode: 'forked' })
+        .createChild(TestActor, { mode: 'remote', host: '127.0.0.1' })
         .then(testActor => testActor.sendAndReceive('sayHello'))
         .then(result => expect(result).to.be.equal('Hello from TestActor'));
     });
@@ -461,7 +423,7 @@ describe('ForkedActor', function() {
       };
 
       return rootActor
-        .createChild(TestActor, { mode: 'forked' })
+        .createChild(TestActor, { mode: 'remote', host: '127.0.0.1' })
         .then(testActor => testActor.sendAndReceive('sayHello'))
         .then(result => expect(result).to.be.equal('Hello from TestActor'));
     });
@@ -479,7 +441,7 @@ describe('ForkedActor', function() {
       };
 
       return rootActor
-        .createChild(TestActor, { mode: 'forked' })
+        .createChild(TestActor, { mode: 'remote', host: '127.0.0.1' })
         .then(testActor => testActor.sendAndReceive('sayHello'))
         .then(result => expect(result).to.be.equal('Hello from TestActor initialized'));
     });
@@ -503,7 +465,7 @@ describe('ForkedActor', function() {
       };
 
       return rootActor
-        .createChild(TestActor, { mode: 'forked' })
+        .createChild(TestActor, { mode: 'remote', host: '127.0.0.1' })
         .then(testActor => testActor.sendAndReceive('sayHello'))
         .then(result => expect(result).to.be.equal('Hello from TestActor'));
     });
@@ -511,13 +473,13 @@ describe('ForkedActor', function() {
     it('should support crashed actor respawn', P.coroutine(function*() {
       var dfd = P.pending();
       var localChild = yield rootActor.createChild({
-        forkedReady: () => {
+        remoteReady: () => {
           dfd.resolve();
         }
       }, { mode: 'in-memory' });
-      var forkedChild = yield localChild.createChild({
+      var remoteChild = yield localChild.createChild({
         initialize: (selfActor) => {
-          process.nextTick(() => selfActor.getParent().send('forkedReady'));
+          process.nextTick(() => selfActor.getParent().send('remoteReady'));
         },
 
         kill: () => {
@@ -525,23 +487,23 @@ describe('ForkedActor', function() {
         },
 
         ping: () => 'pong'
-      }, { mode: 'forked', onCrash: 'respawn' });
+      }, { mode: 'remote', host: '127.0.0.1', onCrash: 'respawn' });
 
       // Wait for forked actor to initialize first time.
       yield dfd.promise;
 
-      for (var i = 0; i < 3; i++) {
+      for (var i = 0; i < 2; i++) {
         // Create new promise.
         dfd = P.pending();
 
         // Kill forked actor.
-        yield forkedChild.send('kill');
+        yield remoteChild.send('kill');
 
-        // Wait for forked actor to respawn.
+        // Wait for remote actor to respawn.
         yield dfd.promise;
 
-        // Ping forked actor.
-        var resp = yield forkedChild.sendAndReceive('ping');
+        // Ping remote actor.
+        var resp = yield remoteChild.sendAndReceive('ping');
 
         expect(resp).to.be.equal('pong');
       }
@@ -549,7 +511,7 @@ describe('ForkedActor', function() {
 
     it('should be able to load an actor from a given module', function() {
       return rootActor
-        .createChild('/test-resources/actors/test-actor', { mode: 'forked' })
+        .createChild('/test-resources/actors/test-actor', { mode: 'remote', host: '127.0.0.1' })
         .then(actor => {
           expect(actor.getName()).to.be.equal('TestActor');
 
@@ -562,7 +524,7 @@ describe('ForkedActor', function() {
 
     it('should be able to load an actor from a given TypeScript module', function() {
       return rootActor
-        .createChild('/test-resources/actors/test-typescript-actor', { mode: 'forked' })
+        .createChild('/test-resources/actors/test-typescript-actor', { mode: 'remote', host: '127.0.0.1' })
         .then(actor => {
           expect(actor.getName()).to.be.equal('TestActor');
 
@@ -586,7 +548,8 @@ describe('ForkedActor', function() {
 
       // Create child actor with custom parameter.
       var childActor = yield rootActor.createChild(MyActor, {
-        mode: 'forked',
+        mode: 'remote',
+        host: '127.0.0.1',
         customParameters: { helloResponse: 'Hi there!' }
       });
 
@@ -594,83 +557,13 @@ describe('ForkedActor', function() {
 
       expect(response).to.be.equal('Hi there!');
     }));
-
-    it('should be able to pass http.Server object as custom parameter to child actor', P.coroutine(function*() {
-      var server = http.createServer();
-
-      server.listen(8888);
-
-      try {
-        yield rootActor.createChild({
-          initialize: function(selfActor) {
-            var server = selfActor.getCustomParameters().server;
-
-            // Handle HTTP requests.
-            server.on('request', (req, res) => {
-              res.writeHead(200, { 'Content-Type': 'text/plain' });
-              res.end('Hello!');
-            });
-          }
-        }, { mode: 'forked', customParameters: { server: server } });
-
-        yield request('http://127.0.0.1:8888')
-          .get('/')
-          .expect(200)
-          .then(res => {
-            expect(res.text).to.be.equal('Hello!');
-          });
-      }
-      finally {
-        yield P.fromCallback(cb => {
-          server.close(cb);
-        });
-      }
-    }));
-
-    it('should be able to pass net.Server object as custom parameter to child actor', P.coroutine(function*() {
-      var server = net.createServer();
-
-      yield P.fromCallback(cb => {
-        server.listen(8889, '127.0.0.1', cb);
-      });
-
-      try {
-        yield rootActor.createChild({
-          initialize: function(selfActor) {
-            var server = selfActor.getCustomParameters().server;
-
-            // Send hello message on connection.
-            server.on('connection', socket => {
-              socket.end('Hello!');
-            });
-          }
-        }, { mode: 'forked', customParameters: { server: server } });
-
-        var serverMessage = yield P.fromCallback(cb => {
-          var clientSocket = net.connect(8889, '127.0.0.1', (err) => {
-            if (err) return cb(err);
-          });
-
-          clientSocket.setEncoding('UTF8');
-
-          clientSocket.on('data', data => {
-            cb(null, data);
-          });
-        });
-
-        expect(serverMessage).to.be.equal('Hello!');
-      }
-      finally {
-        yield P.fromCallback(cb => {
-          server.close(cb);
-        });
-      }
-    }));
   });
 
   describe('createChildren()', function() {
     it('should create module actor children from a specified directory', P.coroutine(function*() {
-      var childActors = yield rootActor.createChildren('/test-resources/actors/child-actors', { mode: 'forked' });
+      var childActors = yield rootActor.createChildren(
+        '/test-resources/actors/child-actors',
+        { mode: 'remote', host: '127.0.0.1' });
 
       expect(childActors.length).to.be.equal(2);
 
@@ -698,7 +591,7 @@ describe('ForkedActor', function() {
               hello: function(msg) {
                 return this.parent.sendAndReceive('tellChild2', msg);
               }
-            }, { mode: 'forked' })
+            }, { mode: 'remote', host: '127.0.0.1' })
             .then(child1 => {
               // Forward 'hello' messages to this child.
               return selfActor.forwardToChild(child1, 'hello');
@@ -718,7 +611,7 @@ describe('ForkedActor', function() {
               getMailbox: function() {
                 return this.mailbox;
               }
-            }, { mode: 'forked' })
+            }, { mode: 'remote', host: '127.0.0.1' })
             .then(child2 => {
               // Forward 'tell...' and 'getMailbox' messages to this child.
               return selfActor.forwardToChild(child2, /^tell.*/, 'getMailbox');
@@ -751,14 +644,14 @@ describe('ForkedActor', function() {
             childMetric: 222
           };
         }
-      }, { name: 'Child1', mode: 'forked' });
+      }, { name: 'Child1', mode: 'remote', host: '127.0.0.1' });
       yield parent.createChild({
         metrics: function() {
           return {
             childMetric: 333
           };
         }
-      }, { name: 'Child2', mode: 'forked' });
+      }, { name: 'Child2', mode: 'remote', host: '127.0.0.1' });
 
       var metrics = yield parent.metrics();
 
