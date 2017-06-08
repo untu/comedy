@@ -3,10 +3,14 @@
   "version": "0.2.1",
   "description": "Node.js actor framework.",
   "main": "index.js",
+  "bin": {
+    "comedy-node": "./listener-node.js"
+  },
   "files": [
     "lib/",
     "index.js",
     "index.d.ts",
+    "listener-node.js",
     "LICENSE.txt",
     "README.md"
   ],
