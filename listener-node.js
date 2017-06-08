@@ -10,4 +10,4 @@ var actors = require('./index.js');
 
 var system = actors();
 
-system.listen();
+system.listen(process.argv[2], process.argv[3]);
