@@ -71,6 +71,24 @@ describe('RemoteActor', function() {
       expect(expectedErr).to.be.instanceof(Error);
     }));
 
+    it('should throw error if listener node is down', P.coroutine(function*() {
+      yield remoteSystem.destroy();
+
+      var rootActor = yield system.rootActor();
+      var error;
+
+      try {
+        yield rootActor.createChild({
+          getPid: () => process.pid
+        }, { mode: 'remote', host: '127.0.0.1' });
+      }
+      catch (err) {
+        error = err;
+      }
+
+      expect(error).to.be.an.instanceof(Error);
+    }));
+
     it('should throw error if handler threw error', function(done) {
       rootActor
         .createChild({
