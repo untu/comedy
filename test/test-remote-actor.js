@@ -554,7 +554,7 @@ describe('RemoteActor', function() {
       expect(response).to.be.equal('Hi there!');
     }));
 
-    it('should support manual cluster configuration', P.coroutine(function*() {
+    it('should support static cluster configuration', P.coroutine(function*() {
       yield P.join(system.destroy(), remoteSystem.destroy());
 
       var systemConfig0 = _.extend({}, systemConfig, {
@@ -570,7 +570,7 @@ describe('RemoteActor', function() {
 
       yield remoteSystem.listen();
 
-      var child = rootActor.createChild({
+      var child = yield rootActor.createChild({
         getPid: () => process.pid
       }, { mode: 'remote', cluster: 'test' });
 
