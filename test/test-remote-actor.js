@@ -19,20 +19,16 @@ var _ = require('underscore');
 var system;
 var rootActor;
 var remoteSystem;
+var systemConfig = {
+  test: true,
+  additionalRequires: 'ts-node/register',
+  pingTimeout: 2000
+};
 
 describe('RemoteActor', function() {
   beforeEach(function() {
-    system = actors({
-      test: true,
-      additionalRequires: 'ts-node/register',
-      pingTimeout: 2000
-    });
-
-    remoteSystem = actors({
-      test: true,
-      additionalRequires: 'ts-node/register',
-      pingTimeout: 2000
-    });
+    system = actors(systemConfig);
+    remoteSystem = actors(systemConfig);
 
     return system.rootActor().then(rootActor0 => {
       rootActor = rootActor0;
@@ -556,6 +552,32 @@ describe('RemoteActor', function() {
       var response = yield childActor.sendAndReceive('hello');
 
       expect(response).to.be.equal('Hi there!');
+    }));
+
+    it('should support manual cluster configuration', P.coroutine(function*() {
+      yield P.join(system.destroy(), remoteSystem.destroy());
+
+      var systemConfig0 = _.extend({}, systemConfig, {
+        clusters: {
+          test: ['127.0.0.1']
+        }
+      });
+
+      system = actors(systemConfig0);
+      remoteSystem = actors(systemConfig); // Listening node uses regular configuration.
+
+      var rootActor = yield system.rootActor();
+
+      yield remoteSystem.listen();
+
+      var child = rootActor.createChild({
+        getPid: () => process.pid
+      }, { mode: 'remote', cluster: 'test' });
+
+      var childPid = yield child.sendAndReceive('getPid');
+
+      expect(childPid).to.be.a.number;
+      expect(childPid).to.be.not.equal(process.pid);
     }));
   });
 
