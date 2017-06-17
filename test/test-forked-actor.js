@@ -180,7 +180,9 @@ describe('ForkedActor', function() {
         }
       }
 
-      var testSystem = actors({
+      yield system.destroy();
+
+      system = actors({
         test: true,
         marshallers: [
           {
@@ -197,7 +199,7 @@ describe('ForkedActor', function() {
         ]
       });
 
-      var rootActor = yield testSystem.rootActor();
+      var rootActor = yield system.rootActor();
       var child = yield rootActor.createChild(
         {
           sayHello: (msg) => 'Hello ' + msg.getPid()
@@ -239,12 +241,14 @@ describe('ForkedActor', function() {
         }
       }
 
-      var testSystem = actors({
+      yield system.destroy();
+
+      system = actors({
         test: true,
         marshallers: [TestMessageClassMarshaller]
       });
 
-      var rootActor = yield testSystem.rootActor();
+      var rootActor = yield system.rootActor();
       var child = yield rootActor.createChild(
         {
           sayHello: (msg) => 'Hello ' + msg.getPid()
@@ -271,12 +275,14 @@ describe('ForkedActor', function() {
         }
       }
 
-      var testSystem = actors({
+      yield system.destroy();
+
+      system = actors({
         test: true,
         marshallers: ['/test-resources/actors/test-message-class-marshaller']
       });
 
-      var rootActor = yield testSystem.rootActor();
+      var rootActor = yield system.rootActor();
       var child = yield rootActor.createChild(
         {
           sayHello: (msg) => 'Hello ' + msg.getPid()
@@ -313,12 +319,14 @@ describe('ForkedActor', function() {
         }
       }
 
-      var testSystem = actors({
+      yield system.destroy();
+
+      system = actors({
         test: true,
         marshallers: ['/test-resources/actors/test-message-class-marshaller']
       });
 
-      var rootActor = yield testSystem.rootActor();
+      var rootActor = yield system.rootActor();
       var child = yield rootActor.createChild(
         {
           sayHello: (msg, from) => `Hello ${msg.getPid()} from ${from}`
@@ -376,20 +384,30 @@ describe('ForkedActor', function() {
             server.on('connection', socket => {
               socket.end('Hello!');
             });
+
+            this.server = server;
+          },
+
+          destroy: function() {
+            return require('bluebird').fromCallback(cb => {
+              this.server.close(cb);
+            });
           }
         }, { mode: 'forked' });
 
         yield child.sendAndReceive('setServer', server);
 
         var serverMessage = yield P.fromCallback(cb => {
-          var clientSocket = net.connect(8889, '127.0.0.1', (err) => {
-            if (err) return cb(err);
-          });
+          var clientSocket = new net.Socket();
 
           clientSocket.setEncoding('UTF8');
 
           clientSocket.on('data', data => {
             cb(null, data);
+          });
+
+          clientSocket.connect(8889, '127.0.0.1', (err) => {
+            if (err) return cb(err);
           });
         });
 
@@ -647,14 +665,16 @@ describe('ForkedActor', function() {
         }, { mode: 'forked', customParameters: { server: server } });
 
         var serverMessage = yield P.fromCallback(cb => {
-          var clientSocket = net.connect(8889, '127.0.0.1', (err) => {
-            if (err) return cb(err);
-          });
+          var clientSocket = new net.Socket();
 
           clientSocket.setEncoding('UTF8');
 
           clientSocket.on('data', data => {
             cb(null, data);
+          });
+
+          clientSocket.connect(8889, '127.0.0.1', (err) => {
+            if (err) return cb(err);
           });
         });
 

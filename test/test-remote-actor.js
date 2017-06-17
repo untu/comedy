@@ -228,7 +228,9 @@ describe('RemoteActor', function() {
         }
       }
 
-      var testSystem = actors({
+      yield system.destroy();
+
+      system = actors({
         test: true,
         marshallers: [
           {
@@ -245,7 +247,7 @@ describe('RemoteActor', function() {
         ]
       });
 
-      var rootActor = yield testSystem.rootActor();
+      var rootActor = yield system.rootActor();
       var child = yield rootActor.createChild(
         {
           sayHello: (msg) => 'Hello ' + msg.getPid()
@@ -287,12 +289,14 @@ describe('RemoteActor', function() {
         }
       }
 
-      var testSystem = actors({
+      yield system.destroy();
+
+      system = actors({
         test: true,
         marshallers: [TestMessageClassMarshaller]
       });
 
-      var rootActor = yield testSystem.rootActor();
+      var rootActor = yield system.rootActor();
       var child = yield rootActor.createChild(
         {
           sayHello: (msg) => 'Hello ' + msg.getPid()
@@ -319,12 +323,14 @@ describe('RemoteActor', function() {
         }
       }
 
-      var testSystem = actors({
+      yield system.destroy();
+
+      system = actors({
         test: true,
         marshallers: ['/test-resources/actors/test-message-class-marshaller']
       });
 
-      var rootActor = yield testSystem.rootActor();
+      var rootActor = yield system.rootActor();
       var child = yield rootActor.createChild(
         {
           sayHello: (msg) => 'Hello ' + msg.getPid()
@@ -361,12 +367,14 @@ describe('RemoteActor', function() {
         }
       }
 
-      var testSystem = actors({
+      yield system.destroy();
+
+      system = actors({
         test: true,
         marshallers: ['/test-resources/actors/test-message-class-marshaller']
       });
 
-      var rootActor = yield testSystem.rootActor();
+      var rootActor = yield system.rootActor();
       var child = yield rootActor.createChild(
         {
           sayHello: (msg, from) => `Hello ${msg.getPid()} from ${from}`
