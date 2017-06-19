@@ -18,6 +18,7 @@ single host (by spawning sub-processes) or even to multiple hosts in your networ
   * [Programmatic configuration](#programmatic-configuration)
   * [Using configuration file](#using-configuration-file)
   * [Scaling to multiple instances](#scaling-to-multiple-instances)
+  * [Remote Actors](#remote-actors)
 - [Actor Lifecycle](#actor-lifecycle)
   * [initialize() lifecycle hook](#initialize-lifecycle-hook)
   * [destroy() lifecycle hook](#destroy-lifecycle-hook)
@@ -264,6 +265,7 @@ actorSystem
  // ...
  .then(rootActor => rootActor.createChild(MyActor, { mode: 'in-memory' }))
  // ...
+ .finally(() => actorSystem.destroy());
 ```
  
     Actor replied: Hello to 19585 from 19585!
