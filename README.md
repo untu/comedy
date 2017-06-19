@@ -422,8 +422,8 @@ actorSystem
 ```
 
 We have only done one tiny modification: changed child actor mode from "forked" to "remote" and specified
-a `host` parameter, that is mandatory to remote mode. The remote mode and host parameter can also be specified
-using actors.json configuration file.
+a `host` parameter, that is mandatory for remote mode. The remote mode and host parameters can also be specified
+using `actors.json` configuration file.
 
 Now let's run our new example. What we get is:
 
@@ -445,10 +445,9 @@ The error was thrown, because we need one more thing to be able to launch remote
 to launch a special Comedy listening node on this machine. To do this, we run the following commands on the target
 machine:
 
+```
 $ npm install comedy
 $ npm run comedy-node
-
-```
 Mon Jun 12 2017 16:56:07 GMT+0300 (MSK) - info: Listening on :::6161
 ```
 
