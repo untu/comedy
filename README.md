@@ -451,6 +451,8 @@ $ npm run comedy-node
 Mon Jun 12 2017 16:56:07 GMT+0300 (MSK) - info: Listening on :::6161
 ```
 
+The last message tells us that the listener node is successfully launched and listening on default Comedy port `6161`.
+
 After running example again we get:
 
 ```
@@ -458,6 +460,8 @@ Mon Jun 12 2017 16:56:14 GMT+0300 (MSK) - info: Didn't find (or couldn't load) d
 Mon Jun 12 2017 16:56:14 GMT+0300 (MSK) - info: Resulting actor configuration: {}
 Actor replied: Hello to 8378 from 8391!
 ```
+
+This means our remote actor successfully replied to our local actor from remote machine.
 
 ## Actor Lifecycle
 
