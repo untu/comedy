@@ -343,31 +343,37 @@ describe('ForkedActor', function() {
 
       server.listen(8888);
 
-      try {
-        var child = yield rootActor.createChild({
-          setServer: function(server) {
-            // Handle HTTP requests.
-            server.on('request', (req, res) => {
-              res.writeHead(200, { 'Content-Type': 'text/plain' });
-              res.end('Hello!');
-            });
-          }
-        }, { mode: 'forked' });
-
-        yield child.sendAndReceive('setServer', server);
-
-        yield request('http://127.0.0.1:8888')
-          .get('/')
-          .expect(200)
-          .then(res => {
-            expect(res.text).to.be.equal('Hello!');
+      var child = yield rootActor.createChild({
+        setServer: function(server) {
+          // Handle HTTP requests.
+          server.on('request', (req, res) => {
+            res.writeHead(200, { 'Content-Type': 'text/plain' });
+            res.end('Hello!');
           });
-      }
-      finally {
-        yield P.fromCallback(cb => {
-          server.close(cb);
+
+          this.server = server;
+        },
+
+        destroy: function() {
+          return require('bluebird').fromCallback(cb => {
+            this.server.close(cb);
+          });
+        }
+      }, { mode: 'forked' });
+
+      yield child.sendAndReceive('setServer', server);
+
+      // Close server in this process to avoid receiving connections locally.
+      yield P.fromCallback(cb => {
+        server.close(cb);
+      });
+
+      yield request('http://127.0.0.1:8888')
+        .get('/')
+        .expect(200)
+        .then(res => {
+          expect(res.text).to.be.equal('Hello!');
         });
-      }
     }));
 
     it('should support net.Server object transfer', P.coroutine(function*() {
@@ -377,47 +383,45 @@ describe('ForkedActor', function() {
         server.listen(8889, '127.0.0.1', cb);
       });
 
-      try {
-        var child = yield rootActor.createChild({
-          setServer: function(server) {
-            // Send hello message on connection.
-            server.on('connection', socket => {
-              socket.end('Hello!');
-            });
-
-            this.server = server;
-          },
-
-          destroy: function() {
-            return require('bluebird').fromCallback(cb => {
-              this.server.close(cb);
-            });
-          }
-        }, { mode: 'forked' });
-
-        yield child.sendAndReceive('setServer', server);
-
-        var serverMessage = yield P.fromCallback(cb => {
-          var clientSocket = new net.Socket();
-
-          clientSocket.setEncoding('UTF8');
-
-          clientSocket.on('data', data => {
-            cb(null, data);
+      var child = yield rootActor.createChild({
+        setServer: function(server) {
+          // Send hello message on connection.
+          server.on('connection', socket => {
+            socket.end('Hello!');
           });
 
-          clientSocket.connect(8889, '127.0.0.1', (err) => {
-            if (err) return cb(err);
+          this.server = server;
+        },
+
+        destroy: function() {
+          return require('bluebird').fromCallback(cb => {
+            this.server.close(cb);
           });
+        }
+      }, { mode: 'forked' });
+
+      yield child.sendAndReceive('setServer', server);
+
+      // Close server in this process to avoid receiving connections locally.
+      yield P.fromCallback(cb => {
+        server.close(cb);
+      });
+
+      var serverMessage = yield P.fromCallback(cb => {
+        var clientSocket = new net.Socket();
+
+        clientSocket.setEncoding('UTF8');
+
+        clientSocket.on('data', data => {
+          cb(null, data);
         });
 
-        expect(serverMessage).to.be.equal('Hello!');
-      }
-      finally {
-        yield P.fromCallback(cb => {
-          server.close(cb);
+        clientSocket.connect(8889, '127.0.0.1', (err) => {
+          if (err) return cb(err);
         });
-      }
+      });
+
+      expect(serverMessage).to.be.equal('Hello!');
     }));
   });
 
@@ -618,31 +622,35 @@ describe('ForkedActor', function() {
 
       server.listen(8888);
 
-      try {
-        yield rootActor.createChild({
-          initialize: function(selfActor) {
-            var server = selfActor.getCustomParameters().server;
+      yield rootActor.createChild({
+        initialize: function(selfActor) {
+          this.server = selfActor.getCustomParameters().server;
 
-            // Handle HTTP requests.
-            server.on('request', (req, res) => {
-              res.writeHead(200, { 'Content-Type': 'text/plain' });
-              res.end('Hello!');
-            });
-          }
-        }, { mode: 'forked', customParameters: { server: server } });
-
-        yield request('http://127.0.0.1:8888')
-          .get('/')
-          .expect(200)
-          .then(res => {
-            expect(res.text).to.be.equal('Hello!');
+          // Handle HTTP requests.
+          this.server.on('request', (req, res) => {
+            res.writeHead(200, { 'Content-Type': 'text/plain' });
+            res.end('Hello!');
           });
-      }
-      finally {
-        yield P.fromCallback(cb => {
-          server.close(cb);
+        },
+
+        destroy: function() {
+          return require('bluebird').fromCallback(cb => {
+            this.server.close(cb);
+          });
+        }
+      }, { mode: 'forked', customParameters: { server: server } });
+
+      // Close server in this process to avoid receiving connections locally.
+      yield P.fromCallback(cb => {
+        server.close(cb);
+      });
+
+      yield request('http://127.0.0.1:8888')
+        .get('/')
+        .expect(200)
+        .then(res => {
+          expect(res.text).to.be.equal('Hello!');
         });
-      }
     }));
 
     it('should be able to pass net.Server object as custom parameter to child actor', P.coroutine(function*() {
@@ -652,39 +660,43 @@ describe('ForkedActor', function() {
         server.listen(8889, '127.0.0.1', cb);
       });
 
-      try {
-        yield rootActor.createChild({
-          initialize: function(selfActor) {
-            var server = selfActor.getCustomParameters().server;
+      yield rootActor.createChild({
+        initialize: function(selfActor) {
+          this.server = selfActor.getCustomParameters().server;
 
-            // Send hello message on connection.
-            server.on('connection', socket => {
-              socket.end('Hello!');
-            });
-          }
-        }, { mode: 'forked', customParameters: { server: server } });
-
-        var serverMessage = yield P.fromCallback(cb => {
-          var clientSocket = new net.Socket();
-
-          clientSocket.setEncoding('UTF8');
-
-          clientSocket.on('data', data => {
-            cb(null, data);
+          // Send hello message on connection.
+          this.server.on('connection', socket => {
+            socket.end('Hello!');
           });
+        },
 
-          clientSocket.connect(8889, '127.0.0.1', (err) => {
-            if (err) return cb(err);
+        destroy: function() {
+          return require('bluebird').fromCallback(cb => {
+            this.server.close(cb);
           });
+        }
+      }, { mode: 'forked', customParameters: { server: server } });
+
+      // Close server in this process to avoid receiving connections locally.
+      yield P.fromCallback(cb => {
+        server.close(cb);
+      });
+
+      var serverMessage = yield P.fromCallback(cb => {
+        var clientSocket = new net.Socket();
+
+        clientSocket.setEncoding('UTF8');
+
+        clientSocket.on('data', data => {
+          cb(null, data);
         });
 
-        expect(serverMessage).to.be.equal('Hello!');
-      }
-      finally {
-        yield P.fromCallback(cb => {
-          server.close(cb);
+        clientSocket.connect(8889, '127.0.0.1', (err) => {
+          if (err) return cb(err);
         });
-      }
+      });
+
+      expect(serverMessage).to.be.equal('Hello!');
     }));
   });
 
