@@ -15,10 +15,13 @@ var os = require('os');
 chai.use(require('chai-like'));
 
 var expect = chai.expect;
+var testSystem;
 
 describe('Actor configuration', function() {
+  afterEach(() => testSystem && testSystem.destroy());
+
   it('should properly configure actors in local process', P.coroutine(function*() {
-    var testSystem = actors({
+    testSystem = actors({
       config: {
         testRoot: {
           mode: 'in-memory'
@@ -105,7 +108,7 @@ describe('Actor configuration', function() {
   }));
 
   it('should properly configure actors in forked process', P.coroutine(function*() {
-    var testSystem = actors({
+    testSystem = actors({
       config: {
         testRoot: {
           mode: 'forked'

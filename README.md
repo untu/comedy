@@ -18,6 +18,7 @@ single host (by spawning sub-processes) or even to multiple hosts in your networ
   * [Programmatic configuration](#programmatic-configuration)
   * [Using configuration file](#using-configuration-file)
   * [Scaling to multiple instances](#scaling-to-multiple-instances)
+  * [Remote Actors](#remote-actors)
 - [Actor Lifecycle](#actor-lifecycle)
   * [initialize() lifecycle hook](#initialize-lifecycle-hook)
   * [destroy() lifecycle hook](#destroy-lifecycle-hook)
@@ -174,8 +175,8 @@ to the project root (a folder where the `package.json` file is).
 ##### Important note about code transfer
 
 Though module-defined actor may seem like a mere shortcut for specifying a direct class
-reference, it has a subtle difference in case of creating forked actors (separate-process
-actors, see below), that you should be aware of. That is: when you create a forked
+reference, it has a subtle difference in case of creating forked or remote actors (separate-process
+actors, see below), that you should be aware of. That is: when you create a forked/remote
 (separate-process) actor with class-defined behaviour, Comedy serializes the code of your
 class definition and passes it to a child actor process, where it is being compiled. This
 means that you cannot reference external variables (such as module imports) from your class,
@@ -194,9 +195,9 @@ simple and self-contained and you don't want to bother creating a separate file 
 ## Scaling
 
 The whole point of actors is the ability to scale on demand. You can turn any actor to a standalone
-process and let it utilize additional CPU core. This is done by just using a configuration property,
-which can be specified both programmaticaly and using a configuration file. Let's see the programmatic
-example first.
+process and let it utilize additional CPU core on either local or remote machine. This is done by
+just using a configuration property, which can be specified both programmaticaly and using a
+configuration file. Let's see the programmatic example first.
 
 ### Programmatic configuration
 
@@ -264,6 +265,7 @@ actorSystem
  // ...
  .then(rootActor => rootActor.createChild(MyActor, { mode: 'in-memory' }))
  // ...
+ .finally(() => actorSystem.destroy());
 ```
  
     Actor replied: Hello to 19585 from 19585!
@@ -375,6 +377,91 @@ The `clusterSize` configuration property can be as well used in JSON configurati
   }
 }
 ```
+
+### Remote Actors
+
+In the examples above we used "forked" mode to spawn child processes and utilize additional CPU cores on local
+machine. But Comedy won't be a full-fledged actor framework without remoting capability. Using "remote" mode,
+you can launch an actor in a separate process on the host of your choice.
+
+Let's take our example with "forked" mode and just change the mode to "remote":
+
+```javascript
+var actors = require('comedy');
+
+/**
+ * Actor definition class.
+ */
+class MyActor {
+  sayHello(to) {
+    // Reply with a message, containing self PID.
+    return `Hello to ${to} from ${process.pid}!`;
+  }
+}
+
+// Create an actor system.
+var actorSystem = actors();
+
+actorSystem
+  // Get a root actor reference.
+  .rootActor()
+  // Create a class-defined child actor, that is run on a remote machine (remote mode).
+  .then(rootActor => rootActor.createChild(MyActor, { mode: 'remote', host: '192.168.33.20' }))
+  // Send a message to our remote actor with a self process PID.
+  .then(myActor => myActor.sendAndReceive('sayHello', process.pid))
+  .then(reply => {
+    // Output result.
+    console.log(`Actor replied: ${reply}`);
+  })
+  // Log errors.
+  .catch(err => {
+    console.error(err);
+  })
+  // Destroy the system, killing all actor processes.
+  .finally(() => actorSystem.destroy());
+```
+
+We have only done one tiny modification: changed child actor mode from "forked" to "remote" and specified
+a `host` parameter, that is mandatory for remote mode. The remote mode and host parameters can also be specified
+using `actors.json` configuration file.
+
+Now let's run our new example. What we get is:
+
+```
+Sun Jun 11 2017 22:00:43 GMT+0300 (MSK) - info: Didn't find (or couldn't load) default configuration file /home/weekens/workspace/comedy/actors.json.
+Sun Jun 11 2017 22:00:43 GMT+0300 (MSK) - info: Resulting actor configuration: {}
+{ Error: connect EHOSTUNREACH 192.168.33.20:6161
+    at Object.exports._errnoException (util.js:1018:11)
+    at exports._exceptionWithHostPort (util.js:1041:20)
+    at TCPConnectWrap.afterConnect [as oncomplete] (net.js:1086:14)
+  code: 'EHOSTUNREACH',
+  errno: 'EHOSTUNREACH',
+  syscall: 'connect',
+  address: '192.168.33.20',
+  port: 6161 }
+```
+
+The error was thrown, because we need one more thing to be able to launch remote actor on 192.168.33.20: we need
+to launch a special Comedy listening node on this machine. To do this, we run the following commands on the target
+machine:
+
+```
+$ npm install comedy
+$ npm run comedy-node
+Mon Jun 12 2017 16:56:07 GMT+0300 (MSK) - info: Listening on :::6161
+```
+
+The last message tells us that the listener node is successfully launched and listening on default Comedy port `6161`.
+
+After running example again we get:
+
+```
+Mon Jun 12 2017 16:56:14 GMT+0300 (MSK) - info: Didn't find (or couldn't load) default configuration file /home/weekens/workspace/comedy/actors.json.
+Mon Jun 12 2017 16:56:14 GMT+0300 (MSK) - info: Resulting actor configuration: {}
+Actor replied: Hello to 8378 from 8391!
+```
+
+This means our remote actor successfully replied to our local actor from remote machine.
 
 ## Actor Lifecycle
 
