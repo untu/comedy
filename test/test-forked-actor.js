@@ -423,6 +423,34 @@ describe('ForkedActor', function() {
 
       expect(serverMessage).to.be.equal('Hello!');
     }));
+
+    it('should be able to pass actor references', P.coroutine(function*() {
+      var rootActor = yield system.rootActor();
+      var localCounter = 0;
+      var localChild = yield rootActor.createChild({
+        tell: msg => {
+          localCounter++;
+
+          return msg.toUpperCase();
+        }
+      });
+      var forkedChild = yield rootActor.createChild({
+        setLocal: function(actor) {
+          this.localActor = actor;
+        },
+
+        tellLocal: function(msg) {
+          return this.localActor.sendAndReceive('tell', msg);
+        }
+      }, { mode: 'forked' });
+
+      yield forkedChild.sendAndReceive('setLocal', localChild);
+
+      var result = yield forkedChild.sendAndReceive('tellLocal', 'Hello!');
+
+      expect(result).to.be.equal('HELLO!');
+      expect(localCounter).to.be.equal(1);
+    }));
   });
 
   describe('send()', function() {
