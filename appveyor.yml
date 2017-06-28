@@ -3,7 +3,6 @@ environment:
     - nodejs_version: '8'
 install:
   - ps: Install-Product node $env:nodejs_version
-  - npm cache clear
   - npm i npm@latest -g
   - set PATH=%APPDATA%\npm;%PATH%
   - set CI=true
