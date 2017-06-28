@@ -12,14 +12,12 @@
 var actors = require('../index');
 var tu = require('../lib/utils/test.js');
 var expect = require('chai').expect;
-var fs = require('fs');
 var http = require('http');
 var net = require('net');
 var request = require('supertest');
+var isRunning = require('is-running');
 var P = require('bluebird');
 var _ = require('underscore');
-
-P.promisifyAll(fs);
 
 var system;
 var rootActor;
@@ -73,9 +71,7 @@ describe('ForkedActor', function() {
       expect(forkedPid).to.be.not.equal(process.pid);
 
       // Check that child process is running.
-      var psExists = fs.existsSync('/proc/' + forkedPid);
-
-      expect(psExists).to.be.equal(true);
+      expect(isRunning(forkedPid)).to.be.equal(true);
 
       // Destroy forked actor.
       yield forkedChild.destroy();
@@ -86,7 +82,7 @@ describe('ForkedActor', function() {
       expect(expectedErr).to.be.instanceof(Error);
 
       // The process should be stopped eventually.
-      yield tu.waitForCondition(() => !fs.existsSync('/proc/' + forkedPid));
+      yield tu.waitForCondition(() => !isRunning(forkedPid));
     }));
 
     it('should be able to import modules in forked process', P.coroutine(function*() {

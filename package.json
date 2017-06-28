@@ -45,6 +45,7 @@
     "grunt-cli": "^1.2.0",
     "grunt-eslint": "^19.0.0",
     "grunt-tslint": "^3.2.1",
+    "is-running": "^2.1.0",
     "istanbul": "^0.4.5",
     "load-grunt-tasks": "^3.5.2",
     "markdown-toc": "^1.1.0",
