@@ -1,7 +1,7 @@
 # Comedy
 
 [![Build Status](https://travis-ci.org/untu/comedy.svg?branch=master)](https://travis-ci.org/untu/comedy)
-[![Windows Tests](https://ci.appveyor.com/api/projects/status/m1vorqhe2yk09h5t?svg=true)](https://ci.appveyor.com/project/weekens/comedy)
+[![Windows Tests](https://ci.appveyor.com/api/projects/status/m1vorqhe2yk09h5t?svg=true&label=Windows%20Tests)](https://ci.appveyor.com/project/weekens/comedy)
 [![codecov](https://codecov.io/gh/untu/comedy/branch/master/graph/badge.svg)](https://codecov.io/gh/untu/comedy)
 
 Comedy is a Node.js actor framework.
