@@ -711,5 +711,40 @@ describe('RemoteActor', function() {
         }
       });
     }));
+
+    it('should not collect metrics from destroyed actors', P.coroutine(function*() {
+      var parent = yield rootActor.createChild({
+        metrics: function() {
+          return {
+            parentMetric: 111
+          };
+        }
+      });
+      yield parent.createChild({
+        metrics: function() {
+          return {
+            childMetric: 222
+          };
+        }
+      }, { name: 'Child1', mode: 'remote', host: '127.0.0.1' });
+      var child2 = yield parent.createChild({
+        metrics: function() {
+          return {
+            childMetric: 333
+          };
+        }
+      }, { name: 'Child2', mode: 'remote', host: '127.0.0.1' });
+
+      yield child2.destroy();
+
+      var metrics = yield parent.metrics();
+
+      expect(metrics).to.be.deep.equal({
+        parentMetric: 111,
+        Child1: {
+          childMetric: 222
+        }
+      });
+    }));
   });
 });
