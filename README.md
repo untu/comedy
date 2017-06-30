@@ -1,7 +1,7 @@
 # Comedy
 
 [![Build Status](https://travis-ci.org/untu/comedy.svg?branch=master)](https://travis-ci.org/untu/comedy)
-[![Windows Tests](https://ci.appveyor.com/api/projects/status/m1vorqhe2yk09h5t?svg=true&passingText=Windows%20Tests%20OK&failingText=Windows%20Tests%20FAILG&pendingText=Windows%20Tests%20pending)](https://ci.appveyor.com/project/weekens/comedy)
+[![Windows Tests](https://ci.appveyor.com/api/projects/status/m1vorqhe2yk09h5t?svg=true&passingText=Windows%20Tests%20OK&failingText=Windows%20Tests%20FAIL&pendingText=Windows%20Tests%20pending)](https://ci.appveyor.com/project/weekens/comedy)
 [![codecov](https://codecov.io/gh/untu/comedy/branch/master/graph/badge.svg)](https://codecov.io/gh/untu/comedy)
 
 Comedy is a Node.js actor framework.
@@ -30,7 +30,7 @@ single host (by spawning sub-processes) or even to multiple hosts in your networ
   * [Setting the log level](#setting-the-log-level)
 - [Resource Management](#resource-management)
 - [Actor Metrics](#actor-metrics)
-- [Message Marshalling](#message-marshalling)
+- [About](#about)
 
 <!-- tocstop -->
 
