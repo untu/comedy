@@ -1065,6 +1065,9 @@ We've received metrics for `MyActor` as well as it's child actor, though we didn
 `metrics` method, metric aggregation happens automatically, so each actor only needs to output it's own metrics
 from `metrics` message handler.
 
-## Message Marshalling
+## About
 
-To be continued...
+Comedy is developed as a part of [SAYMON](http://www.saymon.info/en-version/) project and is actively used in all
+SAYMON production installations.
+
+Comedy was initially inspired by [Drama](https://github.com/stagas/drama) framework.
