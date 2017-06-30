@@ -451,7 +451,7 @@ machine:
 
 ```
 $ npm install comedy
-$ npm run comedy-node
+$ node_modules/.bin/comedy-node
 Mon Jun 12 2017 16:56:07 GMT+0300 (MSK) - info: Listening on :::6161
 ```
 
