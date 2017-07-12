@@ -12,7 +12,7 @@
 var actors = require('../index');
 var tu = require('../lib/utils/test.js');
 var expect = require('chai').expect;
-var fs = require('fs');
+var isRunning = require('is-running');
 var P = require('bluebird');
 var _ = require('underscore');
 
@@ -121,9 +121,7 @@ describe('RemoteActor', function() {
       expect(remotePid).to.be.not.equal(process.pid);
 
       // Check that remote process is running.
-      var psExists = fs.existsSync('/proc/' + remotePid);
-
-      expect(psExists).to.be.equal(true);
+      expect(isRunning(remotePid)).to.be.equal(true);
 
       // Destroy remote actor.
       yield remoteChild.destroy();
@@ -134,7 +132,7 @@ describe('RemoteActor', function() {
       expect(expectedErr).to.be.instanceof(Error);
 
       // The process should be stopped eventually.
-      yield tu.waitForCondition(() => !fs.existsSync('/proc/' + remotePid));
+      yield tu.waitForCondition(() => !isRunning(remotePid));
     }));
 
     it('should be able to import modules in remote process', P.coroutine(function*() {
@@ -710,6 +708,41 @@ describe('RemoteActor', function() {
         },
         Child2: {
           childMetric: 333
+        }
+      });
+    }));
+
+    it('should not collect metrics from destroyed actors', P.coroutine(function*() {
+      var parent = yield rootActor.createChild({
+        metrics: function() {
+          return {
+            parentMetric: 111
+          };
+        }
+      });
+      yield parent.createChild({
+        metrics: function() {
+          return {
+            childMetric: 222
+          };
+        }
+      }, { name: 'Child1', mode: 'remote', host: '127.0.0.1' });
+      var child2 = yield parent.createChild({
+        metrics: function() {
+          return {
+            childMetric: 333
+          };
+        }
+      }, { name: 'Child2', mode: 'remote', host: '127.0.0.1' });
+
+      yield child2.destroy();
+
+      var metrics = yield parent.metrics();
+
+      expect(metrics).to.be.deep.equal({
+        parentMetric: 111,
+        Child1: {
+          childMetric: 222
         }
       });
     }));

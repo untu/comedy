@@ -1,3 +1,6 @@
+### v 1.0.1:
+- Fixed metrics on dead actors.
+
 ### v 1.0.0:
 - Added remote actor support.
 

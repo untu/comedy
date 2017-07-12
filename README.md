@@ -1,4 +1,8 @@
-# Comedy [![Build Status](https://travis-ci.org/untu/comedy.svg?branch=master)](https://travis-ci.org/untu/comedy) [![codecov](https://codecov.io/gh/untu/comedy/branch/master/graph/badge.svg)](https://codecov.io/gh/untu/comedy)
+# Comedy
+
+[![Build Status](https://travis-ci.org/untu/comedy.svg?branch=master)](https://travis-ci.org/untu/comedy)
+[![Windows Tests](https://ci.appveyor.com/api/projects/status/m1vorqhe2yk09h5t/branch/master?svg=true&passingText=Windows%20Tests%20OK&failingText=Windows%20Tests%20FAIL&pendingText=Windows%20Tests%20pending)](https://ci.appveyor.com/project/weekens/comedy)
+[![codecov](https://codecov.io/gh/untu/comedy/branch/master/graph/badge.svg)](https://codecov.io/gh/untu/comedy)
 
 Comedy is a Node.js actor framework.
 
@@ -26,7 +30,7 @@ single host (by spawning sub-processes) or even to multiple hosts in your networ
   * [Setting the log level](#setting-the-log-level)
 - [Resource Management](#resource-management)
 - [Actor Metrics](#actor-metrics)
-- [Message Marshalling](#message-marshalling)
+- [About](#about)
 
 <!-- tocstop -->
 
@@ -447,7 +451,7 @@ machine:
 
 ```
 $ npm install comedy
-$ npm run comedy-node
+$ node_modules/.bin/comedy-node
 Mon Jun 12 2017 16:56:07 GMT+0300 (MSK) - info: Listening on :::6161
 ```
 
@@ -1061,6 +1065,9 @@ We've received metrics for `MyActor` as well as it's child actor, though we didn
 `metrics` method, metric aggregation happens automatically, so each actor only needs to output it's own metrics
 from `metrics` message handler.
 
-## Message Marshalling
+## About
 
-To be continued...
+Comedy is developed as a part of [SAYMON](http://www.saymon.info/en-version/) project and is actively used in all
+SAYMON production installations.
+
+Comedy was initially inspired by [Drama](https://github.com/stagas/drama) framework.
