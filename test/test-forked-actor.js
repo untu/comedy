@@ -641,6 +641,37 @@ describe('ForkedActor', function() {
       expect(response).to.be.equal('Hi there!');
     }));
 
+    it('should be able to pass actor references through custom parameters', P.coroutine(function*() {
+      var rootActor = yield system.rootActor();
+      var localCounter = 0;
+      var localChild = yield rootActor.createChild({
+        tell: msg => {
+          localCounter++;
+
+          return msg.toUpperCase();
+        }
+      });
+      var forkedChild = yield rootActor.createChild({
+        initialize: function(selfActor) {
+          this.localActor = selfActor.getCustomParameters().localActor;
+        },
+
+        tellLocal: function(msg) {
+          return this.localActor.sendAndReceive('tell', msg);
+        }
+      }, {
+        mode: 'forked',
+        customParameters: {
+          localActor: localChild
+        }
+      });
+
+      var result = yield forkedChild.sendAndReceive('tellLocal', 'Hello!');
+
+      expect(result).to.be.equal('HELLO!');
+      expect(localCounter).to.be.equal(1);
+    }));
+
     it('should be able to pass http.Server object as custom parameter to child actor', P.coroutine(function*() {
       var server = http.createServer();
 
