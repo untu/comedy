@@ -355,7 +355,7 @@ describe('Resource injection', function() {
       }
 
       getResource() {
-        return 'depencency';
+        return 'dependency';
       }
     }
 
