@@ -344,4 +344,68 @@ describe('Resource injection', function() {
 
     expect(response).to.be.equal('Hi there!');
   }));
+
+  it('should support resource dependencies', P.coroutine(function*() {
+    /**
+     * Test resource dependency.
+     */
+    class MyResourceDependency {
+      static getName() {
+        return 'resource-dependency';
+      }
+
+      getResource() {
+        return 'depencency';
+      }
+    }
+
+    /**
+     * Test resource with dependency.
+     */
+    class MyResource {
+      static inject() {
+        return ['resource-dependency'];
+      }
+
+      static getName() {
+        return 'resource';
+      }
+
+      constructor(dependency) {
+        this.dependency = dependency;
+      }
+
+      getResource() {
+        return 'resource ' + this.dependency;
+      }
+    }
+
+    /**
+     * Test actor.
+     */
+    class MyActor {
+      static inject() {
+        return ['resource'];
+      }
+
+      constructor(resource) {
+        this.resource = resource;
+      }
+
+      getResourceValue() {
+        return this.resource;
+      }
+    }
+
+    system = actors({
+      test: true,
+      resources: [MyResourceDependency, MyResource]
+    });
+
+    var actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor));
+
+    var response = yield actor.sendAndReceive('getResourceValue');
+
+    expect(response).to.be.equal('resource dependency');
+  }));
 });
