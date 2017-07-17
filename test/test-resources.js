@@ -479,5 +479,7 @@ describe('Resource injection', function() {
       });
 
     expect(error).to.be.an.instanceof(Error);
+
+    system = undefined; // system.destroy() would cause resource dependency error.
   }));
 });
