@@ -408,4 +408,76 @@ describe('Resource injection', function() {
 
     expect(response).to.be.equal('resource dependency');
   }));
+
+  it('should properly handle cyclic resource dependencies', P.coroutine(function*() {
+    /**
+     * Test resource 1.
+     */
+    class Resource1 {
+      static inject() {
+        return ['Resource3'];
+      }
+
+      getResource() {
+        return 'Resource1';
+      }
+    }
+
+    /**
+     * Test resource 2.
+     */
+    class Resource2 {
+      static inject() {
+        return ['Resource1'];
+      }
+
+      getResource() {
+        return 'Resource2';
+      }
+    }
+
+    /**
+     * Test resource 3.
+     */
+    class Resource3 {
+      static inject() {
+        return ['Resource2'];
+      }
+
+      getResource() {
+        return 'Resource3';
+      }
+    }
+
+    /**
+     * Test actor.
+     */
+    class MyActor {
+      static inject() {
+        return ['Resource3'];
+      }
+
+      constructor(resource) {
+        this.resource = resource;
+      }
+
+      getResourceValue() {
+        return this.resource;
+      }
+    }
+
+    system = actors({
+      test: true,
+      resources: [Resource1, Resource2, Resource3]
+    });
+
+    var error;
+    yield system.rootActor()
+      .then(rootActor => rootActor.createChild(MyActor))
+      .catch(err => {
+        error = err;
+      });
+
+    expect(error).to.be.an.instanceof(Error);
+  }));
 });
