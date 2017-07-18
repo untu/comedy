@@ -383,6 +383,34 @@ describe('RemoteActor', function() {
 
       expect(result).to.be.equal(`Hello ${process.pid} from Test`);
     }));
+
+    it('should be able to pass actor references', P.coroutine(function*() {
+      var rootActor = yield system.rootActor();
+      var localCounter = 0;
+      var localChild = yield rootActor.createChild({
+        tell: msg => {
+          localCounter++;
+
+          return msg.toUpperCase();
+        }
+      });
+      var remoteChild = yield rootActor.createChild({
+        setLocal: function(actor) {
+          this.localActor = actor;
+        },
+
+        tellLocal: function(msg) {
+          return this.localActor.sendAndReceive('tell', msg);
+        }
+      }, { mode: 'remote', host: '127.0.0.1' });
+
+      yield remoteChild.sendAndReceive('setLocal', localChild);
+
+      var result = yield remoteChild.sendAndReceive('tellLocal', 'Hello!');
+
+      expect(result).to.be.equal('HELLO!');
+      expect(localCounter).to.be.equal(1);
+    }));
   });
 
   describe('send()', function() {
