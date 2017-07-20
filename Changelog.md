@@ -1,6 +1,7 @@
 ### v 1.1.0:
 - Fixed metrics on dead actors.
 - Removed context support in favour of resources.
+- Implemented actor references.
 
 ### v 1.0.0:
 - Added remote actor support.
