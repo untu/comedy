@@ -631,6 +631,38 @@ describe('RemoteActor', function() {
       expect(childPid).to.be.a.number;
       expect(childPid).to.be.not.equal(process.pid);
     }));
+
+    it('should be able to pass actor references through custom parameters', P.coroutine(function*() {
+      var rootActor = yield system.rootActor();
+      var localCounter = 0;
+      var localChild = yield rootActor.createChild({
+        tell: msg => {
+          localCounter++;
+
+          return msg.toUpperCase();
+        }
+      });
+      var remoteChild = yield rootActor.createChild({
+        initialize: function(selfActor) {
+          this.localActor = selfActor.getCustomParameters().localActor;
+        },
+
+        tellLocal: function(msg) {
+          return this.localActor.sendAndReceive('tell', msg);
+        }
+      }, {
+        mode: 'remote',
+        host: '127.0.0.1',
+        customParameters: {
+          localActor: localChild
+        }
+      });
+
+      var result = yield remoteChild.sendAndReceive('tellLocal', 'Hello!');
+
+      expect(result).to.be.equal('HELLO!');
+      expect(localCounter).to.be.equal(1);
+    }));
   });
 
   describe('createChildren()', function() {
