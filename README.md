@@ -42,7 +42,9 @@ Comedy is installed with NPM by running:
     
 After that you can use Comedy framework in your code by requiring `comedy` package.
 
-    var actors = require('comedy');
+```javascript
+var actors = require('comedy');
+```
     
 ## Quick Start
 
