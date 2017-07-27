@@ -30,6 +30,12 @@ single host (by spawning sub-processes) or even to multiple hosts in your networ
   * [Setting the log level](#setting-the-log-level)
 - [Resource Management](#resource-management)
 - [Actor Metrics](#actor-metrics)
+- [Upcoming Features](#upcoming-features)
+  * [Optimized message serialization](#optimized-message-serialization)
+  * [Hot code deployment](#hot-code-deployment)
+  * [Hot configuration change](#hot-configuration-change)
+  * [Automatic actor clustering according to load](#automatic-actor-clustering-according-to-load)
+  * [Affinity-based routing to clustered actors](#affinity-based-routing-to-clustered-actors)
 - [About](#about)
 
 <!-- tocstop -->
