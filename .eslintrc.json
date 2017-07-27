@@ -1,6 +1,5 @@
 {
   "extends": "google",
-  "installedESLint": true,
   "plugins": [
     "jsdoc"
   ],
