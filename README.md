@@ -1067,6 +1067,51 @@ We've received metrics for `MyActor` as well as it's child actor, though we didn
 `metrics` method, metric aggregation happens automatically, so each actor only needs to output it's own metrics
 from `metrics` message handler.
 
+## Upcoming Features
+
+There is a number of features planned for future Comedy releases. The below list is not a roadmap, but rather a
+vision of what would be needed in nearest time.
+
+### Optimized message serialization
+
+Currently Comedy serializes messages as plain JSON. This serialization method certainly won't give the best throughput.
+In future versions Comedy is likely to switch to a binary message format. Candidates are:
+
+- BSON
+- PSON
+- Smilie
+
+There is also an option to try message compression like Snappy or mere GZip. These solutions will be tested on existing
+benchmarks. There will also be an option for pluggable user-defined serialization.
+
+### Hot code deployment
+
+Currently, when you want to run an actor that has external module dependencies in `remote` mode, you need to ensure
+the dependent modules are installed on a remote machine.
+
+It would be more convenient if Comedy deploys these modules automatically as a part of actor initialization process.
+
+### Hot configuration change
+
+Currently, if you change something in your `actors.json` file, you need to restart your application for changes to
+take effect. A better option would be if Comedy automatically detects changes in `actors.json` and switches actor
+modes accordingly (spawns additional processes or removes unneeded ones) without application restart.
+
+### Automatic actor clustering according to load
+
+You may not know your load in advance. Manually changing cluster size for clustered actors as load changes is
+is tedious and inconvenient. Comedy could instead automatically change cluster size according to, say, actor
+metrics (a function for calculating cluster size from metrics can be specified in parameters). Thus, when your
+load increases, Comedy could automatically spawn additional actors to handle load, and when load reduces - destroy
+unneeded actors.
+
+### Affinity-based routing to clustered actors
+
+For now the only strategy used to route messages to clustered actor children is round-robin. Comedy could support
+more advanced routing, so that a message is transferred to a child that is most efficient to handle this message.
+For instance, we could pick a child that is launched near a particular database shard, where all needed data resides,
+and avoid network query to a remote shard.
+
 ## About
 
 Comedy is developed as a part of [SAYMON](http://www.saymon.info/en-version/) project and is actively used in all
