@@ -18,6 +18,10 @@ export interface Logger {
 }
 
 export interface Actor {
+  getId(): string;
+
+  getName(): string;
+
   getLog(): Logger;
 
   getParent(): Actor;
@@ -33,6 +37,12 @@ export interface Actor {
   sendAndReceive(topic: string, ...message: any[]): Promise<any>;
 
   forwardToParent(...topics: Array<string|RegExp>): void;
+
+  forwardToChild(child: Actor, ...topics: Array<string|RegExp>): void;
+
+  metrics(): Promise<Object>;
+
+  destroy(): Promise<void>;
 }
 
 export interface ActorDefinition {
