@@ -31,7 +31,8 @@ module.exports = function(grunt) {
       },
       target: [
         '**/*.ts',
-        '!**/node_modules/**'
+        '!**/node_modules/**',
+        '!typings/**'
       ]
     }
   });
