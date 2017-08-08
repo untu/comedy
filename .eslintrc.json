@@ -94,6 +94,7 @@
     "no-var": "off",
     "comma-dangle": ["error", "never"],
     "require-yield": "error",
+    "yield-star-spacing": ["warn", "after"],
     "require-await": "error",
     "no-useless-escape": "off"
   }

@@ -632,6 +632,39 @@ describe('RemoteActor', function() {
       expect(childPid).to.be.not.equal(process.pid);
     }));
 
+    it('should support clusterSize parameter in static cluster configuration', P.coroutine(function*() {
+      yield P.join(system.destroy(), remoteSystem.destroy());
+
+      var systemConfig0 = _.extend({}, systemConfig, {
+        clusters: {
+          test: ['127.0.0.1:6161', '127.0.0.1:6162']
+        }
+      });
+
+      system = actors(systemConfig0);
+      remoteSystem = actors(systemConfig); // Listening node uses regular configuration.
+      var remoteSystem2 = actors(systemConfig);
+
+      var rootActor = yield system.rootActor();
+
+      yield remoteSystem.listen(6161);
+      yield remoteSystem2.listen(6162);
+
+      try {
+        var child = yield rootActor.createChild({
+          getPid: () => process.pid
+        }, { mode: 'remote', cluster: 'test', clusterSize: 4 });
+
+        var pids = yield* _.times(8, () => child.sendAndReceive('getPid'));
+        var uniquePids = _.uniq(pids);
+
+        expect(uniquePids.length).to.be.equal(4);
+      }
+      finally {
+        yield remoteSystem2.destroy();
+      }
+    }));
+
     it('should be able to pass actor references through custom parameters', P.coroutine(function*() {
       var rootActor = yield system.rootActor();
       var localCounter = 0;
