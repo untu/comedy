@@ -655,7 +655,8 @@ describe('RemoteActor', function() {
           getPid: () => process.pid
         }, { mode: 'remote', cluster: 'test', clusterSize: 4 });
 
-        var pids = yield* _.times(8, () => child.sendAndReceive('getPid'));
+        var pidPromises = _.times(8, () => child.sendAndReceive('getPid'));
+        var pids = yield P.all(pidPromises);
         var uniquePids = _.uniq(pids);
 
         expect(uniquePids.length).to.be.equal(4);
