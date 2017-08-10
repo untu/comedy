@@ -1,3 +1,6 @@
+### v 1.1.2:
+- Added multiple host support in `"host"` parameter for remote actors.
+
 ### v 1.1.1:
 - Added clusterSize parameter support for remote actors using cluster parameter.
 
