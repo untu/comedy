@@ -666,6 +666,33 @@ describe('RemoteActor', function() {
       }
     }));
 
+    it('should support multiple hosts in "host" parameter', P.coroutine(function*() {
+      var remoteSystem2 = actors(systemConfig);
+
+      var rootActor = yield system.rootActor();
+
+      yield remoteSystem.listen(6161);
+      yield remoteSystem2.listen(6162);
+
+      try {
+        var child = yield rootActor.createChild({
+          getPid: () => process.pid
+        }, {
+          mode: 'remote',
+          host: ['127.0.0.1:6161', '127.0.0.1:6162']
+        });
+
+        var pidPromises = _.times(4, () => child.sendAndReceive('getPid'));
+        var pids = yield P.all(pidPromises);
+        var uniquePids = _.uniq(pids);
+
+        expect(uniquePids.length).to.be.equal(2);
+      }
+      finally {
+        yield remoteSystem2.destroy();
+      }
+    }));
+
     it('should be able to pass actor references through custom parameters', P.coroutine(function*() {
       var rootActor = yield system.rootActor();
       var localCounter = 0;
