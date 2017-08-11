@@ -1,3 +1,6 @@
+### v 1.1.3:
+- Fixed wrong cluster distribution in `"remote"` mode.
+
 ### v 1.1.2:
 - Added multiple host support in `"host"` parameter for remote actors.
 - Fixed Node.JS 8.3.0 compatibility bug.
