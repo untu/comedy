@@ -1,6 +1,7 @@
 ### v 1.1.2:
 - Added multiple host support in `"host"` parameter for remote actors.
 - Fixed Node.JS 8.3.0 compatibility bug.
+- Fixed unconditional remote actor pinging bug.
 
 ### v 1.1.1:
 - Added clusterSize parameter support for remote actors using cluster parameter.
