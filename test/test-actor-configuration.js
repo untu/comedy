@@ -20,93 +20,6 @@ var testSystem;
 describe('Actor configuration', function() {
   afterEach(() => testSystem && testSystem.destroy());
 
-  it('should properly configure actors in local process', P.coroutine(function*() {
-    testSystem = actors({
-      config: {
-        testRoot: {
-          mode: 'in-memory'
-        },
-        testGenOne: {
-          mode: 'in-memory',
-          clusterSize: 3
-        }
-      },
-      test: true
-    });
-
-    /**
-     * Test root actor.
-     */
-    class TestRoot {
-      /**
-       * Initializes this actor.
-       *
-       * @param {Actor} selfActor Self actor.
-       * @returns {P} Initialization promise.
-       */
-      initialize(selfActor) {
-        return selfActor.createChild({
-          name: 'testGenOne'
-        });
-      }
-    }
-
-    var rootActor = yield testSystem.rootActor();
-    yield rootActor.createChild(TestRoot);
-
-    var tree = yield rootActor.tree();
-    var hostname = os.hostname();
-
-    expect(tree).to.be.like({
-      name: 'Root',
-      location: {
-        hostname: hostname,
-        pid: process.pid
-      },
-      children: [
-        {
-          name: TestRoot.name,
-          location: {
-            hostname: hostname,
-            pid: process.pid
-          },
-          children: [
-            {
-              name: 'testGenOneRoundRobinBalancer',
-              location: {
-                hostname: hostname,
-                pid: process.pid
-              },
-              children: [
-                {
-                  name: 'testGenOne',
-                  location: {
-                    hostname: hostname,
-                    pid: process.pid
-                  }
-                },
-                {
-                  name: 'testGenOne',
-                  location: {
-                    hostname: hostname,
-                    pid: process.pid
-                  }
-                },
-                {
-                  name: 'testGenOne',
-                  location: {
-                    hostname: hostname,
-                    pid: process.pid
-                  }
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    });
-  }));
-
   it('should properly configure actors in forked process', P.coroutine(function*() {
     testSystem = actors({
       config: {
@@ -114,7 +27,7 @@ describe('Actor configuration', function() {
           mode: 'forked'
         },
         testGenOne: {
-          mode: 'in-memory',
+          mode: 'forked',
           clusterSize: 3
         }
       },
