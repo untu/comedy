@@ -29,12 +29,12 @@ describe('ClusteredActor', function() {
   });
 
   it('should properly clusterize with round robin balancing strategy', P.coroutine(function*() {
-    var childBeh = {
+    var childDef = {
       getPid: () => process.pid
     };
 
     // This should create local router and 3 sub-processes.
-    var router = yield rootActor.createChild(childBeh, { mode: 'forked', clusterSize: 3 });
+    var router = yield rootActor.createChild(childDef, { mode: 'forked', clusterSize: 3 });
 
     var promises = _.times(6, () => router.sendAndReceive('getPid'));
     var results = yield P.all(promises);
@@ -115,5 +115,16 @@ describe('ClusteredActor', function() {
       { count: 3 }
     ]);
     expect(metrics.summary).to.be.deep.equal({ count: 3 });
+  }));
+
+  it('should return clustered actor mode from actor object', P.coroutine(function*() {
+    var childDef = {
+      getPid: () => process.pid
+    };
+
+    // This should create local router and 3 sub-processes.
+    var router = yield rootActor.createChild(childDef, { mode: 'forked', clusterSize: 3 });
+
+    expect(router.getMode()).to.be.equal('forked');
   }));
 });
