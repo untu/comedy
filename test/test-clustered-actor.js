@@ -127,4 +127,31 @@ describe('ClusteredActor', function() {
 
     expect(router.getMode()).to.be.equal('forked');
   }));
+
+  it('should be able to broadcast messages to all clustered actors', P.coroutine(function*() {
+    /**
+     * Test child definition.
+     */
+    class Child {
+      constructor() {
+        this.count = 0;
+      }
+
+      increment() {
+        this.count++;
+      }
+
+      get() {
+        return this.count;
+      }
+    }
+
+    var router = yield rootActor.createChild(Child, { mode: 'forked', clusterSize: 3 });
+
+    yield router.broadcast('increment');
+
+    var results = yield router.broadcastAndReceive('get');
+
+    expect(results).to.have.members([1, 1, 1]);
+  }));
 });
