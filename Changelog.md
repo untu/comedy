@@ -1,3 +1,7 @@
+### v 1.2.3:
+- Added `Actor.getMode()` method.
+- Added `Actor.broadcast()` and `Actor.broadcastAndReceive()` methods.
+
 ### v 1.1.3:
 - Fixed wrong cluster distribution in `"remote"` mode.
 
