@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Untu, Inc.
+ * Copyright (c) 2016-2017 Untu, Inc.
  * This code is licensed under Eclipse Public License - v 1.0.
  * The full license text can be found in LICENSE.txt file and
  * on the Eclipse official site (https://www.eclipse.org/legal/epl-v10.html).
@@ -29,12 +29,12 @@ describe('ClusteredActor', function() {
   });
 
   it('should properly clusterize with round robin balancing strategy', P.coroutine(function*() {
-    var childBeh = {
+    var childDef = {
       getPid: () => process.pid
     };
 
     // This should create local router and 3 sub-processes.
-    var router = yield rootActor.createChild(childBeh, { mode: 'forked', clusterSize: 3 });
+    var router = yield rootActor.createChild(childDef, { mode: 'forked', clusterSize: 3 });
 
     var promises = _.times(6, () => router.sendAndReceive('getPid'));
     var results = yield P.all(promises);
@@ -115,5 +115,43 @@ describe('ClusteredActor', function() {
       { count: 3 }
     ]);
     expect(metrics.summary).to.be.deep.equal({ count: 3 });
+  }));
+
+  it('should return clustered actor mode from actor object', P.coroutine(function*() {
+    var childDef = {
+      getPid: () => process.pid
+    };
+
+    // This should create local router and 3 sub-processes.
+    var router = yield rootActor.createChild(childDef, { mode: 'forked', clusterSize: 3 });
+
+    expect(router.getMode()).to.be.equal('forked');
+  }));
+
+  it('should be able to broadcast messages to all clustered actors', P.coroutine(function*() {
+    /**
+     * Test child definition.
+     */
+    class Child {
+      constructor() {
+        this.count = 0;
+      }
+
+      increment() {
+        this.count++;
+      }
+
+      get() {
+        return this.count;
+      }
+    }
+
+    var router = yield rootActor.createChild(Child, { mode: 'forked', clusterSize: 3 });
+
+    yield router.broadcast('increment');
+
+    var results = yield router.broadcastAndReceive('get');
+
+    expect(results).to.have.members([1, 1, 1]);
   }));
 });

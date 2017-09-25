@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Untu, Inc.
+ * Copyright (c) 2016-2017 Untu, Inc.
  * This code is licensed under Eclipse Public License - v 1.0.
  * The full license text can be found in LICENSE.txt file and
  * on the Eclipse official site (https://www.eclipse.org/legal/epl-v10.html).
@@ -24,6 +24,10 @@ export interface ParentActor {
 }
 
 export interface Actor {
+  getId(): string;
+
+  getName(): string;
+
   getLog(): Logger;
 
   getParent(): ParentActor;
@@ -32,9 +36,19 @@ export interface Actor {
 
   createChild(behaviour: ActorDefinition|Object, options?: Object): Promise<Actor>;
 
+  createChildren(modulePath: string): Promise<Actor[]>;
+
   send(topic: string, ...message: any[]): Promise<void>;
 
   sendAndReceive(topic: string, ...message: any[]): Promise<any>;
+
+  forwardToParent(...topics: Array<string|RegExp>): void;
+
+  forwardToChild(child: Actor, ...topics: Array<string|RegExp>): void;
+
+  metrics(): Promise<Object>;
+
+  destroy(): Promise<void>;
 }
 
 export interface ActorDefinition {

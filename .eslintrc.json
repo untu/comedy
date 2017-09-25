@@ -1,6 +1,5 @@
 {
   "extends": "google",
-  "installedESLint": true,
   "plugins": [
     "jsdoc"
   ],
@@ -11,7 +10,19 @@
     "es6": true,
     "amd": true
   },
+  "parserOptions": {
+    "ecmaVersion": 8
+  },
   "rules": {
+    "indent": [
+      "warn",
+      2,
+      {
+        "FunctionDeclaration": { "parameters": "first" },
+        "FunctionExpression": { "parameters": "first" },
+        "SwitchCase": 1
+      }
+    ],
     "max-len": ["warn", {
       "code": 120,
       "tabWidth": 2,
@@ -54,6 +65,13 @@
       "warn",
       "always"
     ],
+    "padding-line-between-statements": [
+      "warn",
+      { "blankLine": "always", "prev": "*", "next": "return" },
+      { "blankLine": "always", "prev": "*", "next": "if" },
+      { "blankLine": "always", "prev": "*", "next": "for" },
+      { "blankLine": "always", "prev": "*", "next": "while" }
+    ],
     "no-trailing-spaces": "off",
     "eqeqeq": "off",
     "no-implicit-coercion": "off",
@@ -71,6 +89,13 @@
     "no-negated-condition": "off",
     "no-new": "off",
     "no-lonely-if": "off",
-    "dot-notation": "off"
+    "dot-notation": "off",
+    "array-callback-return": "off",
+    "no-var": "off",
+    "comma-dangle": ["error", "never"],
+    "require-yield": "error",
+    "yield-star-spacing": ["warn", "after"],
+    "require-await": "error",
+    "no-useless-escape": "off"
   }
 }

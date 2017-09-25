@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Untu, Inc.
+ * Copyright (c) 2016-2017 Untu, Inc.
  * This code is licensed under Eclipse Public License - v 1.0.
  * The full license text can be found in LICENSE.txt file and
  * on the Eclipse official site (https://www.eclipse.org/legal/epl-v10.html).
@@ -428,6 +428,41 @@ describe('InMemoryActor', function() {
         },
         Child2: {
           childMetric: 333
+        }
+      });
+    }));
+
+    it('should not collect metrics from destroyed actors', P.coroutine(function*() {
+      var parent = yield rootActor.createChild({
+        metrics: function() {
+          return {
+            parentMetric: 111
+          };
+        }
+      });
+      yield parent.createChild({
+        metrics: function() {
+          return {
+            childMetric: 222
+          };
+        }
+      }, { name: 'Child1' });
+      var child2 = yield parent.createChild({
+        metrics: function() {
+          return {
+            childMetric: 333
+          };
+        }
+      }, { name: 'Child2' });
+
+      yield child2.destroy();
+
+      var metrics = yield parent.metrics();
+
+      expect(metrics).to.be.deep.equal({
+        parentMetric: 111,
+        Child1: {
+          childMetric: 222
         }
       });
     }));

@@ -4,6 +4,8 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": false,
     "strictNullChecks": true,
     "sourceMap": true,
     "inlineSources": true,

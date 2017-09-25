@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Untu, Inc.
+ * Copyright (c) 2016-2017 Untu, Inc.
  * This code is licensed under Eclipse Public License - v 1.0.
  * The full license text can be found in LICENSE.txt file and
  * on the Eclipse official site (https://www.eclipse.org/legal/epl-v10.html).
@@ -373,5 +373,143 @@ describe('Resource injection', function() {
     var response = yield actor.sendAndReceive('hello');
 
     expect(response).to.be.equal('Hi there!');
+  }));
+
+  it('should support resource dependencies', P.coroutine(function*() {
+    /**
+     * Test resource dependency.
+     */
+    class MyResourceDependency {
+      static getName() {
+        return 'resource-dependency';
+      }
+
+      getResource() {
+        return 'dependency';
+      }
+    }
+
+    /**
+     * Test resource with dependency.
+     */
+    class MyResource {
+      static inject() {
+        return ['resource-dependency'];
+      }
+
+      static getName() {
+        return 'resource';
+      }
+
+      constructor(dependency) {
+        this.dependency = dependency;
+      }
+
+      getResource() {
+        return 'resource ' + this.dependency;
+      }
+    }
+
+    /**
+     * Test actor.
+     */
+    class MyActor {
+      static inject() {
+        return ['resource'];
+      }
+
+      constructor(resource) {
+        this.resource = resource;
+      }
+
+      getResourceValue() {
+        return this.resource;
+      }
+    }
+
+    system = actors({
+      test: true,
+      resources: [MyResourceDependency, MyResource]
+    });
+
+    var actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor));
+
+    var response = yield actor.sendAndReceive('getResourceValue');
+
+    expect(response).to.be.equal('resource dependency');
+  }));
+
+  it('should properly handle cyclic resource dependencies', P.coroutine(function*() {
+    /**
+     * Test resource 1.
+     */
+    class Resource1 {
+      static inject() {
+        return ['Resource3'];
+      }
+
+      getResource() {
+        return 'Resource1';
+      }
+    }
+
+    /**
+     * Test resource 2.
+     */
+    class Resource2 {
+      static inject() {
+        return ['Resource1'];
+      }
+
+      getResource() {
+        return 'Resource2';
+      }
+    }
+
+    /**
+     * Test resource 3.
+     */
+    class Resource3 {
+      static inject() {
+        return ['Resource2'];
+      }
+
+      getResource() {
+        return 'Resource3';
+      }
+    }
+
+    /**
+     * Test actor.
+     */
+    class MyActor {
+      static inject() {
+        return ['Resource3'];
+      }
+
+      constructor(resource) {
+        this.resource = resource;
+      }
+
+      getResourceValue() {
+        return this.resource;
+      }
+    }
+
+    system = actors({
+      test: true,
+      resources: [Resource1, Resource2, Resource3]
+    });
+
+    var error;
+    yield system.rootActor()
+      .then(rootActor => rootActor.createChild(MyActor))
+      .catch(err => {
+        error = err;
+      });
+
+    expect(error).to.be.an.instanceof(Error);
+
+    system = undefined; // system.destroy() would cause resource dependency error.
   }));
 });

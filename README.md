@@ -1,4 +1,8 @@
-# Comedy [![Build Status](https://travis-ci.org/untu/comedy.svg?branch=master)](https://travis-ci.org/untu/comedy) [![codecov](https://codecov.io/gh/untu/comedy/branch/master/graph/badge.svg)](https://codecov.io/gh/untu/comedy)
+# Comedy
+
+[![Build Status](https://travis-ci.org/untu/comedy.svg?branch=master)](https://travis-ci.org/untu/comedy)
+[![Windows Tests](https://ci.appveyor.com/api/projects/status/m1vorqhe2yk09h5t/branch/master?svg=true&passingText=Windows%20Tests%20OK&failingText=Windows%20Tests%20FAIL&pendingText=Windows%20Tests%20pending)](https://ci.appveyor.com/project/weekens/comedy)
+[![codecov](https://codecov.io/gh/untu/comedy/branch/master/graph/badge.svg)](https://codecov.io/gh/untu/comedy)
 
 Comedy is a Node.js actor framework.
 
@@ -18,12 +22,21 @@ single host (by spawning sub-processes) or even to multiple hosts in your networ
   * [Programmatic configuration](#programmatic-configuration)
   * [Using configuration file](#using-configuration-file)
   * [Scaling to multiple instances](#scaling-to-multiple-instances)
+  * [Remote Actors](#remote-actors)
 - [Actor Lifecycle](#actor-lifecycle)
   * [initialize() lifecycle hook](#initialize-lifecycle-hook)
   * [destroy() lifecycle hook](#destroy-lifecycle-hook)
 - [Logging](#logging)
-- [Resource management](#resource-management)
+  * [Setting the log level](#setting-the-log-level)
+- [Resource Management](#resource-management)
 - [Actor Metrics](#actor-metrics)
+- [Upcoming Features](#upcoming-features)
+  * [Optimized message serialization](#optimized-message-serialization)
+  * [Hot code deployment](#hot-code-deployment)
+  * [Hot configuration change](#hot-configuration-change)
+  * [Automatic actor clustering according to load](#automatic-actor-clustering-according-to-load)
+  * [Affinity-based routing to clustered actors](#affinity-based-routing-to-clustered-actors)
+- [About](#about)
 
 <!-- tocstop -->
 
@@ -35,7 +48,9 @@ Comedy is installed with NPM by running:
     
 After that you can use Comedy framework in your code by requiring `comedy` package.
 
-    var actors = require('comedy');
+```javascript
+var actors = require('comedy');
+```
     
 ## Quick Start
 
@@ -172,8 +187,8 @@ to the project root (a folder where the `package.json` file is).
 ##### Important note about code transfer
 
 Though module-defined actor may seem like a mere shortcut for specifying a direct class
-reference, it has a subtle difference in case of creating forked actors (separate-process
-actors, see below), that you should be aware of. That is: when you create a forked
+reference, it has a subtle difference in case of creating forked or remote actors (separate-process
+actors, see below), that you should be aware of. That is: when you create a forked/remote
 (separate-process) actor with class-defined behaviour, Comedy serializes the code of your
 class definition and passes it to a child actor process, where it is being compiled. This
 means that you cannot reference external variables (such as module imports) from your class,
@@ -192,9 +207,9 @@ simple and self-contained and you don't want to bother creating a separate file 
 ## Scaling
 
 The whole point of actors is the ability to scale on demand. You can turn any actor to a standalone
-process and let it utilize additional CPU core. This is done by just using a configuration property,
-which can be specified both programmaticaly and using a configuration file. Let's see the programmatic
-example first.
+process and let it utilize additional CPU core on either local or remote machine. This is done by
+just using a configuration property, which can be specified both programmaticaly and using a
+configuration file. Let's see the programmatic example first.
 
 ### Programmatic configuration
 
@@ -262,6 +277,7 @@ actorSystem
  // ...
  .then(rootActor => rootActor.createChild(MyActor, { mode: 'in-memory' }))
  // ...
+ .finally(() => actorSystem.destroy());
 ```
  
     Actor replied: Hello to 19585 from 19585!
@@ -373,6 +389,91 @@ The `clusterSize` configuration property can be as well used in JSON configurati
   }
 }
 ```
+
+### Remote Actors
+
+In the examples above we used "forked" mode to spawn child processes and utilize additional CPU cores on local
+machine. But Comedy won't be a full-fledged actor framework without remoting capability. Using "remote" mode,
+you can launch an actor in a separate process on the host of your choice.
+
+Let's take our example with "forked" mode and just change the mode to "remote":
+
+```javascript
+var actors = require('comedy');
+
+/**
+ * Actor definition class.
+ */
+class MyActor {
+  sayHello(to) {
+    // Reply with a message, containing self PID.
+    return `Hello to ${to} from ${process.pid}!`;
+  }
+}
+
+// Create an actor system.
+var actorSystem = actors();
+
+actorSystem
+  // Get a root actor reference.
+  .rootActor()
+  // Create a class-defined child actor, that is run on a remote machine (remote mode).
+  .then(rootActor => rootActor.createChild(MyActor, { mode: 'remote', host: '192.168.33.20' }))
+  // Send a message to our remote actor with a self process PID.
+  .then(myActor => myActor.sendAndReceive('sayHello', process.pid))
+  .then(reply => {
+    // Output result.
+    console.log(`Actor replied: ${reply}`);
+  })
+  // Log errors.
+  .catch(err => {
+    console.error(err);
+  })
+  // Destroy the system, killing all actor processes.
+  .finally(() => actorSystem.destroy());
+```
+
+We have only done one tiny modification: changed child actor mode from "forked" to "remote" and specified
+a `host` parameter, that is mandatory for remote mode. The remote mode and host parameters can also be specified
+using `actors.json` configuration file.
+
+Now let's run our new example. What we get is:
+
+```
+Sun Jun 11 2017 22:00:43 GMT+0300 (MSK) - info: Didn't find (or couldn't load) default configuration file /home/weekens/workspace/comedy/actors.json.
+Sun Jun 11 2017 22:00:43 GMT+0300 (MSK) - info: Resulting actor configuration: {}
+{ Error: connect EHOSTUNREACH 192.168.33.20:6161
+    at Object.exports._errnoException (util.js:1018:11)
+    at exports._exceptionWithHostPort (util.js:1041:20)
+    at TCPConnectWrap.afterConnect [as oncomplete] (net.js:1086:14)
+  code: 'EHOSTUNREACH',
+  errno: 'EHOSTUNREACH',
+  syscall: 'connect',
+  address: '192.168.33.20',
+  port: 6161 }
+```
+
+The error was thrown, because we need one more thing to be able to launch remote actor on 192.168.33.20: we need
+to launch a special Comedy listening node on this machine. To do this, we run the following commands on the target
+machine:
+
+```
+$ npm install comedy
+$ node_modules/.bin/comedy-node
+Mon Jun 12 2017 16:56:07 GMT+0300 (MSK) - info: Listening on :::6161
+```
+
+The last message tells us that the listener node is successfully launched and listening on default Comedy port `6161`.
+
+After running example again we get:
+
+```
+Mon Jun 12 2017 16:56:14 GMT+0300 (MSK) - info: Didn't find (or couldn't load) default configuration file /home/weekens/workspace/comedy/actors.json.
+Mon Jun 12 2017 16:56:14 GMT+0300 (MSK) - info: Resulting actor configuration: {}
+Actor replied: Hello to 8378 from 8391!
+```
+
+This means our remote actor successfully replied to our local actor from remote machine.
 
 ## Actor Lifecycle
 
@@ -874,4 +975,152 @@ is dumped once by a first actor that receives the `dumpCollection` message (defa
 
 ## Actor Metrics
 
-To be continued...
+When an actor is up and running, it can be configured to output a number of useful metrics for monitoring.
+
+```javascript
+var actors = require('comedy');
+
+/**
+ * Sample actor.
+ */
+class MyActor {
+  // ...Some useful code.
+
+  metrics() {
+    return {
+      requestsPerSecond: Math.floor(Math.random() * 100) // Some real value should be here.
+    };
+  }
+}
+
+actors()
+  .rootActor() // Get a root actor reference.
+  .then(rootActor => rootActor.createChild(MyActor)) // Create a child actor.
+  .then(myActor => myActor.metrics()) // Query actor metrics.
+  .then(metrics => {
+    console.log('Actor metrics:', metrics); // Output actor metrics.
+  });
+```
+
+An example above will output something like:
+
+```
+Actor metrics: { requestPerSecond: 47 }
+```
+
+What we did in the example above is we've defined a `metrics` method in `MyActor` actor definition class and then
+called `metrics` method on `MyActor` actor instance. This method returns a promise with actor metrics object,
+containing the metrics we've returned from `metrics` method.
+
+"Wait!" - you'd say - "Why are we using a special `metrics` method for getting these metrics? Why don't we just send
+a 'metrics' message? Won't the result be the same?"
+
+In this case - yes, the result will be exactly the same. But a `metrics` method has one additional useful property,
+for which you'll definitely want to use it: it automatically collects metrics from all child actors recursively as
+well.
+
+Consider another example:
+
+```javascript
+var actors = require('comedy');
+
+/**
+ * Sample actor.
+ */
+class MyActor {
+  initialize(selfActor) {
+    return selfActor.createChild(MyChildActor); // Create a child actor.
+  }
+
+  // ...Some useful code.
+
+  metrics() {
+    return {
+      requestsPerSecond: Math.floor(Math.random() * 100) // Some real value should be here.
+    };
+  }
+}
+
+/**
+ * Sample child actor.
+ */
+class MyChildActor {
+  // ...Some useful code.
+
+  metrics() {
+    return {
+      ignoredMessages: 0
+    };
+  }
+}
+
+actors()
+  .rootActor() // Get a root actor reference.
+  .then(rootActor => rootActor.createChild(MyActor)) // Create a child actor.
+  .then(myActor => myActor.metrics()) // Query actor metrics.
+  .then(metrics => {
+    console.log('Actor metrics:', metrics); // Output actor metrics.
+  });
+```
+
+This example's output will be similar to:
+
+```
+Actor metrics: { requestsPerSecond: 68, MyChildActor: { ignoredMessages: 0 } }
+```
+
+We've received metrics for `MyActor` as well as it's child actor, though we didn't change our calling code. When using
+`metrics` method, metric aggregation happens automatically, so each actor only needs to output it's own metrics
+from `metrics` message handler.
+
+## Upcoming Features
+
+There is a number of features planned for future Comedy releases. The below list is not a roadmap, but rather a
+vision of what would be needed in nearest time.
+
+### Optimized message serialization
+
+Currently Comedy serializes messages as plain JSON. This serialization method certainly won't give the best throughput.
+In future versions Comedy is likely to switch to a binary message format. Candidates are:
+
+- BSON
+- PSON
+- Smilie
+
+There is also an option to try message compression like Snappy or mere GZip. These solutions will be tested on existing
+benchmarks. There will also be an option for pluggable user-defined serialization.
+
+### Hot code deployment
+
+Currently, when you want to run an actor that has external module dependencies in `remote` mode, you need to ensure
+the dependent modules are installed on a remote machine.
+
+It would be more convenient if Comedy deploys these modules automatically as a part of actor initialization process.
+
+### Hot configuration change
+
+Currently, if you change something in your `actors.json` file, you need to restart your application for changes to
+take effect. A better option would be if Comedy automatically detects changes in `actors.json` and switches actor
+modes accordingly (spawns additional processes or removes unneeded ones) without application restart.
+
+### Automatic actor clustering according to load
+
+You may not know your load in advance. Manually changing cluster size for clustered actors as load changes is
+is tedious and inconvenient. Comedy could instead automatically change cluster size according to, say, actor
+metrics (a function for calculating cluster size from metrics can be specified in parameters). Thus, when your
+load increases, Comedy could automatically spawn additional actors to handle load, and when load reduces - destroy
+unneeded actors.
+
+### Affinity-based routing to clustered actors
+
+For now the only strategy used to route messages to clustered actor children is round-robin. Comedy could support
+more advanced routing, so that a message is transferred to a child that is most efficient to handle this message.
+For instance, we could pick a child that is launched near a particular database shard, where all needed data resides,
+and avoid network query to a remote shard.
+
+## About
+
+Comedy is developed as a part of [SAYMON](http://www.saymon.info/en-version/) project and is actively used in all
+SAYMON production installations.
+
+Comedy was initially inspired by [Drama](https://github.com/stagas/drama) framework.

@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "bluebird": "registry:npm/bluebird#3.3.4+20160723033700",
+    "chai": "registry:npm/chai#3.5.0+20160723033700"
+  },
+  "globalDependencies": {
+    "mocha": "registry:env/mocha#2.2.5+20160723033700",
+    "node": "registry:env/node#6.0.0+20160723033700",
+    "underscore": "registry:dt/underscore#1.7.0+20160720002543"
+  }
+}
