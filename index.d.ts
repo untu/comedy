@@ -18,6 +18,8 @@ export interface Logger {
 }
 
 export interface ParentActor {
+  getId(): string;
+
   send(topic: string, ...message: any[]): Promise<void>;
 
   sendAndReceive(topic: string, ...message: any[]): Promise<any>;
