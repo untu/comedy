@@ -2,6 +2,7 @@
 - Added `Actor.getMode()` method.
 - Added `Actor.broadcast()` and `Actor.broadcastAndReceive()` methods.
 - Fixed premature parent ping in forked actor.
+- Added possibility to forward all unknown topics to parent.
 
 ### v 1.1.3:
 - Fixed wrong cluster distribution in `"remote"` mode.
