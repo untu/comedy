@@ -350,27 +350,6 @@ describe('InMemoryActor', function() {
 
       expect(result).to.be.equal(6);
     }));
-
-    it('should be able to forward any unknown messages to parent actor', P.coroutine(function*() {
-      var result = 0;
-
-      var childActor = yield rootActor.createChild({
-        plus: n => result += n,
-        times: n => result *= n
-      });
-      var grandChildActor = yield childActor.createChild({
-        initialize: selfActor => selfActor.forwardToParent(true),
-
-        sayHello: () => 'Hello!'
-      });
-
-      expect(yield grandChildActor.sendAndReceive('sayHello')).to.be.equal('Hello!');
-
-      yield grandChildActor.send('plus', 2);
-      yield grandChildActor.send('times', 3);
-
-      expect(result).to.be.equal(6);
-    }));
   });
 
   describe('forwardToChild()', function() {
