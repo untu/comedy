@@ -1,4 +1,4 @@
-### v 1.2.3:
+### v 1.2.0:
 - Added `Actor.getMode()` method.
 - Added `Actor.broadcast()` and `Actor.broadcastAndReceive()` methods.
 - Fixed premature parent ping in forked actor.
