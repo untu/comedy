@@ -17,6 +17,14 @@ export interface Logger {
   error(...messages: any[]): void;
 }
 
+export interface ParentActor {
+  getId(): string;
+
+  send(topic: string, ...message: any[]): Promise<void>;
+
+  sendAndReceive(topic: string, ...message: any[]): Promise<any>;
+}
+
 export interface Actor {
   getId(): string;
 
@@ -24,7 +32,7 @@ export interface Actor {
 
   getLog(): Logger;
 
-  getParent(): Actor;
+  getParent(): ParentActor;
 
   getCustomParameters(): Object|null;
 
