@@ -34,6 +34,8 @@ export interface Actor {
 
   getParent(): ParentActor;
 
+  getMode(): string;
+
   getCustomParameters(): any;
 
   createChild(behaviour: ActorDefinition|Object, options?: Object): Promise<Actor>;
