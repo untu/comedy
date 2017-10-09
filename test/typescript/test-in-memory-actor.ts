@@ -10,7 +10,6 @@
 /* eslint require-jsdoc: "off" */
 
 import * as actors from '../../';
-import * as tu from '../../lib/utils/test';
 import {expect} from 'chai';
 import {Actor, ActorSystem} from '../../index';
 import P = require('bluebird');
@@ -22,7 +21,7 @@ let rootActor: Actor;
 describe('InMemoryActor (TypeScript)', function() {
   beforeEach(function() {
     system = actors.createSystem({
-      log: tu.logStub(),
+      test: true,
       additionalRequires: 'ts-node/register'
     });
 
