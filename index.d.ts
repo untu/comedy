@@ -34,7 +34,7 @@ export interface Actor {
 
   getParent(): ParentActor;
 
-  getCustomParameters(): Object|null;
+  getCustomParameters(): any;
 
   createChild(behaviour: ActorDefinition|Object, options?: Object): Promise<Actor>;
 
