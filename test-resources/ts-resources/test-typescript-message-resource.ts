@@ -5,7 +5,7 @@
  * on the Eclipse official site (https://www.eclipse.org/legal/epl-v10.html).
  */
 
-import {ResourceDefinition, ActorSystem} from '../index';
+import {ResourceDefinition, ActorSystem} from '../../index';
 
 /**
  * Test TypeScript message resource.
