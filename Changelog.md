@@ -1,3 +1,7 @@
+### v 1.2.1:
+- Independent logging for each actor.
+- Adjusted TypeScript typings.
+
 ### v 1.2.0:
 - Added `Actor.getMode()` method.
 - Added `Actor.broadcast()` and `Actor.broadcastAndReceive()` methods.
