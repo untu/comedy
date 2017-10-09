@@ -1,3 +1,6 @@
+### v 1.2.2:
+- Fixed TypeScript resource directory loading.
+
 ### v 1.2.1:
 - Independent logging for each actor.
 - Adjusted TypeScript typings.
