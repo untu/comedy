@@ -11,7 +11,6 @@
 
 var actors = require('../index');
 var Actor = require('../lib/actor.js');
-var tu = require('../lib/utils/test.js');
 var expect = require('chai').expect;
 var P = require('bluebird');
 var _ = require('underscore');
@@ -22,7 +21,7 @@ var rootActor;
 describe('InMemoryActor', function() {
   beforeEach(function() {
     system = actors({
-      log: tu.logStub(),
+      test: true,
       additionalRequires: 'ts-node/register'
     });
 
