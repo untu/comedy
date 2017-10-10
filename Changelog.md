@@ -1,3 +1,6 @@
+### v 1.2.3:
+- Moved ts-node and TypeScript to dev dependencies.
+
 ### v 1.2.2:
 - Fixed TypeScript resource directory loading.
 
