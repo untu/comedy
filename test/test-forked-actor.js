@@ -753,6 +753,57 @@ describe('ForkedActor', function() {
 
       expect(serverMessage).to.be.equal('Hello!');
     }));
+
+    it('should respawn crashed actor with original custom parameters', P.coroutine(function*() {
+      var server = http.createServer();
+
+      server.listen(8888);
+
+      var childActor = yield rootActor.createChild({
+        initialize: function(selfActor) {
+          this.server = selfActor.getCustomParameters().server;
+
+          // Handle HTTP requests.
+          this.server.on('request', (req, res) => {
+            res.writeHead(200, { 'Content-Type': 'text/plain' });
+            res.end('Hello!');
+          });
+        },
+
+        kill: function() {
+          process.exit(1);
+        },
+
+        destroy: function() {
+          return require('bluebird').fromCallback(cb => {
+            this.server.close(cb);
+          });
+        }
+      }, { mode: 'forked', onCrash: 'respawn', customParameters: { server: server } });
+
+      // Close server in this process to avoid receiving connections locally.
+      yield P.fromCallback(cb => {
+        server.close(cb);
+      });
+
+      var respawnPromise = new P(resolve => {
+        childActor.once('respawned', resolve);
+      });
+
+      // Kill child actor.
+      yield childActor.send('kill');
+
+      // Wait for child to respawn.
+      yield respawnPromise;
+
+      // Test connection.
+      yield request('http://127.0.0.1:8888')
+        .get('/')
+        .expect(200)
+        .then(res => {
+          expect(res.text).to.be.equal('Hello!');
+        });
+    }));
   });
 
   describe('createChildren()', function() {
