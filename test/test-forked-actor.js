@@ -753,6 +753,36 @@ describe('ForkedActor', function() {
 
       expect(serverMessage).to.be.equal('Hello!');
     }));
+
+    it('should not send messages to crashed actors', P.coroutine(function*() {
+      // Define test behaviour.
+      var def = {
+        kill: () => {
+          process.exit(1);
+        },
+
+        getPid: () => process.pid
+      };
+
+      // Create clustered forked actor.
+      var actor = yield rootActor.createChild(def, { mode: 'forked', clusterSize: 2 });
+
+      // Get child actor PIDs.
+      var pids = yield P.map(_.range(2), () => actor.sendAndReceive('getPid'));
+
+      // Kill first child.
+      yield actor.send('kill');
+
+      // Send getPid message again. Second PID should be received.
+      var pid2 = yield actor.sendAndReceive('getPid');
+
+      expect(pid2).to.be.equal(pids[1]);
+
+      // Send getPid message again. First actor should be skipped as crashed.
+      var pid = yield actor.sendAndReceive('getPid');
+
+      expect(pid).to.be.equal(pids[1]);
+    }));
   });
 
   describe('createChildren()', function() {
