@@ -773,6 +773,9 @@ describe('ForkedActor', function() {
       // Kill first child.
       yield actor.send('kill');
 
+      // Wait for child to die.
+      yield tu.waitForCondition(() => !isRunning(pids[0]));
+
       // Send getPid message again. Second PID should be received.
       var pid2 = yield actor.sendAndReceive('getPid');
 
