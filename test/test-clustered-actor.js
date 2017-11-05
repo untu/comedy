@@ -8,7 +8,9 @@
 'use strict';
 
 var actors = require('../index');
+var tu = require('../lib/utils/test.js');
 var expect = require('chai').expect;
+var isRunning = require('is-running');
 var P = require('bluebird');
 var _ = require('underscore');
 
@@ -153,5 +155,38 @@ describe('ClusteredActor', function() {
     var results = yield router.broadcastAndReceive('get');
 
     expect(results).to.have.members([1, 1, 1]);
+  }));
+
+  it('should not send messages to crashed forked actors', P.coroutine(function*() {
+    // Define test behaviour.
+    var def = {
+      kill: () => {
+        process.exit(1);
+      },
+
+      getPid: () => process.pid
+    };
+
+    // Create clustered forked actor.
+    var actor = yield rootActor.createChild(def, { mode: 'forked', clusterSize: 2 });
+
+    // Get child actor PIDs.
+    var pids = yield P.map(_.range(2), () => actor.sendAndReceive('getPid'));
+
+    // Kill first child.
+    yield actor.send('kill');
+
+    // Wait for child to die.
+    yield tu.waitForCondition(() => !isRunning(pids[0]));
+
+    // Send getPid message again. Second PID should be received.
+    var pid2 = yield actor.sendAndReceive('getPid');
+
+    expect(pid2).to.be.equal(pids[1]);
+
+    // Send getPid message again. First actor should be skipped as crashed.
+    var pid = yield actor.sendAndReceive('getPid');
+
+    expect(pid).to.be.equal(pids[1]);
   }));
 });
