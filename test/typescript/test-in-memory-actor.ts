@@ -67,7 +67,7 @@ describe('InMemoryActor (TypeScript)', function() {
       }
 
       expect(err).to.be.not.equal(undefined);
-      expect(err.message).to.match(/Actor is being initialized/);
+      expect(err.message).to.match(/Actor has not yet been initialized\./);
     });
   });
 

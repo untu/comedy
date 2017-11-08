@@ -196,7 +196,10 @@ describe('ClusteredActor', function() {
     var remoteSystem;
 
     beforeEach(function() {
-      remoteSystem = actors({ test: true });
+      remoteSystem = actors({
+        test: true,
+        additionalRequires: 'ts-node/register'
+      });
 
       return remoteSystem.listen();
     });

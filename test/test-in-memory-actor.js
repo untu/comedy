@@ -67,7 +67,7 @@ describe('InMemoryActor', function() {
       }
 
       expect(err).to.be.not.equal(undefined);
-      expect(err.message).to.match(/Actor is being initialized/);
+      expect(err.message).to.match(/Actor has not yet been initialized\./);
     }));
 
     it('should throw error for sendAndReceive during initialization', P.coroutine(function*() {
@@ -99,7 +99,7 @@ describe('InMemoryActor', function() {
       catch (err) {
         error = err;
 
-        expect(err.message).to.match(/Actor is being initialized/);
+        expect(err.message).to.match(/Actor has not yet been initialized\./);
       }
 
       expect(error).to.be.defined;
