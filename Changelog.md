@@ -1,3 +1,6 @@
+### v 1.2.4:
+- Fixed message routing to crashed actors.
+
 ### v 1.2.3:
 - Moved ts-node and TypeScript to dev dependencies.
 
