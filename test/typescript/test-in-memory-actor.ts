@@ -10,7 +10,6 @@
 /* eslint require-jsdoc: "off" */
 
 import * as actors from '../../';
-import * as tu from '../../lib/utils/test';
 import {expect} from 'chai';
 import {Actor, ActorSystem} from '../../index';
 import P = require('bluebird');
@@ -22,7 +21,7 @@ let rootActor: Actor;
 describe('InMemoryActor (TypeScript)', function() {
   beforeEach(function() {
     system = actors.createSystem({
-      log: tu.logStub(),
+      test: true,
       additionalRequires: 'ts-node/register'
     });
 
@@ -37,8 +36,6 @@ describe('InMemoryActor (TypeScript)', function() {
 
   describe('initialize()', function() {
     it('should not receive messages until initialized', async function() {
-      let helloReceivedBeforeInitialized = false;
-
       class LongStartingActor {
         private initialized = false;
         
@@ -46,6 +43,7 @@ describe('InMemoryActor (TypeScript)', function() {
           return selfActor
             .createChild({
               initialize: function(selfActor) {
+                // This should throw error as parent has not yet been initialized.
                 return selfActor.getParent().send('hello', 'Child');
               }
             })
@@ -55,15 +53,21 @@ describe('InMemoryActor (TypeScript)', function() {
         }
 
         hello(to: string) {
-          helloReceivedBeforeInitialized = !this.initialized;
-
           return `Hello to ${to}`;
         }
       }
 
-      await rootActor.createChild(LongStartingActor);
+      let err: any = undefined;
 
-      expect(helloReceivedBeforeInitialized).to.be.equal(false);
+      try {
+        await rootActor.createChild(LongStartingActor);
+      }
+      catch (err0) {
+        err = err0;
+      }
+
+      expect(err).to.be.not.equal(undefined);
+      expect(err.message).to.match(/Actor has not yet been initialized\./);
     });
   });
 

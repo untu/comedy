@@ -36,8 +36,6 @@ describe('InMemoryActor', function() {
 
   describe('initialize()', function() {
     it('should not receive messages until initialized', P.coroutine(function*() {
-      var helloReceivedBeforeInitialized = false;
-
       class LongStartingActor {
         initialize(selfActor) {
           this.initialized = false;
@@ -45,6 +43,7 @@ describe('InMemoryActor', function() {
           return selfActor
             .createChild({
               initialize: function(selfActor) {
+                // This should throw error as parent has not yet been initialized.
                 return selfActor.getParent().send('hello', 'Child');
               }
             })
@@ -54,15 +53,21 @@ describe('InMemoryActor', function() {
         }
 
         hello(to) {
-          helloReceivedBeforeInitialized = !this.initialized;
-
           return `Hello to ${to}`;
         }
       }
 
-      yield rootActor.createChild(LongStartingActor);
+      var err;
 
-      expect(helloReceivedBeforeInitialized).to.be.equal(false);
+      try {
+        yield rootActor.createChild(LongStartingActor);
+      }
+      catch (err0) {
+        err = err0;
+      }
+
+      expect(err).to.be.not.equal(undefined);
+      expect(err.message).to.match(/Actor has not yet been initialized\./);
     }));
 
     it('should throw error for sendAndReceive during initialization', P.coroutine(function*() {
@@ -94,7 +99,7 @@ describe('InMemoryActor', function() {
       catch (err) {
         error = err;
 
-        expect(err.message).to.match(/Actor is being initialized/);
+        expect(err.message).to.match(/Actor has not yet been initialized\./);
       }
 
       expect(error).to.be.defined;

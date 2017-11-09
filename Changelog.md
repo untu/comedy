@@ -1,3 +1,16 @@
+### v 1.2.4:
+- Fixed message routing to crashed actors.
+
+### v 1.2.3:
+- Moved ts-node and TypeScript to dev dependencies.
+
+### v 1.2.2:
+- Fixed TypeScript resource directory loading.
+
+### v 1.2.1:
+- Independent logging for each actor.
+- Adjusted TypeScript typings.
+
 ### v 1.2.0:
 - Added `Actor.getMode()` method.
 - Added `Actor.broadcast()` and `Actor.broadcastAndReceive()` methods.
