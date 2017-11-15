@@ -23,6 +23,8 @@ single host (by spawning sub-processes) or even to multiple hosts in your networ
   * [Using configuration file](#using-configuration-file)
   * [Scaling to multiple instances](#scaling-to-multiple-instances)
   * [Remote Actors](#remote-actors)
+    + [Named clusters](#named-clusters)
+    + [Multiple hosts](#multiple-hosts)
 - [Actor Lifecycle](#actor-lifecycle)
   * [initialize() lifecycle hook](#initialize-lifecycle-hook)
   * [destroy() lifecycle hook](#destroy-lifecycle-hook)
@@ -474,6 +476,70 @@ Actor replied: Hello to 8378 from 8391!
 ```
 
 This means our remote actor successfully replied to our local actor from remote machine.
+
+#### Named clusters
+
+Most of the time you may probably want to launch a remote actor not on a single machine, but on a cluster of
+several machines, one actor per host or more. Comedy allows you to configure a named cluster, which can
+be later referenced by `"cluster"` actor option instead of `"host"` option.
+
+```javascript
+var actors = require('comedy');
+var P = require('bluebird');
+
+/**
+ * Actor definition class.
+ */
+class MyActor {
+  sayHello(to) {
+    // Reply with a message, containing self PID.
+    return `Hello to ${to} from ${process.pid}!`;
+  }
+}
+
+// Create an actor system.
+var actorSystem = actors({
+  clusters: {
+    // Configure "alpha" cluster, consisting of 3 hosts (each should have comedy-node started).
+    alpha: ['192.168.33.10', '192.168.33.20', '192.168.33.30']
+  }
+});
+
+actorSystem
+  // Get a root actor reference.
+  .rootActor()
+  // Create a class-defined child actor on each host of "alpha" cluster.
+  .then(rootActor => rootActor.createChild(MyActor, { mode: 'remote', cluster: 'alpha' }))
+  // Send a message to each remote actor in a cluster (messages are round-robin balanced).
+  .then(myActor => P.map([1, 2, 3], () => myActor.sendAndReceive('sayHello', process.pid)
+    .then(reply => {
+      // Output result. There should be replies from each actor in a cluster.
+      console.log(`Actor replied: ${reply}`);
+    })))
+  // Log errors.
+  .catch(err => {
+    console.error(err);
+  })
+  // Destroy the system, killing all actor processes.
+  .finally(() => actorSystem.destroy());
+```
+
+By default, Comedy creates 1 actor per host in a cluster. You can override this by specifying `"clusterSize"`
+actor parameter. Comedy will try to distribute the `"clusterSize"` amount of actor instances equally between
+the hosts in a cluster, but `"clusterSize"` is not divisible by the number of hosts, some hosts will have 1 actor
+less than others.
+
+#### Multiple hosts
+
+Specifying a cluster for remote actor requires prior actor system configuration (see section above). In case
+you need to just quickly launch an actor on multiple hosts, you may not bother configuring a cluster and
+simply specify a host array in `"host"` actor parameter.
+
+```javascript
+rootActor.createChild(MyActor, { mode: 'remote', host: ['192.168.33.10', '192.168.33.20', '192.168.33.30'] })
+```
+
+This works the same way as `"cluster"` parameter. The only difference is that now the cluster is unnamed.
 
 ## Actor Lifecycle
 

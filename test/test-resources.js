@@ -270,7 +270,7 @@ describe('Resource injection', function() {
 
     system = actors({
       test: true,
-      resources: ['/test-resources/test-typescript-message-resource'],
+      resources: ['/test-resources/ts-resources/test-typescript-message-resource'],
       additionalRequires: 'ts-node/register'
     });
 
@@ -301,7 +301,7 @@ describe('Resource injection', function() {
 
     system = actors({
       test: true,
-      resources: ['/test-resources/test-typescript-message-resource'],
+      resources: ['/test-resources/ts-resources/test-typescript-message-resource'],
       additionalRequires: 'ts-node/register'
     });
 
@@ -369,6 +369,37 @@ describe('Resource injection', function() {
     });
 
     var actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor));
+
+    var response = yield actor.sendAndReceive('hello');
+
+    expect(response).to.be.equal('Hi there!');
+  }));
+
+  it('should support TypeScript resource module directory specification', P.coroutine(function*() {
+    /**
+     * Test actor, that uses test resource.
+     */
+    class MyActor {
+      static inject() {
+        return ['MessageResource'];
+      }
+
+      constructor(message) {
+        this.message = message;
+      }
+
+      hello() {
+        return this.message;
+      }
+    }
+
+    system = actors({
+      test: true,
+      resources: '/test-resources/ts-resources/',
+      additionalRequires: 'ts-node/register'
+    });
+
+    var actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor, { mode: 'in-memory' }));
 
     var response = yield actor.sendAndReceive('hello');
 
