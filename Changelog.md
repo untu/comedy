@@ -1,3 +1,6 @@
+### v 1.2.5:
+- Fixed `broadcastAndReceive` for non-clustered actor.
+
 ### v 1.2.4:
 - Fixed message routing to crashed actors.
 
