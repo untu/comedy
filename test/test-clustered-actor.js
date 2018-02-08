@@ -110,7 +110,7 @@ describe('ClusteredActor', function() {
 
       var metrics = yield router.metrics();
 
-      expect(_.keys(metrics).length).to.be.equal(4);
+      expect(_.keys(metrics)).to.have.members(['0', '1', '2', 'summary']);
       expect(_.values(metrics)).to.have.deep.members([
         { count: 1 },
         { count: 1 },
