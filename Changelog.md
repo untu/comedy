@@ -1,4 +1,5 @@
 ### v 1.2.5:
+- Fixed `broadcastAndReceive` for non-clustered actor.
 - Index-based clustered actor metrics output format.
 
 ### v 1.2.4:

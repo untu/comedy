@@ -158,6 +158,33 @@ describe('ClusteredActor', function() {
       expect(results).to.have.members([1, 1, 1]);
     }));
 
+    it('should correctly broadcast to non-clustered actor', P.coroutine(function*() {
+      /**
+       * Test child definition.
+       */
+      class Child {
+        constructor() {
+          this.count = 0;
+        }
+
+        increment() {
+          this.count++;
+        }
+
+        get() {
+          return this.count;
+        }
+      }
+
+      var router = yield rootActor.createChild(Child, { mode: 'in-memory', clusterSize: 1 });
+
+      yield router.broadcast('increment');
+
+      var results = yield router.broadcastAndReceive('get');
+
+      expect(results).to.have.members([1]);
+    }));
+
     it('should not send messages to crashed forked actors', P.coroutine(function*() {
       // Define test behaviour.
       var def = {
