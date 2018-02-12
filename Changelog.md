@@ -1,3 +1,6 @@
+### v 1.2.5:
+- Index-based clustered actor metrics output format.
+
 ### v 1.2.4:
 - Fixed message routing to crashed actors.
 
