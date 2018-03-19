@@ -5,6 +5,8 @@
  * on the Eclipse official site (https://www.eclipse.org/legal/epl-v10.html).
  */
 
+import EventEmitter = NodeJS.EventEmitter;
+
 export interface Logger {
   isDebug(): boolean;
 
@@ -25,7 +27,7 @@ export interface ParentActor {
   sendAndReceive(topic: string, ...message: any[]): Promise<any>;
 }
 
-export interface Actor {
+export interface Actor extends EventEmitter {
   getId(): string;
 
   getName(): string;
