@@ -36,6 +36,8 @@ export interface Actor extends EventEmitter {
 
   getParent(): ParentActor;
 
+  getSystem(): ActorSystem;
+
   getMode(): string;
 
   getCustomParameters(): any;
