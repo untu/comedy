@@ -61,7 +61,7 @@
   "dependencies": {
     "app-root-path": "2.0.1",
     "bluebird": "3.4.6",
-    "bson": "0.5.5",
+    "bson": "2.0.0",
     "randomstring": "1.1.5",
     "require-dir": "0.3.2",
     "tosource": "1.0.0",
