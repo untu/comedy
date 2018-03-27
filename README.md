@@ -690,7 +690,8 @@ topic that will be covered later.
 
 In some cases you might not want Comedy to do logging at all. In others you may want extended debug-level logging.
 
-The log level is configured using `setLevel()` method of `Logger` instance.
+DEPRECATED: The log level is configured using `setLevel()` method of `Logger` instance.
+The log level is configured using container/logger.conf file. `setLevel()` method is also still available for backwards compatibility.
 
 There are 5 log levels in Comedy logger (each one includes all previous):
 
@@ -701,7 +702,23 @@ There are 5 log levels in Comedy logger (each one includes all previous):
 5. Debug. Debug messages are written. These are messages that are only interesting for application developers
 and include some information about Comedy internals.
 
-Here is an example of how you would configure logging level for the whole actor system:
+Here is an example of a logger configuration file:
+
+```javascript
+// This config allows to see only messages comming from MyActor omitting all the rest.
+{
+  "Default": "Silent", // use Silent log level for every log source not defined in this config file
+  "MyActor": "Info", // use Info log level for logger which category is set as `MyActor`
+}
+
+// This config sets log level for MyActor category explicitly while loggers for other categories will use log levels passed to their constructor.
+{
+  "MyActor": "Info",
+}
+```
+Please note that both category name and log level are case sensitive.
+
+Here is an example of how you would configure logging level for the whole actor system using deprecated `setLevel()` method:
 
 ```javascript
 // Create an actor system.
