@@ -1,5 +1,6 @@
-### v 1.2.6 (upcoming):
+### v 1.3.6 (upcoming):
 - Index-based clustered actor metrics output format.
+- Added `dropMessagesOnOverload` actor parameter support.
 
 ### v 1.2.5:
 - Fixed `broadcastAndReceive` for non-clustered actor.
