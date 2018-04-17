@@ -1139,6 +1139,29 @@ We've received metrics for `MyActor` as well as it's child actor, though we didn
 `metrics` method, metric aggregation happens automatically, so each actor only needs to output it's own metrics
 from `metrics` message handler.
 
+## Other Features
+
+A full Comedy reference manual is still to come. In this chapter we briefly cover some additional features.
+
+### Dropping messages on overload
+
+In high-load applications, a usual thing is when the amount of incoming messages is greater than the one
+your actor can handle. In this case the message queue grows, the event loop lag grows as well, and eventually your
+server process crashes with `OutOfMemory` error.
+
+You may configure an actor to drop incoming messages if the system is overloaded, i.e. when an event loop lag
+exceeds a certain threshold. This is useful if you cannot predict the load in advance and thus cannot initially
+pick the right `clusterSize` for an actor.
+
+A `dropMessagesOnOverload` actor parameter set to `true` (can be set both programmatically and via `actors.json`)
+enables an actor to drop messages when an event loop lag is greater than a `busyLagLimit` actor system option value
+(defaults to **3 seconds**). When the event loop lag decreases and becomes lower than `busyLagLimit`, an actor resumes
+normal message handling.
+
+You normally only want to enable `dropMessagesOnOverload` for actors that receive messages you may allow to loose.
+An example of such messages are monitoring messages, informational or statistical messages or messages that regularly
+repeat.
+
 ## Upcoming Features
 
 There is a number of features planned for future Comedy releases. The below list is not a roadmap, but rather a
