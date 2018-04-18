@@ -32,6 +32,8 @@ single host (by spawning sub-processes) or even to multiple hosts in your networ
   * [Setting the log level](#setting-the-log-level)
 - [Resource Management](#resource-management)
 - [Actor Metrics](#actor-metrics)
+- [Other Features](#other-features)
+  * [Dropping messages on overload](#dropping-messages-on-overload)
 - [Upcoming Features](#upcoming-features)
   * [Optimized message serialization](#optimized-message-serialization)
   * [Hot code deployment](#hot-code-deployment)
