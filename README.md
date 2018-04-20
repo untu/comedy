@@ -30,6 +30,7 @@ single host (by spawning sub-processes) or even to multiple hosts in your networ
   * [destroy() lifecycle hook](#destroy-lifecycle-hook)
 - [Logging](#logging)
   * [Setting the log level](#setting-the-log-level)
+    + [Dynamic logger configuration](#dynamic-logger-configuration)
 - [Resource Management](#resource-management)
 - [Actor Metrics](#actor-metrics)
 - [Other Features](#other-features)
