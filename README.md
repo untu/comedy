@@ -685,12 +685,10 @@ An actor instance class name reveals the underlying actor instance implementatio
 and can be one of `InMemoryActor`, `ForkedActorParent` or `ForkedActorChild`. An actor ID is generated automatically
 for a given actor instance and is unique across the system.
 
-You can specify your own logger implementation by using `log` actor system creation option, but this is an advanced
-topic that will be covered later.
-
 ### Setting the log level
 
 In some cases you might not want Comedy to do logging at all. In others you may want extended debug-level logging.
+Also, you might want to enable verbose logging for a certain actor while keeping the level for the rest of actors.
 
 The log level is configured using `setLevel()` method of `Logger` instance.
 
@@ -738,6 +736,31 @@ class MyActor {
   // ...
 }
 ```
+
+#### Dynamic logger configuration
+
+Programmatic logger configuration described above is usually not what you really want. Instead of hard-coding log
+levels for various actors, you would normally prefer configuring these log levels in a configuration file to be
+able to change them in runtime. Comedy allows you doing this with dynamic logger configuration capability.
+
+To configure log levels dynamically, you need to:
+
+1. Create a file with logger configuration (usually named `logger.json`) in the directory of your choice.
+2. Specify a path to this file in `loggerConfiguration` parameter in actor system options.
+
+The `logger.json` file has the following format:
+
+```javascript
+{
+  "categories": {
+    "Default": "Info",
+    "MyActor": "Error",
+    "MyOtherActor": "Debug"
+  }
+}
+```
+
+TODO
 
 ## Resource Management
 
