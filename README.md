@@ -760,7 +760,43 @@ The `logger.json` file has the following format:
 }
 ```
 
-TODO
+Here we have a category mapping under `categories` key. This mapping object maps logging category name to a log level.
+Each category name is just an actor name. So, with the above category mapping you can configure log levels on
+per-actor basis. There is a special category name - `"Default"` - which configures the default log level.
+
+In the exampe above: actor(s) with name `"MyActor"` will log messages with `Error` log level or higher; actor(s) with
+name `"MyOtherActor"` will log messages with `Debug` log level or higher; all other actors will log messages with
+`Info` level or higher.
+
+To enable file-based logger configuration, you need to specify a path to your `logger.json` file (or whatever
+the name is) in actor system configuration:
+
+```javascript
+var actors = require('comedy');
+
+//...
+
+actors({
+  loggerConfiguration: 'conf/logger.json' // You can also specify the absolute path.
+})
+```
+
+Comedy supports hot logging configuration change. This means that all changes you make to `logger.json` file are
+applied on-the-run without process restart.
+
+You can also specify multiple configuration files in actor system configuration. In this case these configurations
+will be merged just like `actors.json` files do:
+
+```javascript
+var actors = require('comedy');
+
+//...
+
+actors({
+  // Files are specified in descending priority: first file has highest priority.
+  loggerConfiguration: ['/etc/my-service/logger.json', 'conf/logger.json']
+})
+```
 
 ## Resource Management
 
