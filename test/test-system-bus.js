@@ -21,7 +21,7 @@ describe('SystemBus', function() {
     return system.destroy();
   });
 
-  describe('recipients adding/removing', function() {
+  describe('Recipients adding/removing', function() {
     it('should admit forked-actor recipients', P.coroutine(function*() {
       yield rootActor
         .createChild({}, { mode: 'forked' })
