@@ -50,7 +50,7 @@ describe('SystemBus', function() {
     }));
   });
 
-  describe('events emittion', () => {
+  describe('Event generation', () => {
     /**
      * Actor definition class.
      */
