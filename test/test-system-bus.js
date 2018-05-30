@@ -82,7 +82,7 @@ describe('SystemBus', function() {
       }
 
       destroyChild() {
-        this.childActorC.destroy();
+        return this.childActorC.destroy();
       }
 
       sendPing() {
