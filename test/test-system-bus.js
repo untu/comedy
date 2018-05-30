@@ -237,7 +237,7 @@ describe('SystemBus', function() {
       })
     );
 
-    it('should not get any messages by bus for particular topic after unsubscribed from it', P.coroutine(function*() {
+    it('should not get any messages by bus for particular topic after unsubscribing from it', P.coroutine(function*() {
       yield rootActor
         .createChild(TestActor, { mode: 'forked', customParameters: { name: 'B' } })
         .then(childActorB => {
