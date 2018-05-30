@@ -227,10 +227,13 @@ describe('SystemBus', function() {
             
             return messagesExpectationPromise();
           })
-          .then(messages => expect(messages.length).to.be.equal(2) &&
-            expect(messages).to.include('pong from B') &&
-            expect(messages).to.include('ping from C'),
-          error => { throw error; });
+          .then(
+            messages => {
+              expect(messages.length).to.be.equal(2);
+              expect(messages).to.include('pong from B');
+              expect(messages).to.include('ping from C');
+            },
+            error => { throw error; });
       })
     );
 
