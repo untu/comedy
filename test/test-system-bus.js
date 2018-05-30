@@ -68,13 +68,14 @@ describe('SystemBus', function() {
           sendPing() {
             this.selfActor.sendBusMessage('test-message-ping', `ping from ${this.selfActor.customParameters.name}`);
           }
-        } 
+        }
 
-        return this.selfActor.createChild(TestActorChild, {
-          mode: this.selfActor.getMode(),
-          host: '127.0.0.1',
-          customParameters: { name: 'C' } 
-        })
+        return this.selfActor
+          .createChild(TestActorChild, {
+            mode: this.selfActor.getMode(),
+            host: '127.0.0.1',
+            customParameters: { name: 'C' }
+          })
           .then(childActorC => {
             this.childActorC = childActorC;
           });
