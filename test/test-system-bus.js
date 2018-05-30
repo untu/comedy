@@ -19,25 +19,6 @@ describe('SystemBus', function() {
     return system.destroy();
   });
 
-  describe('Recipients adding/removing', function() {
-    it('should admit forked-actor recipients', P.coroutine(function*() {
-      yield rootActor
-        .createChild({}, { mode: 'forked' })
-        .then(() => {
-          expect(rootActor.getBus().recipients.size).to.be.equal(1);
-        });
-    }));
-
-    it('should reject wrong type recipients', P.coroutine(function*() {
-      yield rootActor
-        .createChild({}, { mode: 'in-memory' })
-        .then(testActor => {
-          rootActor.getBus().addForkedRecipient(testActor);
-          expect(rootActor.getBus().recipients.size).to.be.equal(0);
-        });
-    }));
-  });
-
   describe('Event generation', () => {
     const messagesExpectationPromise = () => {
       return new Promise((resolve, reject) => {
