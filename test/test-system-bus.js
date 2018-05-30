@@ -189,10 +189,13 @@ describe('SystemBus', function() {
 
             return messagesExpectationPromise();
           })
-          .then(messages => expect(messages.length).to.be.equal(2) &&
-            expect(messages).to.include('pong from B') &&
-            expect(messages).to.include('pong from C'),
-          error => { throw new Error(error); });
+          .then(
+            messages => {
+              expect(messages.length).to.be.equal(2);
+              expect(messages).to.include('pong from B');
+              expect(messages).to.include('pong from C');
+            },
+            error => { throw new Error(error); });
       })
     );
 
