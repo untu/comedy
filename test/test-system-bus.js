@@ -106,7 +106,7 @@ describe('SystemBus', function() {
       P.coroutine(function*() {
         yield rootActor
           .createChild(TestActor, { mode: 'forked', customParameters: { name: 'B' } })
-          .then(childActorB => {
+          .then(() => {
             rootActor.sendBusMessage('test-message-ping', 'ping from A');
 
             return messagesExpectationPromise();
