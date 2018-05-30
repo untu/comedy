@@ -170,10 +170,13 @@ describe('SystemBus', function() {
 
             return messagesExpectationPromise();
           })
-          .then(messages => expect(messages.length).to.be.equal(6) &&
-            expect(messages.filter(msg => msg === 'pong from B').length).to.be.equal(3) &&
-            expect(messages.filter(msg => msg === 'pong from C').length).to.be.equal(3),
-          error => { throw new Error(error); });
+          .then(
+            messages => {
+              expect(messages.length).to.be.equal(6);
+              expect(messages.filter(msg => msg === 'pong from B').length).to.be.equal(3);
+              expect(messages.filter(msg => msg === 'pong from C').length).to.be.equal(3);
+            },
+            error => { throw new Error(error); });
       })
     );
 
