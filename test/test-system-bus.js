@@ -90,7 +90,7 @@ describe('SystemBus', function() {
       }
 
       sendChildPing() {
-        this.childActorC.send('sendPing');
+        return this.childActorC.send('sendPing');
       }
     }
 
