@@ -46,7 +46,7 @@ describe('SystemBus', function() {
       initialize(selfActor) {
         this.selfActor = selfActor;
         this.selfActor.getBus().on('test-message-ping', message => {
-          if (message !== 'ping from B') {
+          if (message !== 'ping from B') { // To avoid message receiving by clustered siblings.
             this.selfActor.sendBusMessage('test-message-pong', `pong from ${selfActor.customParameters.name}`);
           }
         });  
@@ -59,7 +59,7 @@ describe('SystemBus', function() {
             this.selfActor = selfActor;
 
             this.selfActor.getBus().on('test-message-ping', message => {
-              if (message !== 'ping from C') {
+              if (message !== 'ping from C') { // To avoid message receiving by clustered siblings.
                 this.selfActor.sendBusMessage('test-message-pong', `pong from ${selfActor.customParameters.name}`);
               }
             }); 
