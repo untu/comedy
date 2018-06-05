@@ -72,7 +72,10 @@
       { "blankLine": "always", "prev": "*", "next": "for" },
       { "blankLine": "always", "prev": "*", "next": "while" }
     ],
-    "no-trailing-spaces": "off",
+    "no-trailing-spaces": [
+      "warn",
+      { "skipBlankLines": true }
+    ],
     "eqeqeq": "off",
     "no-implicit-coercion": "off",
     "brace-style": ["warn", "stroustrup", { "allowSingleLine": true }],
