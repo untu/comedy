@@ -22,9 +22,9 @@ describe('SystemBus', function() {
   describe('Event generation', () => {
     const messagesExpectationPromise = expectedMessages => {
       return new Promise((resolve, reject) => {
-        const bus = rootActor.getBus();
-        const handler = message => {
-          const index = expectedMessages.findIndex(value => value === message);
+        var bus = rootActor.getBus();
+        var handler = message => {
+          var index = expectedMessages.findIndex(value => value === message);
 
           if (!~index) {
             reject(`Received unexpected message '${message}'`);
