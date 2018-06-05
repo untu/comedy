@@ -20,22 +20,29 @@ describe('SystemBus', function() {
   });
 
   describe('Event generation', () => {
-    const messagesExpectationPromise = () => {
+    const messagesExpectationPromise = expectedMessages => {
       return new Promise((resolve, reject) => {
-        let messages = [];
         const bus = rootActor.getBus();
+        const handler = message => {
+          const index = expectedMessages.findIndex(value => value === message);
 
-        setTimeout(() => {
-          resolve(messages);
-        }, 3000);
+          if (!~index) {
+            reject(`Received unexpected message '${message}'`);
+          }
 
-        bus.on('test-message-ping', message => {
-          messages.push(message);
-        });
+          expectedMessages.splice(index, 1);
 
-        bus.on('test-message-pong', message => {
-          messages.push(message);
-        });
+          if (!expectedMessages.length) {
+            resolve();
+          }
+
+          setTimeout(() => {
+            reject('Test timeout expired.');
+          }, 5000);
+        };
+
+        bus.on('test-message-ping', handler);
+        bus.on('test-message-pong', handler);
       });
     };
 
@@ -108,12 +115,7 @@ describe('SystemBus', function() {
           .then(() => {
             rootActor.sendBusMessage('test-message-ping', 'ping from A');
 
-            return messagesExpectationPromise();
-          })
-          .then(messages => {
-            expect(messages.length).to.be.equal(2);
-            expect(messages).to.include('pong from B');
-            expect(messages).to.include('pong from C');
+            return messagesExpectationPromise(['pong from B', 'pong from C']);
           });
       })
     );
@@ -124,13 +126,8 @@ describe('SystemBus', function() {
           .createChild(TestActor, { mode: 'forked' })
           .then(childActorB => {
             return childActorB.send('sendPing').then(() => {
-              return messagesExpectationPromise();
+              return messagesExpectationPromise(['ping from B', 'pong from C']);
             });
-          })
-          .then(messages => {
-            expect(messages.length).to.be.equal(2);
-            expect(messages).to.include('ping from B');
-            expect(messages).to.include('pong from C');
           });
       })
     );
@@ -141,13 +138,8 @@ describe('SystemBus', function() {
           .createChild(TestActor, { mode: 'forked' })
           .then(childActorB => {
             return childActorB.send('sendChildPing').then(() => {
-              return messagesExpectationPromise();
+              return messagesExpectationPromise(['pong from B', 'ping from C']);
             });
-          })
-          .then(messages => {
-            expect(messages.length).to.be.equal(2);
-            expect(messages).to.include('pong from B');
-            expect(messages).to.include('ping from C');
           });
       })
     );
@@ -159,12 +151,8 @@ describe('SystemBus', function() {
           .then(testActor => {
             rootActor.sendBusMessage('test-message-ping', 'ping from A');
 
-            return messagesExpectationPromise();
-          })
-          .then(messages => {
-            expect(messages.length).to.be.equal(6);
-            expect(messages.filter(msg => msg === 'pong from B').length).to.be.equal(3);
-            expect(messages.filter(msg => msg === 'pong from C').length).to.be.equal(3);
+            return messagesExpectationPromise(['pong from B', 'pong from B', 'pong from B',
+              'pong from C', 'pong from C', 'pong from C']);
           });
       })
     );
@@ -176,12 +164,7 @@ describe('SystemBus', function() {
           .then(childActorB => {
             rootActor.sendBusMessage('test-message-ping', 'ping from A');
 
-            return messagesExpectationPromise();
-          })
-          .then(messages => {
-            expect(messages.length).to.be.equal(2);
-            expect(messages).to.include('pong from B');
-            expect(messages).to.include('pong from C');
+            return messagesExpectationPromise(['pong from B', 'pong from C']);
           });
       })
     );
@@ -192,13 +175,8 @@ describe('SystemBus', function() {
           .createChild(TestActor, { mode: 'remote', host: '127.0.0.1' })
           .then(childActorB => {
             return childActorB.send('sendPing').then(() => {
-              return messagesExpectationPromise();
+              return messagesExpectationPromise(['ping from B', 'pong from C']);
             });
-          })
-          .then(messages => {
-            expect(messages.length).to.be.equal(2);
-            expect(messages).to.include('ping from B');
-            expect(messages).to.include('pong from C');
           });
       })
     );
@@ -209,13 +187,8 @@ describe('SystemBus', function() {
           .createChild(TestActor, { mode: 'remote', host: '127.0.0.1' })
           .then(childActorB => {
             return childActorB.send('sendChildPing').then(() => {
-              return messagesExpectationPromise();
+              return messagesExpectationPromise(['pong from B', 'ping from C']);
             });
-          })
-          .then(messages => {
-            expect(messages.length).to.be.equal(2);
-            expect(messages).to.include('pong from B');
-            expect(messages).to.include('ping from C');
           });
       })
     );
@@ -245,16 +218,13 @@ describe('SystemBus', function() {
       yield rootActor
         .createChild(TestActor, { mode: 'forked' })
         .then(childActorB => {
-          childActorB.send('destroyChild');
-
-          return P.delay(3000)
+          return childActorB.sendAndReceive('destroyChild')
             .then(() => {
               rootActor.sendBusMessage('test-message-ping', 'ping from A');
 
-              return messagesExpectationPromise();
+              return messagesExpectationPromise(['pong from B']);
             });
-        })
-        .then(messages => expect(messages).to.be.eql(['pong from B']));
+        });
     }));
   });
 });
