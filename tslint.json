@@ -12,7 +12,7 @@
     "no-duplicate-variable": true,
     "no-eval": true,
     "no-internal-module": true,
-    "no-trailing-whitespace": false,
+    "no-trailing-whitespace": [true, "ignore-blank-lines"],
     "no-unsafe-finally": true,
     "no-var-keyword": true,
     "no-arg": true,
