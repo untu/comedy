@@ -197,8 +197,8 @@ describe('SystemBus', function() {
       yield rootActor
         .createChild(TestActor, { mode: 'forked' })
         .then(childActorB => {
-          const bus = rootActor.getBus();
-          const listener = message => {
+          var bus = rootActor.getBus();
+          var listener = message => {
             throw new Error('Expected no messages from topic test-message-pong, but got one!');
           };
 
