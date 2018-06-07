@@ -1,9 +1,18 @@
-const actors = require('../index');
-const expect = require('chai').expect;
-const P = require('bluebird');
+/*
+ * Copyright (c) 2016-2017 Untu, Inc.
+ * This code is licensed under Eclipse Public License - v 1.0.
+ * The full license text can be found in LICENSE.txt file and
+ * on the Eclipse official site (https://www.eclipse.org/legal/epl-v10.html).
+ */
 
-let system;
-let rootActor;
+'use strict';
+
+var actors = require('../index');
+var expect = require('chai').expect;
+var P = require('bluebird');
+
+var system;
+var rootActor;
 
 describe('SystemBus', function() {
   beforeEach(function() {
@@ -26,7 +35,7 @@ describe('SystemBus', function() {
         var handler = message => {
           var index = expectedMessages.findIndex(value => value === message);
 
-          if (!~index) {
+          if (index == -1) {
             reject(`Received unexpected message '${message}'`);
           }
 
@@ -35,10 +44,6 @@ describe('SystemBus', function() {
           if (!expectedMessages.length) {
             resolve();
           }
-
-          setTimeout(() => {
-            reject('Test timeout expired.');
-          }, 5000);
         };
 
         bus.on('test-message-ping', handler);
@@ -56,7 +61,7 @@ describe('SystemBus', function() {
           if (message !== 'ping from B') { // To avoid message receiving by clustered siblings.
             this.selfActor.sendBusMessage('test-message-pong', `pong from B`);
           }
-        });  
+        });
 
         /**
          * Actor forked/remote child.
@@ -69,7 +74,7 @@ describe('SystemBus', function() {
               if (message !== 'ping from C') { // To avoid message receiving by clustered siblings.
                 this.selfActor.sendBusMessage('test-message-pong', `pong from C`);
               }
-            }); 
+            });
           }
 
           sendPing() {
@@ -110,121 +115,95 @@ describe('SystemBus', function() {
 
     it('should broadcast emitted messages to all connected recipients in forked mode from actor A',
       P.coroutine(function*() {
-        yield rootActor
-          .createChild(TestActor, { mode: 'forked' })
-          .then(() => {
-            rootActor.sendBusMessage('test-message-ping', 'ping from A');
+        yield rootActor.createChild(TestActor, { mode: 'forked' });
+        rootActor.sendBusMessage('test-message-ping', 'ping from A');
 
-            return messagesExpectationPromise(['pong from B', 'pong from C']);
-          });
+        return messagesExpectationPromise(['pong from B', 'pong from C']);
       })
     );
 
     it('should broadcast emitted messages to all connected recipients in forked mode from actor B',
       P.coroutine(function*() {
-        yield rootActor
-          .createChild(TestActor, { mode: 'forked' })
-          .then(childActorB => {
-            return childActorB.send('sendPing').then(() => {
-              return messagesExpectationPromise(['ping from B', 'pong from C']);
-            });
-          });
+        var childActorB = yield rootActor.createChild(TestActor, { mode: 'forked' });
+
+        yield childActorB.send('sendPing');
+        
+        return messagesExpectationPromise(['ping from B', 'pong from C']);
       })
     );
 
     it('should broadcast emitted messages to all connected recipients in forked mode from actor C',
       P.coroutine(function*() {
-        yield rootActor
-          .createChild(TestActor, { mode: 'forked' })
-          .then(childActorB => {
-            return childActorB.send('sendChildPing').then(() => {
-              return messagesExpectationPromise(['pong from B', 'ping from C']);
-            });
-          });
+        var childActorB = yield rootActor.createChild(TestActor, { mode: 'forked' });
+
+        yield childActorB.send('sendChildPing');
+
+        return messagesExpectationPromise(['pong from B', 'ping from C']);
       })
     );
 
     it('should broadcast emitted messages to all connected recipients in forked clusterized mode',
       P.coroutine(function*() {
-        yield rootActor
-          .createChild(TestActor, { mode: 'forked', clusterSize: 3 })
-          .then(testActor => {
-            rootActor.sendBusMessage('test-message-ping', 'ping from A');
+        yield rootActor.createChild(TestActor, { mode: 'forked', clusterSize: 3 });
+        rootActor.sendBusMessage('test-message-ping', 'ping from A');
 
-            return messagesExpectationPromise(['pong from B', 'pong from B', 'pong from B',
-              'pong from C', 'pong from C', 'pong from C']);
-          });
+        return messagesExpectationPromise([
+          'pong from B', 'pong from B', 'pong from B',
+          'pong from C', 'pong from C', 'pong from C'
+        ]);
       })
     );
 
     it('should broadcast emitted messages to all connected recipients in remote mode from actor A',
       P.coroutine(function*() {
-        yield rootActor
-          .createChild(TestActor, { mode: 'remote', host: '127.0.0.1' })
-          .then(childActorB => {
-            rootActor.sendBusMessage('test-message-ping', 'ping from A');
+        yield rootActor.createChild(TestActor, { mode: 'remote', host: '127.0.0.1' });
+        rootActor.sendBusMessage('test-message-ping', 'ping from A');
 
-            return messagesExpectationPromise(['pong from B', 'pong from C']);
-          });
+        return messagesExpectationPromise(['pong from B', 'pong from C']);
       })
     );
 
     it('should broadcast emitted messages to all connected recipients in remote mode from actor B',
       P.coroutine(function*() {
-        yield rootActor
-          .createChild(TestActor, { mode: 'remote', host: '127.0.0.1' })
-          .then(childActorB => {
-            return childActorB.send('sendPing').then(() => {
-              return messagesExpectationPromise(['ping from B', 'pong from C']);
-            });
-          });
+        var childActorB = yield rootActor.createChild(TestActor, { mode: 'remote', host: '127.0.0.1' });
+        
+        yield childActorB.send('sendPing');
+        
+        return messagesExpectationPromise(['ping from B', 'pong from C']);
       })
     );
 
     it('should broadcast emitted messages to all connected recipients in remote mode from actor C',
       P.coroutine(function*() {
-        yield rootActor
-          .createChild(TestActor, { mode: 'remote', host: '127.0.0.1' })
-          .then(childActorB => {
-            return childActorB.send('sendChildPing').then(() => {
-              return messagesExpectationPromise(['pong from B', 'ping from C']);
-            });
-          });
+        var childActorB = yield rootActor.createChild(TestActor, { mode: 'remote', host: '127.0.0.1' });
+        
+        yield childActorB.send('sendChildPing');
+        
+        return messagesExpectationPromise(['pong from B', 'ping from C']);
       })
     );
 
     it('should not get any messages by bus for particular topic after unsubscribing from it', P.coroutine(function*() {
-      yield rootActor
-        .createChild(TestActor, { mode: 'forked' })
-        .then(childActorB => {
-          var bus = rootActor.getBus();
-          var listener = message => {
-            throw new Error('Expected no messages from topic test-message-pong, but got one!');
-          };
+      var bus = rootActor.getBus();
+      var listener = message => {
+        throw new Error('Expected no messages from topic test-message-pong, but got one!');
+      };
 
-          bus.on('test-message-pong', listener); 
-          bus.removeListener('test-message-pong', listener);
-          rootActor.sendBusMessage('test-message-ping', 'ping from A');
+      yield rootActor.createChild(TestActor, { mode: 'forked' });
+      bus.on('test-message-pong', listener);
+      bus.removeListener('test-message-pong', listener);
+      rootActor.sendBusMessage('test-message-ping', 'ping from A');
 
-          return new Promise((resolve, reject) => {
-            setTimeout(() => {
-              resolve();
-            }, 3000);
-          });
-        });
+      return P.delay(3000);
     }));
 
     it('should not deliver any messages to a destroyed actor', P.coroutine(function*() {
-      yield rootActor
-        .createChild(TestActor, { mode: 'forked' })
-        .then(childActorB => {
-          return childActorB.sendAndReceive('destroyChild')
-            .then(() => {
-              rootActor.sendBusMessage('test-message-ping', 'ping from A');
+      var childActorB = yield rootActor.createChild(TestActor, { mode: 'forked' });
+      
+      yield childActorB.sendAndReceive('destroyChild');
+      rootActor.sendBusMessage('test-message-ping', 'ping from A');
 
-              return messagesExpectationPromise(['pong from B']);
-            });
-        });
+      return messagesExpectationPromise(['pong from B']);
     }));
   });
 });
