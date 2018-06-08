@@ -63,13 +63,61 @@ describe('ClusteredActor', function() {
     }
 
     var parent = yield rootActor.createChild(ParentBehaviour);
-    var router = yield parent.createChild(ChildBehaviour, { clusterSize: 2 });
+    var router = yield parent.createChild(ChildBehaviour, { mode: 'forked', clusterSize: 2 });
 
     yield router.sendAndReceive('hello');
 
     var helloReceivedCount = yield parent.sendAndReceive('getHelloReceivedCount');
 
     expect(helloReceivedCount).to.be.equal(1);
+  }));
+
+  it('should support random balancer', P.coroutine(function*() {
+    /**
+     * Child definition.
+     */
+    class Child {
+      initialize(selfActor) {
+        this.id = selfActor.getId();
+      }
+
+      test() {
+        return this.id;
+      }
+    }
+
+    /**
+     * Parent definition.
+     */
+    class Parent {
+      async initialize(selfActor) {
+        this.router = await selfActor.createChild(Child, {
+          mode: 'forked',
+          clusterSize: 2,
+          balancer: 'random'
+        });
+      }
+
+      async test() {
+        var counters = {};
+        var maxDelta = 0;
+
+        for (var i = 0; i < 100; i++) {
+          var from = await this.router.sendAndReceive('test');
+          counters[from] && counters[from]++ || (counters[from] = 1);
+
+          var curDelta = _.reduce(counters, (memo, value) => Math.abs(value - memo), 0);
+
+          maxDelta = Math.max(maxDelta, curDelta);
+        }
+
+        expect(maxDelta).to.be.within(2, 99);
+      }
+    }
+
+    var parent = yield rootActor.createChild(Parent);
+
+    yield parent.sendAndReceive('test');
   }));
 
   describe('forked mode', function() {
