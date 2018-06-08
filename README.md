@@ -30,8 +30,11 @@ single host (by spawning sub-processes) or even to multiple hosts in your networ
   * [destroy() lifecycle hook](#destroy-lifecycle-hook)
 - [Logging](#logging)
   * [Setting the log level](#setting-the-log-level)
+    + [Dynamic logger configuration](#dynamic-logger-configuration)
 - [Resource Management](#resource-management)
 - [Actor Metrics](#actor-metrics)
+- [Other Features](#other-features)
+  * [Dropping messages on overload](#dropping-messages-on-overload)
 - [Upcoming Features](#upcoming-features)
   * [Optimized message serialization](#optimized-message-serialization)
   * [Hot code deployment](#hot-code-deployment)
@@ -683,12 +686,10 @@ An actor instance class name reveals the underlying actor instance implementatio
 and can be one of `InMemoryActor`, `ForkedActorParent` or `ForkedActorChild`. An actor ID is generated automatically
 for a given actor instance and is unique across the system.
 
-You can specify your own logger implementation by using `log` actor system creation option, but this is an advanced
-topic that will be covered later.
-
 ### Setting the log level
 
 In some cases you might not want Comedy to do logging at all. In others you may want extended debug-level logging.
+Also, you might want to enable verbose logging for a certain actor while keeping the level for the rest of actors.
 
 The log level is configured using `setLevel()` method of `Logger` instance.
 
@@ -735,6 +736,67 @@ class MyActor {
 
   // ...
 }
+```
+
+#### Dynamic logger configuration
+
+Programmatic logger configuration described above is usually not what you really want. Instead of hard-coding log
+levels for various actors, you would normally prefer configuring these log levels in a configuration file to be
+able to change them in runtime. Comedy allows you doing this with dynamic logger configuration capability.
+
+To configure log levels dynamically, you need to:
+
+1. Create a file with logger configuration (usually named `logger.json`) in the directory of your choice.
+2. Specify a path to this file in `loggerConfiguration` parameter in actor system options.
+
+The `logger.json` file has the following format:
+
+```javascript
+{
+  "categories": {
+    "Default": "Info",
+    "MyActor": "Error",
+    "MyOtherActor": "Debug"
+  }
+}
+```
+
+Here we have a category mapping under `categories` key. This mapping object maps logging category name to a log level.
+Each category name is just an actor name. So, with the above category mapping you can configure log levels on
+per-actor basis. There is a special category name - `"Default"` - which configures the default log level.
+
+In the exampe above: actor(s) with name `"MyActor"` will log messages with `Error` log level or higher; actor(s) with
+name `"MyOtherActor"` will log messages with `Debug` log level or higher; all other actors will log messages with
+`Info` level or higher.
+
+To enable file-based logger configuration, you need to specify a path to your `logger.json` file (or whatever
+the name is) in actor system configuration:
+
+```javascript
+var actors = require('comedy');
+
+//...
+
+actors({
+  loggerConfiguration: 'conf/logger.json' // You can also specify the absolute path.
+})
+```
+
+Comedy supports hot logging configuration change. This means that all changes you make to `logger.json` file are
+applied on-the-run without process restart.
+
+You can also specify multiple configuration files in actor system configuration. In this case these configurations
+will be merged just like `actors.json` files do:
+
+```javascript
+var actors = require('comedy');
+
+//...
+
+actors({
+  // Files are specified in descending priority: first file has highest priority.
+  loggerConfiguration: ['/etc/my-service/logger.json', 'conf/logger.json']
+})
 ```
 
 ## Resource Management

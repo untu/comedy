@@ -1,3 +1,6 @@
+### v 1.4.0 (upcoming):
+- Added dynamic per-actor logger configuration.
+
 ### v 1.3.0:
 - Index-based clustered actor metrics output format.
 - Added `dropMessagesOnOverload` actor parameter support.
