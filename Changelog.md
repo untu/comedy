@@ -1,4 +1,4 @@
-### v 1.4.0 (upcoming):
+### v 1.4.0:
 - Added dynamic per-actor logger configuration.
 - Fixed `_classCallCheck` problem for compiled code in `'forked'` mode.
 
