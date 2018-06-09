@@ -37,6 +37,8 @@ describe('SystemBus', function() {
 
           if (index == -1) {
             reject(`Received unexpected message '${message}'`);
+
+            return;
           }
 
           expectedMessages.splice(index, 1);
