@@ -1,4 +1,4 @@
-### v 1.5.0 (upcoming):
+### v 1.5.0:
 - Added random balancer.
 
 ### v 1.4.0:
