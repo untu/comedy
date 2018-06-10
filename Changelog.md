@@ -1,3 +1,6 @@
+### v 1.5.0 (upcoming):
+- Added random balancer.
+
 ### v 1.4.0:
 - Added dynamic per-actor logger configuration.
 - Fixed `_classCallCheck` problem for compiled code in `'forked'` mode.
