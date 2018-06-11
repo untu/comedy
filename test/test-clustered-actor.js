@@ -120,6 +120,69 @@ describe('ClusteredActor', function() {
     yield parent.sendAndReceive('test');
   }));
 
+  it('should support custom balancers', P.coroutine(function*() {
+    /**
+     * Child actor.
+     */
+    class Child {
+      constructor() {
+        this.received = [];
+      }
+
+      test(msg) {
+        this.received.push(msg);
+      }
+
+      getReceived() {
+        return this.received;
+      }
+    }
+
+    /**
+     * Custom balancer.
+     */
+    class CustomBalancer {
+      clusterChanged(actors) {
+        var _ = require('underscore');
+
+        this.table = _.chain(actors).map(actor => actor.getId()).sortBy().value();
+      }
+
+      forward(msg) {
+        var tableIdx = msg.shard % this.table.length;
+
+        return this.table[tableIdx];
+      }
+    }
+
+    var parent = yield rootActor.createChild(Child, {
+      mode: 'forked',
+      clusterSize: 3,
+      balancer: CustomBalancer
+    });
+
+    yield parent.sendAndReceive('test', { shard: 0, value: 1 });
+    yield P.mapSeries(_.range(2), idx => parent.sendAndReceive('test', { shard: 1, value: idx }));
+    yield P.mapSeries(_.range(3), idx => parent.sendAndReceive('test', { shard: 2, value: idx }));
+
+    var result = yield parent.broadcastAndReceive('getReceived');
+
+    expect(result).to.have.deep.members([
+      [
+        { shard: 0, value: 1 }
+      ],
+      [
+        { shard: 1, value: 0 },
+        { shard: 1, value: 1 }
+      ],
+      [
+        { shard: 2, value: 0 },
+        { shard: 2, value: 1 },
+        { shard: 2, value: 2 }
+      ]
+    ]);
+  }));
+
   describe('forked mode', function() {
     it('should properly clusterize with round robin balancing strategy', P.coroutine(function*() {
       var childDef = {
