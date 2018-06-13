@@ -155,10 +155,19 @@ describe('ClusteredActor', function() {
       }
     }
 
+    // Define custom system with our test balancer.
+    yield system.destroy();
+    system = actors({
+      test: true,
+      balancers: [CustomBalancer]
+    });
+    rootActor = yield system.rootActor();
+
+    // Create clustered actor with custom balancer.
     var parent = yield rootActor.createChild(Child, {
       mode: 'forked',
       clusterSize: 3,
-      balancer: CustomBalancer
+      balancer: 'CustomBalancer'
     });
 
     yield parent.sendAndReceive('test', { shard: 0, value: 1 });
