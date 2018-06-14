@@ -10,7 +10,9 @@
     "sourceMap": true,
     "inlineSources": true,
     "newLine": "lf",
-    "outDir": "target"
+    "outDir": "target",
+    "types": ["node", "mocha"],
+    "typeRoots": ["./node_modules/@types"]
   },
   "exclude": [
     "node_modules",

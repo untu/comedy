@@ -5,7 +5,7 @@
  * on the Eclipse official site (https://www.eclipse.org/legal/epl-v10.html).
  */
 
-import EventEmitter = NodeJS.EventEmitter;
+import {EventEmitter} from 'events';
 
 export interface Logger {
   isDebug(): boolean;
