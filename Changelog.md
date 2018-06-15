@@ -1,5 +1,9 @@
-### v 1.4.0 (upcoming):
+### v 1.5.0:
+- Added random balancer.
+
+### v 1.4.0:
 - Added dynamic per-actor logger configuration.
+- Fixed `_classCallCheck` problem for compiled code in `'forked'` mode.
 
 ### v 1.3.0:
 - Index-based clustered actor metrics output format.

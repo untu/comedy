@@ -395,6 +395,19 @@ The `clusterSize` configuration property can be as well used in JSON configurati
 }
 ```
 
+While round-robin balancer is a default, you can also use random balancer by specifying `"balancer": "random"` in
+actor configuration:
+
+```json
+{
+  "MyActor": {
+    "mode": "forked",
+    "clusterSize": 3,
+    "balancer": "random"
+  }
+}
+```
+
 ### Remote Actors
 
 In the examples above we used "forked" mode to spawn child processes and utilize additional CPU cores on local
