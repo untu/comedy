@@ -148,7 +148,7 @@ describe('ClusteredActor', function() {
         this.table = _.chain(actors).map(actor => actor.getId()).sortBy().value();
       }
 
-      forward(msg) {
+      forward(topic, msg) {
         var tableIdx = msg.shard % this.table.length;
 
         return this.table[tableIdx];
@@ -191,6 +191,12 @@ describe('ClusteredActor', function() {
       ]
     ]);
   }));
+
+  it('should call "clusterChanged" on custom balancer if a child goes offline and online');
+
+  it('should support empty "forward" response on custom balancer');
+
+  it('should properly destroy it\'s children');
 
   describe('forked mode', function() {
     it('should properly clusterize with round robin balancing strategy', P.coroutine(function*() {
