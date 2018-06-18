@@ -14,6 +14,7 @@ import {expect} from 'chai';
 import {Actor, ActorSystem} from '../../index';
 import P = require('bluebird');
 import _ = require('underscore');
+import {describe, afterEach, beforeEach, it} from 'mocha';
 
 let system: ActorSystem;
 let rootActor: Actor;
