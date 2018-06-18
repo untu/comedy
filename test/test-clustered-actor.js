@@ -192,7 +192,65 @@ describe('ClusteredActor', function() {
     ]);
   }));
 
-  it('should call "clusterChanged" on custom balancer if a child goes offline and online');
+  it('should call "clusterChanged" on custom balancer if a child goes offline and online', P.coroutine(function*() {
+    /**
+     * Child actor.
+     */
+    class Child {
+      initialize(selfActor) {
+        this.id = selfActor.getId();
+      }
+
+      test() {
+        return this.id;
+      }
+
+      kill() {
+        process.exit(1);
+      }
+    }
+
+    var numberOfClusterChanges = 0;
+
+    /**
+     * Custom balancer. Always routes to a single actor in the
+     * cluster that happens to be the first in clusterChanged() hook.
+     */
+    class CustomBalancer {
+      clusterChanged(actors) {
+        this.currentId = actors[0].getId();
+        numberOfClusterChanges++;
+      }
+
+      forward(topic, msg) {
+        return this.currentId;
+      }
+    }
+
+    // Define custom system with our test balancer.
+    yield system.destroy();
+    system = actors({
+      test: true,
+      balancers: [CustomBalancer]
+    });
+    rootActor = yield system.rootActor();
+
+    // Create clustered actor with custom balancer.
+    var parent = yield rootActor.createChild(Child, {
+      mode: 'forked',
+      clusterSize: 3,
+      balancer: 'CustomBalancer',
+      onCrash: 'respawn'
+    });
+
+    var currentId = yield parent.sendAndReceive('test');
+
+    parent.send('kill');
+
+    yield tu.waitForCondition(() => parent.sendAndReceive('test').then(id => id != currentId));
+
+    yield tu.waitForCondition(() => numberOfClusterChanges == 2);
+  }));
 
   it('should support empty "forward" response on custom balancer');
 
