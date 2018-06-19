@@ -40,6 +40,8 @@ export interface Actor extends EventEmitter {
 
   getMode(): string;
 
+  getState(): string;
+
   getCustomParameters(): any;
 
   createChild(behaviour: ActorDefinition|Object, options?: Object): Promise<Actor>;
