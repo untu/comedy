@@ -287,7 +287,63 @@ describe('ClusteredActor', function() {
     expect(error.message).to.match(/No child to forward message to./);
   }));
 
-  it('should properly destroy it\'s children');
+  it('should generate proper error if forward() returned non-existing child ID');
+
+  it('should properly destroy it\'s children', P.coroutine(function*() {
+    var initializeCounter = 0;
+    var destroyCounter = 0;
+
+    /**
+     * Child actor.
+     */
+    class Child {
+      initialize() {
+        initializeCounter++;
+      }
+
+      destroy() {
+        destroyCounter++;
+      }
+    }
+
+    /**
+     * Custom balancer.
+     */
+    class CustomBalancer {
+      clusterChanged(actors) {
+        this.actors = actors;
+      }
+
+      forward(topic, msg) {
+        var _ = require('underscore');
+        var idx = _.random(this.actors.length);
+
+        return this.actors[idx];
+      }
+    }
+
+    // Define custom system with our test balancer.
+    var system = actors({
+      test: true,
+      balancers: [CustomBalancer]
+    });
+    var rootActor = yield system.rootActor();
+
+    // Create clustered actor with custom balancer.
+    var parent = yield rootActor.createChild(Child, {
+      mode: 'in-memory',
+      clusterSize: 3,
+      balancer: 'CustomBalancer'
+    });
+
+    expect(initializeCounter).to.be.equal(3);
+    expect(destroyCounter).to.be.equal(0);
+
+    yield parent.destroy();
+
+    expect(initializeCounter).to.be.equal(3);
+    expect(destroyCounter).to.be.equal(3);
+  }));
 
   describe('forked mode', function() {
     it('should properly clusterize with round robin balancing strategy', P.coroutine(function*() {
