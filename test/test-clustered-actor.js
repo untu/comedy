@@ -252,7 +252,40 @@ describe('ClusteredActor', function() {
     yield tu.waitForCondition(() => numberOfClusterChanges == 2);
   }));
 
-  it('should support empty "forward" response on custom balancer');
+  it('should support empty "forward" response on custom balancer', P.coroutine(function*() {
+    /**
+     * Custom balancer.
+     */
+    class CustomBalancer {
+      forward(topic, msg) {
+        // Return nothing.
+      }
+    }
+
+    // Define custom system with our test balancer.
+    yield system.destroy();
+    system = actors({
+      test: true,
+      balancers: [CustomBalancer]
+    });
+    rootActor = yield system.rootActor();
+
+    // Create clustered actor with custom balancer.
+    var parent = yield rootActor.createChild({}, {
+      mode: 'forked',
+      clusterSize: 3,
+      balancer: 'CustomBalancer'
+    });
+
+    var error;
+
+    yield parent.sendAndReceive('test', { shard: 0, value: 1 }).catch(err => {
+      error = err;
+    });
+
+    expect(error).to.be.an.instanceof(Error);
+    expect(error.message).to.match(/No child to forward message to./);
+  }));
 
   it('should properly destroy it\'s children');
 
