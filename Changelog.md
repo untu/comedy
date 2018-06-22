@@ -1,3 +1,9 @@
+### v 1.6.0 (upcoming):
+- Added custom balancers.
+
+### v 1.5.1:
+- Moved `toobusy-js` to regular dependencies (bugfix).
+
 ### v 1.5.0:
 - Added random balancer.
 
