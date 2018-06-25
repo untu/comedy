@@ -1,5 +1,6 @@
 ### v 1.6.0 (upcoming):
 - Added custom balancers.
+- Added Babel-transpiled projects support.
 
 ### v 1.5.1:
 - Moved `toobusy-js` to regular dependencies (bugfix).
