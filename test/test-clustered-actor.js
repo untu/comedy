@@ -120,6 +120,265 @@ describe('ClusteredActor', function() {
     yield parent.sendAndReceive('test');
   }));
 
+  it('should support custom balancers', P.coroutine(function*() {
+    /**
+     * Child actor.
+     */
+    class Child {
+      constructor() {
+        this.received = [];
+      }
+
+      test(msg) {
+        this.received.push(msg);
+      }
+
+      getReceived() {
+        return this.received;
+      }
+    }
+
+    /**
+     * Custom balancer.
+     */
+    class CustomBalancer {
+      clusterChanged(actors) {
+        var _ = require('underscore');
+
+        this.table = _.chain(actors).map(actor => actor.getId()).sortBy().value();
+      }
+
+      forward(topic, msg) {
+        var tableIdx = msg.shard % this.table.length;
+
+        return this.table[tableIdx];
+      }
+    }
+
+    // Define custom system with our test balancer.
+    yield system.destroy();
+    system = actors({
+      test: true,
+      balancers: [CustomBalancer]
+    });
+    rootActor = yield system.rootActor();
+
+    // Create clustered actor with custom balancer.
+    var parent = yield rootActor.createChild(Child, {
+      mode: 'forked',
+      clusterSize: 3,
+      balancer: 'CustomBalancer'
+    });
+
+    yield parent.sendAndReceive('test', { shard: 0, value: 1 });
+    yield P.mapSeries(_.range(2), idx => parent.sendAndReceive('test', { shard: 1, value: idx }));
+    yield P.mapSeries(_.range(3), idx => parent.sendAndReceive('test', { shard: 2, value: idx }));
+
+    var result = yield parent.broadcastAndReceive('getReceived');
+
+    expect(result).to.have.deep.members([
+      [
+        { shard: 0, value: 1 }
+      ],
+      [
+        { shard: 1, value: 0 },
+        { shard: 1, value: 1 }
+      ],
+      [
+        { shard: 2, value: 0 },
+        { shard: 2, value: 1 },
+        { shard: 2, value: 2 }
+      ]
+    ]);
+  }));
+
+  it('should call "clusterChanged" on custom balancer if a child goes offline and online', P.coroutine(function*() {
+    /**
+     * Child actor.
+     */
+    class Child {
+      initialize(selfActor) {
+        this.id = selfActor.getId();
+      }
+
+      test() {
+        return this.id;
+      }
+
+      kill() {
+        process.exit(1);
+      }
+    }
+
+    var numberOfClusterChanges = 0;
+
+    /**
+     * Custom balancer. Always routes to a single actor in the
+     * cluster that happens to be the first in clusterChanged() hook.
+     */
+    class CustomBalancer {
+      clusterChanged(actors) {
+        this.currentId = actors[0].getId();
+        numberOfClusterChanges++;
+      }
+
+      forward(topic, msg) {
+        return this.currentId;
+      }
+    }
+
+    // Define custom system with our test balancer.
+    yield system.destroy();
+    system = actors({
+      test: true,
+      balancers: [CustomBalancer]
+    });
+    rootActor = yield system.rootActor();
+
+    // Create clustered actor with custom balancer.
+    var parent = yield rootActor.createChild(Child, {
+      mode: 'forked',
+      clusterSize: 3,
+      balancer: 'CustomBalancer',
+      onCrash: 'respawn'
+    });
+
+    var currentId = yield parent.sendAndReceive('test');
+
+    parent.send('kill');
+
+    yield tu.waitForCondition(() => parent.sendAndReceive('test').then(id => id != currentId));
+
+    yield tu.waitForCondition(() => numberOfClusterChanges == 2);
+  }));
+
+  it('should support empty "forward" response on custom balancer', P.coroutine(function*() {
+    /**
+     * Custom balancer.
+     */
+    class CustomBalancer {
+      forward(topic, msg) {
+        // Return nothing.
+      }
+    }
+
+    // Define custom system with our test balancer.
+    yield system.destroy();
+    system = actors({
+      test: true,
+      balancers: [CustomBalancer]
+    });
+    rootActor = yield system.rootActor();
+
+    // Create clustered actor with custom balancer.
+    var parent = yield rootActor.createChild({}, {
+      mode: 'forked',
+      clusterSize: 3,
+      balancer: 'CustomBalancer'
+    });
+
+    var error;
+
+    yield parent.sendAndReceive('test', { shard: 0, value: 1 }).catch(err => {
+      error = err;
+    });
+
+    expect(error).to.be.an.instanceof(Error);
+    expect(error.message).to.match(/No child to forward message to./);
+  }));
+
+  it('should generate proper error if forward() returned non-existing child ID', P.coroutine(function*() {
+    /**
+     * Custom balancer.
+     */
+    class CustomBalancer {
+      forward(topic, msg) {
+        // Return absent ID.
+        return '123456';
+      }
+    }
+
+    // Define custom system with our test balancer.
+    yield system.destroy();
+    system = actors({
+      test: true,
+      balancers: [CustomBalancer]
+    });
+    rootActor = yield system.rootActor();
+
+    // Create clustered actor with custom balancer.
+    var parent = yield rootActor.createChild({}, {
+      mode: 'forked',
+      clusterSize: 3,
+      balancer: 'CustomBalancer'
+    });
+
+    var error;
+
+    yield parent.sendAndReceive('test', { shard: 0, value: 1 }).catch(err => {
+      error = err;
+    });
+
+    expect(error).to.be.an.instanceof(Error);
+    expect(error.message).to.match(/No child to forward message to./);
+  }));
+
+  it('should properly destroy it\'s children', P.coroutine(function*() {
+    var initializeCounter = 0;
+    var destroyCounter = 0;
+
+    /**
+     * Child actor.
+     */
+    class Child {
+      initialize() {
+        initializeCounter++;
+      }
+
+      destroy() {
+        destroyCounter++;
+      }
+    }
+
+    /**
+     * Custom balancer.
+     */
+    class CustomBalancer {
+      clusterChanged(actors) {
+        this.actors = actors;
+      }
+
+      forward(topic, msg) {
+        var _ = require('underscore');
+        var idx = _.random(this.actors.length);
+
+        return this.actors[idx];
+      }
+    }
+
+    // Define custom system with our test balancer.
+    var system = actors({
+      test: true,
+      balancers: [CustomBalancer]
+    });
+    var rootActor = yield system.rootActor();
+
+    // Create clustered actor with custom balancer.
+    var parent = yield rootActor.createChild(Child, {
+      mode: 'in-memory',
+      clusterSize: 3,
+      balancer: 'CustomBalancer'
+    });
+
+    expect(initializeCounter).to.be.equal(3);
+    expect(destroyCounter).to.be.equal(0);
+
+    yield parent.destroy();
+
+    expect(initializeCounter).to.be.equal(3);
+    expect(destroyCounter).to.be.equal(3);
+  }));
+
   describe('forked mode', function() {
     it('should properly clusterize with round robin balancing strategy', P.coroutine(function*() {
       var childDef = {
