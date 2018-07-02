@@ -21,6 +21,7 @@ module.exports = function(grunt) {
       target: [
         '**/*.js',
         '!**/node_modules/**',
+        '!target/**',
         '!coverage/**'
       ]
     },
