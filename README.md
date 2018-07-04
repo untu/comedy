@@ -1241,7 +1241,7 @@ repeat.
 ### Custom balancers
 
 In [Scaling to multiple instances](#scaling-to-multiple-instances) section we covered clustered actors with
-several balancing strategies: `"round-robin"` and `"random"`. Are there any other balancing strategies possible?
+two balancing strategies: `"round-robin"` and `"random"`. Are there any other balancing strategies possible?
 The answer is: yes!
 
 You can define your own custom balancers for clustered actors. Here we explain how it is done.
@@ -1275,7 +1275,7 @@ A `"forward"` message handler performs actual balancing. It receives a message t
 a message body as a second argument, and should return an ID of a child actor, to which a message should be forwarded.
 
 A `"clusterChanged"` message handler is called once before a first message is received by balancer and then every
-time there is a change in a cluster (one or more actors go down or up, actors are added or removed etc.). The handler
+time there is a change in a cluster (one or more actors went down or up, actors are added or removed etc.). The handler
 receives an array of online actors, which are capable of receiving a forwarded message.
 
 The `CustomBalancer` actor above does a simple (maybe, too simple) shard-based forwarding. In `"clusterChanged"`
@@ -1297,7 +1297,7 @@ parameters:
 var system = actors({ balancers: ['/some-project-folder/balancers/custom-balancer'] });
 ```
 
-After that, we just specify the balancer name in the `"balancer"` parameter of our clustered actor, either
+After that, we just specify the balancer's name in the `"balancer"` parameter of our clustered actor, either
 programmatically or via `actors.json` file:
 
 ```javascript
@@ -1309,6 +1309,51 @@ programmatically or via `actors.json` file:
   }
 }
 ```
+
+In the example above, messages to `MyClusteredActor` will be balanced with our `CustomBalancer`.
+
+### System bus
+
+There might be cases when you need to broadcast a message to all actors in your system. For example, you may need
+to propagate system-wide configuration. For such cases, a system bus is implemented.
+
+System bus lets you broadcast a message to every actor that has subscribed to a particular topic.
+
+To receive a system-wide message, an actor needs to subscribe to it. The subscription example is below:
+
+```javascript
+class MyActor {
+  initialize(selfActor) {
+    // Subscribe to 'system-configuration-changed' topic.
+    selfActor.getSystem().getBus().on('system-configuration-changed', newConfig => {
+      console.log('New system configuration:', newConfig);
+
+      // Do something useful with new configuration...
+    });
+  }
+}
+```
+
+After having your actors subscribed, you can broadcast a system-wide message from any place of your code where
+`ActorSystem` is accessible and have it received by subscribed actors, even if they are in `"forked"` or `"remote"`
+mode:
+
+```javascript
+system.getBus().emit('system-configuration-changed', { foo: 'bar' });
+```
+
+Note the following:
+
+1. The level of actor hierarchy, from which you emit messages into the bus, does not matter - the messages are
+being broadcast to all subscribed actors in all processes in the system.
+2. If you subscribe to system bus messages in a clustered actor, all instances of your clustered actor will
+receive a message, no balancing will occur.
+3. You can subscribe to system bus messages in actor [resources](#resource-management) as well (and also emit
+messages from resources).
+
+**Do not overuse system bus messages!** This feature is intended only for **rare**, occasional messages that
+potentially impact a large part of your system. For normal workload you better use direct actor-to-actor
+messaging and hierarchical work distribution.
 
 ## Upcoming Features
 
