@@ -33,15 +33,14 @@ single host (by spawning sub-processes) or even to multiple hosts in your networ
     + [Dynamic logger configuration](#dynamic-logger-configuration)
 - [Resource Management](#resource-management)
 - [Actor Metrics](#actor-metrics)
-- [Other Features](#other-features)
+- [Advanced Features](#advanced-features)
   * [Dropping messages on overload](#dropping-messages-on-overload)
+  * [Custom balancers](#custom-balancers)
 - [Upcoming Features](#upcoming-features)
   * [Optimized message serialization](#optimized-message-serialization)
   * [Hot code deployment](#hot-code-deployment)
   * [Hot configuration change](#hot-configuration-change)
   * [Automatic actor clustering according to load](#automatic-actor-clustering-according-to-load)
-- [Advanced Features](#advanced-features)
-  * [Custom balancers](#custom-balancers)
 - [About](#about)
 
 <!-- tocstop -->
@@ -1215,9 +1214,10 @@ We've received metrics for `MyActor` as well as it's child actor, though we didn
 `metrics` method, metric aggregation happens automatically, so each actor only needs to output it's own metrics
 from `metrics` message handler.
 
-## Other Features
+## Advanced Features
 
-A full Comedy reference manual is still to come. In this chapter we briefly cover some additional features.
+In this section we cover advanced Comedy features, that are not absolutely necessary to use the framework, but
+can be useful in some particular cases.
 
 ### Dropping messages on overload
 
@@ -1237,49 +1237,6 @@ normal message handling.
 You normally only want to enable `dropMessagesOnOverload` for actors that receive messages you may allow to loose.
 An example of such messages are monitoring messages, informational or statistical messages or messages that regularly
 repeat.
-
-## Upcoming Features
-
-There is a number of features planned for future Comedy releases. The below list is not a roadmap, but rather a
-vision of what would be needed in nearest time.
-
-### Optimized message serialization
-
-Currently Comedy serializes messages as plain JSON. This serialization method certainly won't give the best throughput.
-In future versions Comedy is likely to switch to a binary message format. Candidates are:
-
-- BSON
-- PSON
-- Smilie
-
-There is also an option to try message compression like Snappy or mere GZip. These solutions will be tested on existing
-benchmarks. There will also be an option for pluggable user-defined serialization.
-
-### Hot code deployment
-
-Currently, when you want to run an actor that has external module dependencies in `remote` mode, you need to ensure
-the dependent modules are installed on a remote machine.
-
-It would be more convenient if Comedy deploys these modules automatically as a part of actor initialization process.
-
-### Hot configuration change
-
-Currently, if you change something in your `actors.json` file, you need to restart your application for changes to
-take effect. A better option would be if Comedy automatically detects changes in `actors.json` and switches actor
-modes accordingly (spawns additional processes or removes unneeded ones) without application restart.
-
-### Automatic actor clustering according to load
-
-You may not know your load in advance. Manually changing cluster size for clustered actors as load changes is
-is tedious and inconvenient. Comedy could instead automatically change cluster size according to, say, actor
-metrics (a function for calculating cluster size from metrics can be specified in parameters). Thus, when your
-load increases, Comedy could automatically spawn additional actors to handle load, and when load reduces - destroy
-unneeded actors.
-
-## Advanced Features
-
-In this section we cover advanced Comedy features, that are not absolutely necessary to use the framework, but
-can be useful in some particular cases.
 
 ### Custom balancers
 
@@ -1352,6 +1309,44 @@ programmatically or via `actors.json` file:
   }
 }
 ```
+
+## Upcoming Features
+
+There is a number of features planned for future Comedy releases. The below list is not a roadmap, but rather a
+vision of what would be needed in nearest time.
+
+### Optimized message serialization
+
+Currently Comedy serializes messages as plain JSON. This serialization method certainly won't give the best throughput.
+In future versions Comedy is likely to switch to a binary message format. Candidates are:
+
+- BSON
+- PSON
+- Smilie
+
+There is also an option to try message compression like Snappy or mere GZip. These solutions will be tested on existing
+benchmarks. There will also be an option for pluggable user-defined serialization.
+
+### Hot code deployment
+
+Currently, when you want to run an actor that has external module dependencies in `remote` mode, you need to ensure
+the dependent modules are installed on a remote machine.
+
+It would be more convenient if Comedy deploys these modules automatically as a part of actor initialization process.
+
+### Hot configuration change
+
+Currently, if you change something in your `actors.json` file, you need to restart your application for changes to
+take effect. A better option would be if Comedy automatically detects changes in `actors.json` and switches actor
+modes accordingly (spawns additional processes or removes unneeded ones) without application restart.
+
+### Automatic actor clustering according to load
+
+You may not know your load in advance. Manually changing cluster size for clustered actors as load changes is
+is tedious and inconvenient. Comedy could instead automatically change cluster size according to, say, actor
+metrics (a function for calculating cluster size from metrics can be specified in parameters). Thus, when your
+load increases, Comedy could automatically spawn additional actors to handle load, and when load reduces - destroy
+unneeded actors.
 
 ## About
 
