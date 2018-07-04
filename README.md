@@ -40,7 +40,8 @@ single host (by spawning sub-processes) or even to multiple hosts in your networ
   * [Hot code deployment](#hot-code-deployment)
   * [Hot configuration change](#hot-configuration-change)
   * [Automatic actor clustering according to load](#automatic-actor-clustering-according-to-load)
-  * [Affinity-based routing to clustered actors](#affinity-based-routing-to-clustered-actors)
+- [Advanced Features](#advanced-features)
+  * [Custom balancers](#custom-balancers)
 - [About](#about)
 
 <!-- tocstop -->
