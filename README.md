@@ -1275,12 +1275,82 @@ metrics (a function for calculating cluster size from metrics can be specified i
 load increases, Comedy could automatically spawn additional actors to handle load, and when load reduces - destroy
 unneeded actors.
 
-### Affinity-based routing to clustered actors
+## Advanced Features
 
-For now the only strategy used to route messages to clustered actor children is round-robin. Comedy could support
-more advanced routing, so that a message is transferred to a child that is most efficient to handle this message.
-For instance, we could pick a child that is launched near a particular database shard, where all needed data resides,
-and avoid network query to a remote shard.
+In this section we cover advanced Comedy features, that are not absolutely necessary to use the framework, but
+can be useful in some particular cases.
+
+### Custom balancers
+
+In [Scaling to multiple instances](#scaling-to-multiple-instances) section we covered clustered actors with
+several balancing strategies: `"round-robin"` and `"random"`. Are there any other balancing strategies possible?
+The answer is: yes!
+
+You can define your own custom balancers for clustered actors. Here we explain how it is done.
+
+Firstly, you need to implement your custom balancer, which is just a regular actor definition with
+additional contract: you need to define a `"forward"` message handler and, optionally, a `"clusterChanged"`
+message handler.
+
+Below is a custom balancer example:
+
+```javascript
+/**
+ * Custom balancer with simplistic sharding.
+ */
+class CustomBalancer {
+  clusterChanged(actors) {
+    var _ = require('underscore');
+
+    this.table = _.chain(actors).map(actor => actor.getId()).sortBy().value();
+  }
+
+  forward(topic, msg) {
+    var tableIdx = msg.shard % this.table.length;
+
+    return this.table[tableIdx];
+  }
+}
+```
+
+A `"forward"` message handler performs actual balancing. It receives a message topic as a first argument and
+a message body as a second argument, and should return an ID of a child actor, to which a message should be forwarded.
+
+A `"clusterChanged"` message handler is called once before a first message is received by balancer and then every
+time there is a change in a cluster (one or more actors go down or up, actors are added or removed etc.). The handler
+receives an array of online actors, which are capable of receiving a forwarded message.
+
+The `CustomBalancer` actor above does a simple (maybe, too simple) shard-based forwarding. In `"clusterChanged"`
+message handler, it saves actor IDs into a sorted array. Then, in `"forward"` message handler it picks the
+appropriate actor ID based on a `"shard"` field of a message. If `"shard"` field is absent in a message, the
+`"forward"` handler will return `undefined`, which will result in and error ("No actor to send message to.") returned
+to a sender of a message.
+
+After we have defined our custom balancer, we should feed it to the actor system through initialization parameters:
+
+```javascript
+var system = actors({ balancers: [CustomBalancer] });
+```
+
+We could also save the balancer to a separate file and specify a path to this file in actor system initialization
+parameters:
+
+```javascript
+var system = actors({ balancers: ['/some-project-folder/balancers/custom-balancer'] });
+```
+
+After that, we just specify the balancer name in the `"balancer"` parameter of our clustered actor, either
+programmatically or via `actors.json` file:
+
+```javascript
+{
+  "MyClusteredActor": {
+    "mode": "forked",
+    "clusterSize": 3,
+    "balancer": "CustomBalancer"
+  }
+}
+```
 
 ## About
 
