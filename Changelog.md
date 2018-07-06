@@ -1,4 +1,4 @@
-### v 1.6.0 (upcoming):
+### v 1.6.0:
 - Added custom balancers.
 - Added Babel-transpiled projects support.
 - Added system bus.
