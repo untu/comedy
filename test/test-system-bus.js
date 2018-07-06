@@ -7,12 +7,12 @@
 
 'use strict';
 
-var actors = require('../index');
-var expect = require('chai').expect;
-var P = require('bluebird');
+let actors = require('../index');
+let expect = require('chai').expect;
+let P = require('bluebird');
 
-var system;
-var rootActor;
+let system;
+let rootActor;
 
 describe('SystemBus', function() {
   beforeEach(function() {
@@ -31,9 +31,9 @@ describe('SystemBus', function() {
   describe('Event generation', () => {
     const messagesExpectationPromise = expectedMessages => {
       return new Promise((resolve, reject) => {
-        var bus = rootActor.getBus();
-        var handler = message => {
-          var index = expectedMessages.findIndex(value => value === message);
+        let bus = rootActor.getBus();
+        let handler = message => {
+          let index = expectedMessages.findIndex(value => value === message);
 
           if (index == -1) {
             reject(`Received unexpected message '${message}'`);
@@ -126,7 +126,7 @@ describe('SystemBus', function() {
 
     it('should broadcast emitted messages to all connected recipients in forked mode from actor B',
       P.coroutine(function*() {
-        var childActorB = yield rootActor.createChild(TestActor, { mode: 'forked' });
+        let childActorB = yield rootActor.createChild(TestActor, { mode: 'forked' });
 
         yield childActorB.send('sendPing');
         
@@ -136,7 +136,7 @@ describe('SystemBus', function() {
 
     it('should broadcast emitted messages to all connected recipients in forked mode from actor C',
       P.coroutine(function*() {
-        var childActorB = yield rootActor.createChild(TestActor, { mode: 'forked' });
+        let childActorB = yield rootActor.createChild(TestActor, { mode: 'forked' });
 
         yield childActorB.send('sendChildPing');
 
@@ -167,7 +167,7 @@ describe('SystemBus', function() {
 
     it('should broadcast emitted messages to all connected recipients in remote mode from actor B',
       P.coroutine(function*() {
-        var childActorB = yield rootActor.createChild(TestActor, { mode: 'remote', host: '127.0.0.1' });
+        let childActorB = yield rootActor.createChild(TestActor, { mode: 'remote', host: '127.0.0.1' });
         
         yield childActorB.send('sendPing');
         
@@ -177,7 +177,7 @@ describe('SystemBus', function() {
 
     it('should broadcast emitted messages to all connected recipients in remote mode from actor C',
       P.coroutine(function*() {
-        var childActorB = yield rootActor.createChild(TestActor, { mode: 'remote', host: '127.0.0.1' });
+        let childActorB = yield rootActor.createChild(TestActor, { mode: 'remote', host: '127.0.0.1' });
         
         yield childActorB.send('sendChildPing');
         
@@ -186,8 +186,8 @@ describe('SystemBus', function() {
     );
 
     it('should not get any messages by bus for particular topic after unsubscribing from it', P.coroutine(function*() {
-      var bus = rootActor.getBus();
-      var listener = message => {
+      let bus = rootActor.getBus();
+      let listener = message => {
         throw new Error('Expected no messages from topic test-message-pong, but got one!');
       };
 
@@ -200,7 +200,7 @@ describe('SystemBus', function() {
     }));
 
     it('should not deliver any messages to a destroyed actor', P.coroutine(function*() {
-      var childActorB = yield rootActor.createChild(TestActor, { mode: 'forked' });
+      let childActorB = yield rootActor.createChild(TestActor, { mode: 'forked' });
       
       yield childActorB.sendAndReceive('destroyChild');
       rootActor.sendBusMessage('test-message-ping', 'ping from A');

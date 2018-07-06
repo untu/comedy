@@ -9,14 +9,14 @@
 
 /* eslint require-jsdoc: "off" */
 
-var actors = require('../index');
-var Actor = require('../lib/actor.js');
-var expect = require('chai').expect;
-var P = require('bluebird');
-var _ = require('underscore');
+let actors = require('../index');
+let Actor = require('../lib/actor.js');
+let expect = require('chai').expect;
+let P = require('bluebird');
+let _ = require('underscore');
 
-var system;
-var rootActor;
+let system;
+let rootActor;
 
 describe('InMemoryActor', function() {
   beforeEach(function() {
@@ -57,7 +57,7 @@ describe('InMemoryActor', function() {
         }
       }
 
-      var err;
+      let err;
 
       try {
         yield rootActor.createChild(LongStartingActor);
@@ -91,7 +91,7 @@ describe('InMemoryActor', function() {
         }
       }
 
-      var error;
+      let error;
 
       try {
         yield rootActor.createChild(LongStartingActor);
@@ -108,7 +108,7 @@ describe('InMemoryActor', function() {
 
   describe('send()', function() {
     it('should send a message to an actor', function() {
-      var externalState = 0;
+      let externalState = 0;
 
       return rootActor
         .createChild({
@@ -153,7 +153,7 @@ describe('InMemoryActor', function() {
     });
 
     it('should allow additional arguments', function() {
-      var result = 0;
+      let result = 0;
 
       return rootActor
         .createChild({
@@ -241,7 +241,7 @@ describe('InMemoryActor', function() {
     });
 
     it('should support ES5 class behaviour definitions', function() {
-      var TestActor = function() {};
+      let TestActor = function() {};
 
       TestActor.prototype.initialize = function(selfActor) {
         expect(selfActor).to.be.instanceof(Actor);
@@ -287,15 +287,15 @@ describe('InMemoryActor', function() {
 
   describe('createChildren()', function() {
     it('should create module actor children from a specified directory', P.coroutine(function*() {
-      var childActors = yield rootActor.createChildren('/test-resources/actors/child-actors');
+      let childActors = yield rootActor.createChildren('/test-resources/actors/child-actors');
 
       expect(childActors.length).to.be.equal(2);
 
-      var childActorNames = _.map(childActors, actor => actor.getName());
+      let childActorNames = _.map(childActors, actor => actor.getName());
 
       expect(childActorNames).to.have.members(['ChildActor1', 'ChildActor2']);
 
-      var childActorReplies = yield P.map(childActors, actor => actor.sendAndReceive('hello'));
+      let childActorReplies = yield P.map(childActors, actor => actor.sendAndReceive('hello'));
 
       expect(childActorReplies).to.have.members(['Hello from ChildActor1', 'Hello from ChildActor2']);
     }));
@@ -312,9 +312,9 @@ describe('InMemoryActor', function() {
       }
 
       // Create child actor with custom parameter.
-      var childActor = yield rootActor.createChild(MyActor, { customParameters: { helloResponse: 'Hi there!' } });
+      let childActor = yield rootActor.createChild(MyActor, { customParameters: { helloResponse: 'Hi there!' } });
 
-      var response = yield childActor.sendAndReceive('hello');
+      let response = yield childActor.sendAndReceive('hello');
 
       expect(response).to.be.equal('Hi there!');
     }));
@@ -322,13 +322,13 @@ describe('InMemoryActor', function() {
 
   describe('forwardToParent()', function() {
     it('should forward messages with given topics to parent actor', P.coroutine(function*() {
-      var result = 0;
+      let result = 0;
 
-      var childActor = yield rootActor.createChild({
+      let childActor = yield rootActor.createChild({
         plus: n => result += n,
         times: n => result *= n
       });
-      var grandChildActor = yield childActor.createChild({
+      let grandChildActor = yield childActor.createChild({
         initialize: selfActor => selfActor.forwardToParent('plus', 'times')
       });
 
@@ -339,13 +339,13 @@ describe('InMemoryActor', function() {
     }));
 
     it('should support regular expressions', P.coroutine(function*() {
-      var result = 0;
+      let result = 0;
 
-      var childActor = yield rootActor.createChild({
+      let childActor = yield rootActor.createChild({
         mathPlus: n => result += n,
         mathTimes: n => result *= n
       });
-      var grandChildActor = yield childActor.createChild({
+      let grandChildActor = yield childActor.createChild({
         initialize: selfActor => selfActor.forwardToParent(/^math/)
       });
 
@@ -358,11 +358,11 @@ describe('InMemoryActor', function() {
 
   describe('forwardToChild()', function() {
     it('should forward messages with given topics to a given child actor', P.coroutine(function*() {
-      var child2Mailbox = [];
-      var parent = yield rootActor.createChild({
+      let child2Mailbox = [];
+      let parent = yield rootActor.createChild({
         initialize: selfActor => {
           // Create first child that receives 'hello' messages and sends 'tell...' messages to parent.
-          var child1Promise = selfActor
+          let child1Promise = selfActor
             .createChild({
               initialize: selfActor => {
                 this.parent = selfActor.getParent();
@@ -378,7 +378,7 @@ describe('InMemoryActor', function() {
             });
 
           // Create second child that receives 'tell...' messages and writes to mailbox.
-          var child2Promise = selfActor
+          let child2Promise = selfActor
             .createChild({
               tellChild2: msg => {
                 child2Mailbox.push(msg);
@@ -401,7 +401,7 @@ describe('InMemoryActor', function() {
 
   describe('metrics()', function() {
     it('should collect metrics from target actor and all the actor sub-tree', P.coroutine(function*() {
-      var parent = yield rootActor.createChild({
+      let parent = yield rootActor.createChild({
         metrics: function() {
           return {
             parentMetric: 111
@@ -423,7 +423,7 @@ describe('InMemoryActor', function() {
         }
       }, { name: 'Child2' });
 
-      var metrics = yield parent.metrics();
+      let metrics = yield parent.metrics();
 
       expect(metrics).to.be.deep.equal({
         parentMetric: 111,
@@ -437,7 +437,7 @@ describe('InMemoryActor', function() {
     }));
 
     it('should not collect metrics from destroyed actors', P.coroutine(function*() {
-      var parent = yield rootActor.createChild({
+      let parent = yield rootActor.createChild({
         metrics: function() {
           return {
             parentMetric: 111
@@ -451,7 +451,7 @@ describe('InMemoryActor', function() {
           };
         }
       }, { name: 'Child1' });
-      var child2 = yield parent.createChild({
+      let child2 = yield parent.createChild({
         metrics: function() {
           return {
             childMetric: 333
@@ -461,7 +461,7 @@ describe('InMemoryActor', function() {
 
       yield child2.destroy();
 
-      var metrics = yield parent.metrics();
+      let metrics = yield parent.metrics();
 
       expect(metrics).to.be.deep.equal({
         parentMetric: 111,
@@ -474,8 +474,8 @@ describe('InMemoryActor', function() {
 
   describe('destroy()', function() {
     it('should call destroy() method in behaviour object', P.coroutine(function*() {
-      var destroyed = false;
-      var childActor = yield rootActor.createChild({
+      let destroyed = false;
+      let childActor = yield rootActor.createChild({
         destroy: () => destroyed = true
       });
 
@@ -485,8 +485,8 @@ describe('InMemoryActor', function() {
     }));
 
     it('should destroy children before destroying self', P.coroutine(function*() {
-      var destroyList = [];
-      var childActor = yield rootActor.createChild({
+      let destroyList = [];
+      let childActor = yield rootActor.createChild({
         destroy: () => destroyList.push('child')
       });
       yield childActor.createChild({

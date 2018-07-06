@@ -7,7 +7,7 @@
 
 'use strict';
 
-var _ = require('underscore');
+let _ = require('underscore');
 
 /**
  * Cumulative average metric.
@@ -39,7 +39,7 @@ class CumulativeAverage {
    * @returns {Number} Current average value.
    */
   getAndReset() {
-    var ret = this.count !== 0 ? this.sum / this.count : 0;
+    let ret = this.count !== 0 ? this.sum / this.count : 0;
 
     if (this.options.precision) {
       ret = parseFloat(ret.toFixed(this.options.precision));

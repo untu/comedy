@@ -7,8 +7,8 @@
 
 'use strict';
 
-var AbstractThroughputBenchmark = require('./abstract-throughput-benchmark.js');
-var actors = require('../index.js');
+let AbstractThroughputBenchmark = require('./abstract-throughput-benchmark.js');
+let actors = require('../index.js');
 
 /**
  * A test actor for measuring messaging throughput in forked mode.
@@ -64,7 +64,7 @@ class ForkedMessagingNativeSerializationBenchmark extends AbstractThroughputBenc
   }
 }
 
-var bm = new ForkedMessagingNativeSerializationBenchmark();
+let bm = new ForkedMessagingNativeSerializationBenchmark();
 
 bm.runWithWarmUp({ concurrencyLevel: 16 }).then(result => {
   console.log({

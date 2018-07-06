@@ -9,11 +9,11 @@
 
 /* eslint require-jsdoc: "off" */
 
-var expect = require('chai').expect;
-var actors = require('../index');
-var P = require('bluebird');
+let expect = require('chai').expect;
+let actors = require('../index');
+let P = require('bluebird');
 
-var testSystem;
+let testSystem;
 
 describe('ActorSystem', function() {
   afterEach(function() {
@@ -23,7 +23,7 @@ describe('ActorSystem', function() {
   });
 
   it('should destroy all actors and call proper hooks upon destruction', P.coroutine(function*() {
-    var hookList = [];
+    let hookList = [];
 
     class MyResource {
       getResource() {
@@ -51,8 +51,8 @@ describe('ActorSystem', function() {
       test: true
     });
 
-    var rootActor = yield testSystem.rootActor();
-    var childActor = yield rootActor.createChild({
+    let rootActor = yield testSystem.rootActor();
+    let childActor = yield rootActor.createChild({
       destroy: () => hookList.push('child')
     });
     yield childActor.createChild({

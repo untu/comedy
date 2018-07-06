@@ -9,18 +9,18 @@
 
 /* eslint require-jsdoc: "off" */
 
-var actors = require('../index');
-var tu = require('../lib/utils/test.js');
-var expect = require('chai').expect;
-var http = require('http');
-var net = require('net');
-var request = require('supertest');
-var isRunning = require('is-running');
-var P = require('bluebird');
-var _ = require('underscore');
+let actors = require('../index');
+let tu = require('../lib/utils/test.js');
+let expect = require('chai').expect;
+let http = require('http');
+let net = require('net');
+let request = require('supertest');
+let isRunning = require('is-running');
+let P = require('bluebird');
+let _ = require('underscore');
 
-var system;
-var rootActor;
+let system;
+let rootActor;
 
 describe('ForkedActor', function() {
   beforeEach(function() {
@@ -58,14 +58,14 @@ describe('ForkedActor', function() {
     });
 
     it('should fork a sub-process and perform message exchange', P.coroutine(function*() {
-      var behaviour = {
+      let behaviour = {
         getPid: () => {
           return process.pid;
         }
       };
 
-      var forkedChild = yield rootActor.createChild(behaviour, { mode: 'forked' });
-      var forkedPid = yield forkedChild.sendAndReceive('getPid');
+      let forkedChild = yield rootActor.createChild(behaviour, { mode: 'forked' });
+      let forkedPid = yield forkedChild.sendAndReceive('getPid');
 
       expect(forkedPid).to.be.a.number;
       expect(forkedPid).to.be.not.equal(process.pid);
@@ -77,7 +77,7 @@ describe('ForkedActor', function() {
       yield forkedChild.destroy();
 
       // From this point, any additional communication should not be possible.
-      var expectedErr = yield forkedChild.sendAndReceive('getPid').catch(err => err);
+      let expectedErr = yield forkedChild.sendAndReceive('getPid').catch(err => err);
 
       expect(expectedErr).to.be.instanceof(Error);
 
@@ -87,28 +87,28 @@ describe('ForkedActor', function() {
 
     it('should be able to import modules in forked process', P.coroutine(function*() {
       // Use module import in behaviour.
-      var behaviour = {
+      let behaviour = {
         sayHello: () => {
-          var P = require('bluebird');
+          let P = require('bluebird');
 
           return P.resolve('Hello!');
         }
       };
 
-      var forkedChild = yield rootActor.createChild(behaviour, { mode: 'forked' });
-      var result = yield forkedChild.sendAndReceive('sayHello');
+      let forkedChild = yield rootActor.createChild(behaviour, { mode: 'forked' });
+      let result = yield forkedChild.sendAndReceive('sayHello');
 
       expect(result).to.be.equal('Hello!');
     }));
 
     it('should be able to send a message to parent actor', P.coroutine(function*() {
-      var replyMsg = yield new P((resolve, reject) => {
-        var parentBehaviour = {
+      let replyMsg = yield new P((resolve, reject) => {
+        let parentBehaviour = {
           reply: function(msg) {
             resolve(msg);
           }
         };
-        var childBehaviour = {
+        let childBehaviour = {
           initialize: function(selfActor) {
             this.parent = selfActor.getParent();
           },
@@ -128,13 +128,13 @@ describe('ForkedActor', function() {
     }));
 
     it('should be able to forward messages to parent', P.coroutine(function*() {
-      var replyMsg = yield new P((resolve, reject) => {
-        var parentBehaviour = {
+      let replyMsg = yield new P((resolve, reject) => {
+        let parentBehaviour = {
           reply: function(msg) {
             resolve(msg);
           }
         };
-        var childBehaviour = {
+        let childBehaviour = {
           initialize: function(selfActor) {
             selfActor.forwardToParent('reply');
 
@@ -195,14 +195,14 @@ describe('ForkedActor', function() {
         ]
       });
 
-      var rootActor = yield system.rootActor();
-      var child = yield rootActor.createChild(
+      let rootActor = yield system.rootActor();
+      let child = yield rootActor.createChild(
         {
           sayHello: (msg) => 'Hello ' + msg.getPid()
         },
         { mode: 'forked' });
 
-      var result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid));
+      let result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid));
 
       expect(result).to.be.equal('Hello ' + process.pid);
     }));
@@ -244,14 +244,14 @@ describe('ForkedActor', function() {
         marshallers: [TestMessageClassMarshaller]
       });
 
-      var rootActor = yield system.rootActor();
-      var child = yield rootActor.createChild(
+      let rootActor = yield system.rootActor();
+      let child = yield rootActor.createChild(
         {
           sayHello: (msg) => 'Hello ' + msg.getPid()
         },
         { mode: 'forked' });
 
-      var result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid));
+      let result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid));
 
       expect(result).to.be.equal('Hello ' + process.pid);
     }));
@@ -278,24 +278,24 @@ describe('ForkedActor', function() {
         marshallers: ['/test-resources/actors/test-message-class-marshaller']
       });
 
-      var rootActor = yield system.rootActor();
-      var child = yield rootActor.createChild(
+      let rootActor = yield system.rootActor();
+      let child = yield rootActor.createChild(
         {
           sayHello: (msg) => 'Hello ' + msg.getPid()
         },
         { mode: 'forked' });
 
-      var result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid));
+      let result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid));
 
       expect(result).to.be.equal('Hello ' + process.pid);
     }));
 
     it('should support variable arguments', P.coroutine(function*() {
-      var child = yield rootActor.createChild({
+      let child = yield rootActor.createChild({
         hello: (from, to) => `Hello from ${from} to ${to}.`
       }, { mode: 'forked' });
 
-      var result = yield child.sendAndReceive('hello', 'Bob', 'Alice');
+      let result = yield child.sendAndReceive('hello', 'Bob', 'Alice');
 
       expect(result).to.be.equal('Hello from Bob to Alice.');
     }));
@@ -322,24 +322,24 @@ describe('ForkedActor', function() {
         marshallers: ['/test-resources/actors/test-message-class-marshaller']
       });
 
-      var rootActor = yield system.rootActor();
-      var child = yield rootActor.createChild(
+      let rootActor = yield system.rootActor();
+      let child = yield rootActor.createChild(
         {
           sayHello: (msg, from) => `Hello ${msg.getPid()} from ${from}`
         },
         { mode: 'forked' });
 
-      var result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid), 'Test');
+      let result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid), 'Test');
 
       expect(result).to.be.equal(`Hello ${process.pid} from Test`);
     }));
 
     it('should support http.Server object transfer', P.coroutine(function*() {
-      var server = http.createServer();
+      let server = http.createServer();
 
       server.listen(8888);
 
-      var child = yield rootActor.createChild({
+      let child = yield rootActor.createChild({
         setServer: function(server) {
           // Handle HTTP requests.
           server.on('request', (req, res) => {
@@ -373,13 +373,13 @@ describe('ForkedActor', function() {
     }));
 
     it('should support net.Server object transfer', P.coroutine(function*() {
-      var server = net.createServer();
+      let server = net.createServer();
 
       yield P.fromCallback(cb => {
         server.listen(8889, '127.0.0.1', cb);
       });
 
-      var child = yield rootActor.createChild({
+      let child = yield rootActor.createChild({
         setServer: function(server) {
           // Send hello message on connection.
           server.on('connection', socket => {
@@ -403,8 +403,8 @@ describe('ForkedActor', function() {
         server.close(cb);
       });
 
-      var serverMessage = yield P.fromCallback(cb => {
-        var clientSocket = new net.Socket();
+      let serverMessage = yield P.fromCallback(cb => {
+        let clientSocket = new net.Socket();
 
         clientSocket.setEncoding('UTF8');
 
@@ -421,16 +421,16 @@ describe('ForkedActor', function() {
     }));
 
     it('should be able to pass actor references', P.coroutine(function*() {
-      var rootActor = yield system.rootActor();
-      var localCounter = 0;
-      var localChild = yield rootActor.createChild({
+      let rootActor = yield system.rootActor();
+      let localCounter = 0;
+      let localChild = yield rootActor.createChild({
         tell: msg => {
           localCounter++;
 
           return msg.toUpperCase();
         }
       });
-      var forkedChild = yield rootActor.createChild({
+      let forkedChild = yield rootActor.createChild({
         setLocal: function(actor) {
           this.localActor = actor;
         },
@@ -442,7 +442,7 @@ describe('ForkedActor', function() {
 
       yield forkedChild.sendAndReceive('setLocal', localChild);
 
-      var result = yield forkedChild.sendAndReceive('tellLocal', 'Hello!');
+      let result = yield forkedChild.sendAndReceive('tellLocal', 'Hello!');
 
       expect(result).to.be.equal('HELLO!');
       expect(localCounter).to.be.equal(1);
@@ -451,13 +451,13 @@ describe('ForkedActor', function() {
 
   describe('send()', function() {
     it('should support variable arguments', P.coroutine(function*() {
-      var replyDfd = P.pending();
-      var parent = yield rootActor.createChild({
+      let replyDfd = P.pending();
+      let parent = yield rootActor.createChild({
         helloReply: function(from, to) {
           replyDfd.resolve(`Hello reply from ${from} to ${to}.`);
         }
       }, { mode: 'in-memory' });
-      var child = yield parent.createChild({
+      let child = yield parent.createChild({
         initialize: function(selfActor) {
           this.parent = selfActor.getParent();
         },
@@ -469,7 +469,7 @@ describe('ForkedActor', function() {
 
       yield child.send('hello', 'Bob', 'Alice');
 
-      var result = yield replyDfd.promise;
+      let result = yield replyDfd.promise;
 
       expect(result).to.be.equal('Hello reply from Alice to Bob.');
     }));
@@ -496,7 +496,7 @@ describe('ForkedActor', function() {
     });
 
     it('should support ES5 class behaviour definitions', function() {
-      var TestActor = function() {
+      let TestActor = function() {
       };
 
       TestActor.prototype.initialize = function() {
@@ -555,13 +555,13 @@ describe('ForkedActor', function() {
     });
 
     it('should support crashed actor respawn', P.coroutine(function*() {
-      var dfd = P.pending();
-      var localChild = yield rootActor.createChild({
+      let dfd = P.pending();
+      let localChild = yield rootActor.createChild({
         forkedReady: () => {
           dfd.resolve();
         }
       }, { mode: 'in-memory' });
-      var forkedChild = yield localChild.createChild({
+      let forkedChild = yield localChild.createChild({
         initialize: (selfActor) => {
           process.nextTick(() => selfActor.getParent().send('forkedReady'));
         },
@@ -576,7 +576,7 @@ describe('ForkedActor', function() {
       // Wait for forked actor to initialize first time.
       yield dfd.promise;
 
-      for (var i = 0; i < 3; i++) {
+      for (let i = 0; i < 3; i++) {
         // Create new promise.
         dfd = P.pending();
 
@@ -587,7 +587,7 @@ describe('ForkedActor', function() {
         yield dfd.promise;
 
         // Ping forked actor.
-        var resp = yield forkedChild.sendAndReceive('ping');
+        let resp = yield forkedChild.sendAndReceive('ping');
 
         expect(resp).to.be.equal('pong');
       }
@@ -631,27 +631,27 @@ describe('ForkedActor', function() {
       }
 
       // Create child actor with custom parameter.
-      var childActor = yield rootActor.createChild(MyActor, {
+      let childActor = yield rootActor.createChild(MyActor, {
         mode: 'forked',
         customParameters: { helloResponse: 'Hi there!' }
       });
 
-      var response = yield childActor.sendAndReceive('hello');
+      let response = yield childActor.sendAndReceive('hello');
 
       expect(response).to.be.equal('Hi there!');
     }));
 
     it('should be able to pass actor references through custom parameters', P.coroutine(function*() {
-      var rootActor = yield system.rootActor();
-      var localCounter = 0;
-      var localChild = yield rootActor.createChild({
+      let rootActor = yield system.rootActor();
+      let localCounter = 0;
+      let localChild = yield rootActor.createChild({
         tell: msg => {
           localCounter++;
 
           return msg.toUpperCase();
         }
       });
-      var forkedChild = yield rootActor.createChild({
+      let forkedChild = yield rootActor.createChild({
         initialize: function(selfActor) {
           this.localActor = selfActor.getCustomParameters().localActor;
         },
@@ -666,14 +666,14 @@ describe('ForkedActor', function() {
         }
       });
 
-      var result = yield forkedChild.sendAndReceive('tellLocal', 'Hello!');
+      let result = yield forkedChild.sendAndReceive('tellLocal', 'Hello!');
 
       expect(result).to.be.equal('HELLO!');
       expect(localCounter).to.be.equal(1);
     }));
 
     it('should be able to pass http.Server object as custom parameter to child actor', P.coroutine(function*() {
-      var server = http.createServer();
+      let server = http.createServer();
 
       server.listen(8888);
 
@@ -709,7 +709,7 @@ describe('ForkedActor', function() {
     }));
 
     it('should be able to pass net.Server object as custom parameter to child actor', P.coroutine(function*() {
-      var server = net.createServer();
+      let server = net.createServer();
 
       yield P.fromCallback(cb => {
         server.listen(8889, '127.0.0.1', cb);
@@ -737,8 +737,8 @@ describe('ForkedActor', function() {
         server.close(cb);
       });
 
-      var serverMessage = yield P.fromCallback(cb => {
-        var clientSocket = new net.Socket();
+      let serverMessage = yield P.fromCallback(cb => {
+        let clientSocket = new net.Socket();
 
         clientSocket.setEncoding('UTF8');
 
@@ -757,15 +757,15 @@ describe('ForkedActor', function() {
 
   describe('createChildren()', function() {
     it('should create module actor children from a specified directory', P.coroutine(function*() {
-      var childActors = yield rootActor.createChildren('/test-resources/actors/child-actors', { mode: 'forked' });
+      let childActors = yield rootActor.createChildren('/test-resources/actors/child-actors', { mode: 'forked' });
 
       expect(childActors.length).to.be.equal(2);
 
-      var childActorNames = _.map(childActors, actor => actor.getName());
+      let childActorNames = _.map(childActors, actor => actor.getName());
 
       expect(childActorNames).to.have.members(['ChildActor1', 'ChildActor2']);
 
-      var childActorReplies = yield P.map(childActors, actor => actor.sendAndReceive('hello'));
+      let childActorReplies = yield P.map(childActors, actor => actor.sendAndReceive('hello'));
 
       expect(childActorReplies).to.have.members(['Hello from ChildActor1', 'Hello from ChildActor2']);
     }));
@@ -773,10 +773,10 @@ describe('ForkedActor', function() {
 
   describe('forwardToChild()', function() {
     it('should forward messages with given topics to a given child actor', P.coroutine(function*() {
-      var parent = yield rootActor.createChild({
+      let parent = yield rootActor.createChild({
         initialize: selfActor => {
           // Create first child that receives 'hello' messages and sends 'tell...' messages to parent.
-          var child1Promise = selfActor
+          let child1Promise = selfActor
             .createChild({
               initialize: function(selfActor) {
                 this.parent = selfActor.getParent();
@@ -792,7 +792,7 @@ describe('ForkedActor', function() {
             });
 
           // Create second child that receives 'tell...' messages and writes to mailbox.
-          var child2Promise = selfActor
+          let child2Promise = selfActor
             .createChild({
               initialize: function() {
                 this.mailbox = [];
@@ -817,7 +817,7 @@ describe('ForkedActor', function() {
 
       yield parent.sendAndReceive('hello', 'World!');
 
-      var child2Mailbox = yield parent.sendAndReceive('getMailbox');
+      let child2Mailbox = yield parent.sendAndReceive('getMailbox');
 
       expect(child2Mailbox).to.have.members(['World!']);
     }));
@@ -825,7 +825,7 @@ describe('ForkedActor', function() {
 
   describe('metrics()', function() {
     it('should collect metrics from target actor and all the actor sub-tree', P.coroutine(function*() {
-      var parent = yield rootActor.createChild({
+      let parent = yield rootActor.createChild({
         metrics: function() {
           return {
             parentMetric: 111
@@ -847,7 +847,7 @@ describe('ForkedActor', function() {
         }
       }, { name: 'Child2', mode: 'forked' });
 
-      var metrics = yield parent.metrics();
+      let metrics = yield parent.metrics();
 
       expect(metrics).to.be.deep.equal({
         parentMetric: 111,
@@ -861,7 +861,7 @@ describe('ForkedActor', function() {
     }));
 
     it('should not collect metrics from destroyed actors', P.coroutine(function*() {
-      var parent = yield rootActor.createChild({
+      let parent = yield rootActor.createChild({
         metrics: function() {
           return {
             parentMetric: 111
@@ -875,7 +875,7 @@ describe('ForkedActor', function() {
           };
         }
       }, { name: 'Child1', mode: 'forked' });
-      var child2 = yield parent.createChild({
+      let child2 = yield parent.createChild({
         metrics: function() {
           return {
             childMetric: 333
@@ -885,7 +885,7 @@ describe('ForkedActor', function() {
 
       yield child2.destroy();
 
-      var metrics = yield parent.metrics();
+      let metrics = yield parent.metrics();
 
       expect(metrics).to.be.deep.equal({
         parentMetric: 111,

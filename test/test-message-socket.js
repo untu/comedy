@@ -7,19 +7,19 @@
 
 'use strict';
 
-var MessageSocket = require('../lib/net/message-socket.js');
-var net = require('net');
-var expect = require('chai').expect;
-var P = require('bluebird');
-var _ = require('underscore');
+let MessageSocket = require('../lib/net/message-socket.js');
+let net = require('net');
+let expect = require('chai').expect;
+let P = require('bluebird');
+let _ = require('underscore');
 
-var server;
-var client;
+let server;
+let client;
 
 describe('MessageSocket', function() {
   afterEach(() => {
-    var clientP = P.resolve();
-    var serverP = P.resolve();
+    let clientP = P.resolve();
+    let serverP = P.resolve();
 
     if (client) {
       clientP = P.fromCallback(cb => client.end(cb));
@@ -34,7 +34,7 @@ describe('MessageSocket', function() {
 
   it('should correctly receive 1 message in 1 chunk', done => {
     server = net.createServer(socket => {
-      var serverMessageSocket = new MessageSocket(socket);
+      let serverMessageSocket = new MessageSocket(socket);
 
       serverMessageSocket.once('message', msg => {
         expect(msg).to.be.deep.equal({ text: 'Hello world!' });
@@ -47,7 +47,7 @@ describe('MessageSocket', function() {
     server.on('error', done);
 
     client = net.createConnection(6363, () => {
-      var clientMessageSocket = new MessageSocket(client);
+      let clientMessageSocket = new MessageSocket(client);
 
       clientMessageSocket.send({ text: 'Hello world!' });
     });
@@ -56,7 +56,7 @@ describe('MessageSocket', function() {
 
   it('should correctly receive 1 message in 2 chunks', done => {
     server = net.createServer(socket => {
-      var serverMessageSocket = new MessageSocket(socket);
+      let serverMessageSocket = new MessageSocket(socket);
 
       serverMessageSocket.once('message', msg => {
         expect(msg).to.be.deep.equal({ text: 'Hello world!' });
@@ -69,9 +69,9 @@ describe('MessageSocket', function() {
     server.on('error', done);
 
     client = net.createConnection(6363, () => {
-      var clientMessageSocket = new MessageSocket(client);
-      var packet = clientMessageSocket.makePacket({ text: 'Hello world!' });
-      var chunks = splitBuffer(packet, 2);
+      let clientMessageSocket = new MessageSocket(client);
+      let packet = clientMessageSocket.makePacket({ text: 'Hello world!' });
+      let chunks = splitBuffer(packet, 2);
 
       _.each(chunks, chunk => client.write(chunk));
     });
@@ -80,7 +80,7 @@ describe('MessageSocket', function() {
 
   it('should correctly receive 2 messages in 3 chunks', done => {
     server = net.createServer(socket => {
-      var serverMessageSocket = new MessageSocket(socket);
+      let serverMessageSocket = new MessageSocket(socket);
 
       serverMessageSocket.once('message', msg => {
         expect(msg).to.be.deep.equal({ text: 'Sun is shining!' });
@@ -97,11 +97,11 @@ describe('MessageSocket', function() {
     server.on('error', done);
 
     client = net.createConnection(6363, () => {
-      var clientMessageSocket = new MessageSocket(client);
-      var packet1 = clientMessageSocket.makePacket({ text: 'Sun is shining!' });
-      var packet2 = clientMessageSocket.makePacket({ text: 'The weather is sweet!' });
-      var jointPacket = Buffer.concat([packet1, packet2]);
-      var chunks = splitBuffer(jointPacket, 3);
+      let clientMessageSocket = new MessageSocket(client);
+      let packet1 = clientMessageSocket.makePacket({ text: 'Sun is shining!' });
+      let packet2 = clientMessageSocket.makePacket({ text: 'The weather is sweet!' });
+      let jointPacket = Buffer.concat([packet1, packet2]);
+      let chunks = splitBuffer(jointPacket, 3);
 
       _.each(chunks, chunk => client.write(chunk));
     });
@@ -118,12 +118,12 @@ describe('MessageSocket', function() {
  * @returns {Buffer[]} Array of resulting chunks.
  */
 function splitBuffer(buf, nChunks) {
-  var chunkLength = Math.trunc(buf.length, nChunks);
-  var lastChunkLength = chunkLength + buf.length % nChunks;
+  let chunkLength = Math.trunc(buf.length, nChunks);
+  let lastChunkLength = chunkLength + buf.length % nChunks;
 
   return _.times(nChunks, i => {
-    var len = i == buf.length - 1 ? lastChunkLength : chunkLength;
-    var chunk = Buffer.alloc(len);
+    let len = i == buf.length - 1 ? lastChunkLength : chunkLength;
+    let chunk = Buffer.alloc(len);
     buf.copy(chunk, 0, chunkLength * i, len);
 
     return buf;

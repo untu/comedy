@@ -9,17 +9,17 @@
 
 /* eslint require-jsdoc: "off" */
 
-var actors = require('../index');
-var tu = require('../lib/utils/test.js');
-var expect = require('chai').expect;
-var isRunning = require('is-running');
-var P = require('bluebird');
-var _ = require('underscore');
+let actors = require('../index');
+let tu = require('../lib/utils/test.js');
+let expect = require('chai').expect;
+let isRunning = require('is-running');
+let P = require('bluebird');
+let _ = require('underscore');
 
-var system;
-var rootActor;
-var remoteSystem;
-var systemConfig = {
+let system;
+let rootActor;
+let remoteSystem;
+let systemConfig = {
   test: true,
   additionalRequires: 'ts-node/register',
   pingTimeout: 2000
@@ -43,14 +43,14 @@ describe('RemoteActor', function() {
 
   describe('sendAndReceive', function() {
     it('should perform message exchange with remote actor', P.coroutine(function*() {
-      var behaviour = {
+      let behaviour = {
         sayHello: (to) => {
           return `Hello, ${to}!`;
         }
       };
 
-      var remoteChild = yield rootActor.createChild(behaviour, { mode: 'remote', host: '127.0.0.1' });
-      var response = yield remoteChild.sendAndReceive('sayHello', 'Bob');
+      let remoteChild = yield rootActor.createChild(behaviour, { mode: 'remote', host: '127.0.0.1' });
+      let response = yield remoteChild.sendAndReceive('sayHello', 'Bob');
 
       expect(response).to.be.equal('Hello, Bob!');
 
@@ -58,13 +58,13 @@ describe('RemoteActor', function() {
       yield remoteChild.destroy();
 
       // From this point, any additional communication should not be possible.
-      var expectedErr = yield remoteChild.sendAndReceive('sayHello', 'Jack').catch(err => err);
+      let expectedErr = yield remoteChild.sendAndReceive('sayHello', 'Jack').catch(err => err);
 
       expect(expectedErr).to.be.instanceof(Error);
     }));
 
     it('should correctly fail if wrong port is specified', P.coroutine(function*() {
-      var expectedErr = yield rootActor
+      let expectedErr = yield rootActor
         .createChild({}, { mode: 'remote', host: '127.0.0.1', port: 6262 })
         .catch(err => err);
 
@@ -74,8 +74,8 @@ describe('RemoteActor', function() {
     it('should throw error if listener node is down', P.coroutine(function*() {
       yield remoteSystem.destroy();
 
-      var rootActor = yield system.rootActor();
-      var error;
+      let rootActor = yield system.rootActor();
+      let error;
 
       try {
         yield rootActor.createChild({
@@ -108,14 +108,14 @@ describe('RemoteActor', function() {
     });
 
     it('should correctly manage remote actor process', P.coroutine(function*() {
-      var behaviour = {
+      let behaviour = {
         getPid: () => {
           return process.pid;
         }
       };
 
-      var remoteChild = yield rootActor.createChild(behaviour, { mode: 'remote', host: '127.0.0.1' });
-      var remotePid = yield remoteChild.sendAndReceive('getPid');
+      let remoteChild = yield rootActor.createChild(behaviour, { mode: 'remote', host: '127.0.0.1' });
+      let remotePid = yield remoteChild.sendAndReceive('getPid');
 
       expect(remotePid).to.be.a.number;
       expect(remotePid).to.be.not.equal(process.pid);
@@ -127,7 +127,7 @@ describe('RemoteActor', function() {
       yield remoteChild.destroy();
 
       // From this point, any additional communication should not be possible.
-      var expectedErr = yield remoteChild.sendAndReceive('getPid').catch(err => err);
+      let expectedErr = yield remoteChild.sendAndReceive('getPid').catch(err => err);
 
       expect(expectedErr).to.be.instanceof(Error);
 
@@ -137,28 +137,28 @@ describe('RemoteActor', function() {
 
     it('should be able to import modules in remote process', P.coroutine(function*() {
       // Use module import in behaviour.
-      var behaviour = {
+      let behaviour = {
         sayHello: () => {
-          var P = require('bluebird');
+          let P = require('bluebird');
 
           return P.resolve('Hello!');
         }
       };
 
-      var remoteChild = yield rootActor.createChild(behaviour, { mode: 'remote', host: '127.0.0.1' });
-      var result = yield remoteChild.sendAndReceive('sayHello');
+      let remoteChild = yield rootActor.createChild(behaviour, { mode: 'remote', host: '127.0.0.1' });
+      let result = yield remoteChild.sendAndReceive('sayHello');
 
       expect(result).to.be.equal('Hello!');
     }));
 
     it('should be able to send a message to parent actor', P.coroutine(function*() {
-      var replyMsg = yield new P((resolve, reject) => {
-        var parentBehaviour = {
+      let replyMsg = yield new P((resolve, reject) => {
+        let parentBehaviour = {
           reply: function(msg) {
             resolve(msg);
           }
         };
-        var childBehaviour = {
+        let childBehaviour = {
           initialize: function(selfActor) {
             this.parent = selfActor.getParent();
           },
@@ -178,13 +178,13 @@ describe('RemoteActor', function() {
     }));
 
     it('should be able to forward messages to parent', P.coroutine(function*() {
-      var replyMsg = yield new P((resolve, reject) => {
-        var parentBehaviour = {
+      let replyMsg = yield new P((resolve, reject) => {
+        let parentBehaviour = {
           reply: function(msg) {
             resolve(msg);
           }
         };
-        var childBehaviour = {
+        let childBehaviour = {
           initialize: function(selfActor) {
             selfActor.forwardToParent('reply');
 
@@ -245,14 +245,14 @@ describe('RemoteActor', function() {
         ]
       });
 
-      var rootActor = yield system.rootActor();
-      var child = yield rootActor.createChild(
+      let rootActor = yield system.rootActor();
+      let child = yield rootActor.createChild(
         {
           sayHello: (msg) => 'Hello ' + msg.getPid()
         },
         { mode: 'remote', host: '127.0.0.1' });
 
-      var result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid));
+      let result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid));
 
       expect(result).to.be.equal('Hello ' + process.pid);
     }));
@@ -294,14 +294,14 @@ describe('RemoteActor', function() {
         marshallers: [TestMessageClassMarshaller]
       });
 
-      var rootActor = yield system.rootActor();
-      var child = yield rootActor.createChild(
+      let rootActor = yield system.rootActor();
+      let child = yield rootActor.createChild(
         {
           sayHello: (msg) => 'Hello ' + msg.getPid()
         },
         { mode: 'remote', host: '127.0.0.1' });
 
-      var result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid));
+      let result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid));
 
       expect(result).to.be.equal('Hello ' + process.pid);
     }));
@@ -328,24 +328,24 @@ describe('RemoteActor', function() {
         marshallers: ['/test-resources/actors/test-message-class-marshaller']
       });
 
-      var rootActor = yield system.rootActor();
-      var child = yield rootActor.createChild(
+      let rootActor = yield system.rootActor();
+      let child = yield rootActor.createChild(
         {
           sayHello: (msg) => 'Hello ' + msg.getPid()
         },
         { mode: 'remote', host: '127.0.0.1' });
 
-      var result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid));
+      let result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid));
 
       expect(result).to.be.equal('Hello ' + process.pid);
     }));
 
     it('should support variable arguments', P.coroutine(function*() {
-      var child = yield rootActor.createChild({
+      let child = yield rootActor.createChild({
         hello: (from, to) => `Hello from ${from} to ${to}.`
       }, { mode: 'remote', host: '127.0.0.1' });
 
-      var result = yield child.sendAndReceive('hello', 'Bob', 'Alice');
+      let result = yield child.sendAndReceive('hello', 'Bob', 'Alice');
 
       expect(result).to.be.equal('Hello from Bob to Alice.');
     }));
@@ -372,29 +372,29 @@ describe('RemoteActor', function() {
         marshallers: ['/test-resources/actors/test-message-class-marshaller']
       });
 
-      var rootActor = yield system.rootActor();
-      var child = yield rootActor.createChild(
+      let rootActor = yield system.rootActor();
+      let child = yield rootActor.createChild(
         {
           sayHello: (msg, from) => `Hello ${msg.getPid()} from ${from}`
         },
         { mode: 'remote', host: '127.0.0.1' });
 
-      var result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid), 'Test');
+      let result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid), 'Test');
 
       expect(result).to.be.equal(`Hello ${process.pid} from Test`);
     }));
 
     it('should be able to pass actor references', P.coroutine(function*() {
-      var rootActor = yield system.rootActor();
-      var localCounter = 0;
-      var localChild = yield rootActor.createChild({
+      let rootActor = yield system.rootActor();
+      let localCounter = 0;
+      let localChild = yield rootActor.createChild({
         tell: msg => {
           localCounter++;
 
           return msg.toUpperCase();
         }
       });
-      var remoteChild = yield rootActor.createChild({
+      let remoteChild = yield rootActor.createChild({
         setLocal: function(actor) {
           this.localActor = actor;
         },
@@ -406,7 +406,7 @@ describe('RemoteActor', function() {
 
       yield remoteChild.sendAndReceive('setLocal', localChild);
 
-      var result = yield remoteChild.sendAndReceive('tellLocal', 'Hello!');
+      let result = yield remoteChild.sendAndReceive('tellLocal', 'Hello!');
 
       expect(result).to.be.equal('HELLO!');
       expect(localCounter).to.be.equal(1);
@@ -415,13 +415,13 @@ describe('RemoteActor', function() {
 
   describe('send()', function() {
     it('should support variable arguments', P.coroutine(function*() {
-      var replyDfd = P.pending();
-      var parent = yield rootActor.createChild({
+      let replyDfd = P.pending();
+      let parent = yield rootActor.createChild({
         helloReply: function(from, to) {
           replyDfd.resolve(`Hello reply from ${from} to ${to}.`);
         }
       }, { mode: 'in-memory' });
-      var child = yield parent.createChild({
+      let child = yield parent.createChild({
         initialize: function(selfActor) {
           this.parent = selfActor.getParent();
         },
@@ -433,7 +433,7 @@ describe('RemoteActor', function() {
 
       yield child.send('hello', 'Bob', 'Alice');
 
-      var result = yield replyDfd.promise;
+      let result = yield replyDfd.promise;
 
       expect(result).to.be.equal('Hello reply from Alice to Bob.');
     }));
@@ -460,7 +460,7 @@ describe('RemoteActor', function() {
     });
 
     it('should support ES5 class behaviour definitions', function() {
-      var TestActor = function() {
+      let TestActor = function() {
       };
 
       TestActor.prototype.initialize = function() {
@@ -519,13 +519,13 @@ describe('RemoteActor', function() {
     });
 
     it('should support crashed actor respawn', P.coroutine(function*() {
-      var dfd = P.pending();
-      var localChild = yield rootActor.createChild({
+      let dfd = P.pending();
+      let localChild = yield rootActor.createChild({
         remoteReady: () => {
           dfd.resolve();
         }
       }, { mode: 'in-memory' });
-      var remoteChild = yield localChild.createChild({
+      let remoteChild = yield localChild.createChild({
         initialize: (selfActor) => {
           process.nextTick(() => selfActor.getParent().send('remoteReady'));
         },
@@ -540,7 +540,7 @@ describe('RemoteActor', function() {
       // Wait for forked actor to initialize first time.
       yield dfd.promise;
 
-      for (var i = 0; i < 2; i++) {
+      for (let i = 0; i < 2; i++) {
         // Create new promise.
         dfd = P.pending();
 
@@ -551,7 +551,7 @@ describe('RemoteActor', function() {
         yield dfd.promise;
 
         // Ping remote actor.
-        var resp = yield remoteChild.sendAndReceive('ping');
+        let resp = yield remoteChild.sendAndReceive('ping');
 
         expect(resp).to.be.equal('pong');
       }
@@ -595,13 +595,13 @@ describe('RemoteActor', function() {
       }
 
       // Create child actor with custom parameter.
-      var childActor = yield rootActor.createChild(MyActor, {
+      let childActor = yield rootActor.createChild(MyActor, {
         mode: 'remote',
         host: '127.0.0.1',
         customParameters: { helloResponse: 'Hi there!' }
       });
 
-      var response = yield childActor.sendAndReceive('hello');
+      let response = yield childActor.sendAndReceive('hello');
 
       expect(response).to.be.equal('Hi there!');
     }));
@@ -609,7 +609,7 @@ describe('RemoteActor', function() {
     it('should support static cluster configuration', P.coroutine(function*() {
       yield P.join(system.destroy(), remoteSystem.destroy());
 
-      var systemConfig0 = _.extend({}, systemConfig, {
+      let systemConfig0 = _.extend({}, systemConfig, {
         clusters: {
           test: ['127.0.0.1']
         }
@@ -618,15 +618,15 @@ describe('RemoteActor', function() {
       system = actors(systemConfig0);
       remoteSystem = actors(systemConfig); // Listening node uses regular configuration.
 
-      var rootActor = yield system.rootActor();
+      let rootActor = yield system.rootActor();
 
       yield remoteSystem.listen();
 
-      var child = yield rootActor.createChild({
+      let child = yield rootActor.createChild({
         getPid: () => process.pid
       }, { mode: 'remote', cluster: 'test' });
 
-      var childPid = yield child.sendAndReceive('getPid');
+      let childPid = yield child.sendAndReceive('getPid');
 
       expect(childPid).to.be.a.number;
       expect(childPid).to.be.not.equal(process.pid);
@@ -635,7 +635,7 @@ describe('RemoteActor', function() {
     it('should support clusterSize parameter in static cluster configuration', P.coroutine(function*() {
       yield P.join(system.destroy(), remoteSystem.destroy());
 
-      var systemConfig0 = _.extend({}, systemConfig, {
+      let systemConfig0 = _.extend({}, systemConfig, {
         clusters: {
           test: ['127.0.0.1:6161', '127.0.0.1:6162']
         }
@@ -643,21 +643,21 @@ describe('RemoteActor', function() {
 
       system = actors(systemConfig0);
       remoteSystem = actors(systemConfig); // Listening node uses regular configuration.
-      var remoteSystem2 = actors(systemConfig);
+      let remoteSystem2 = actors(systemConfig);
 
-      var rootActor = yield system.rootActor();
+      let rootActor = yield system.rootActor();
 
       yield remoteSystem.listen(6161);
       yield remoteSystem2.listen(6162);
 
       try {
-        var child = yield rootActor.createChild({
+        let child = yield rootActor.createChild({
           getPid: () => process.pid
         }, { mode: 'remote', cluster: 'test', clusterSize: 4 });
 
-        var pidPromises = _.times(8, () => child.sendAndReceive('getPid'));
-        var pids = yield P.all(pidPromises);
-        var uniquePids = _.uniq(pids);
+        let pidPromises = _.times(8, () => child.sendAndReceive('getPid'));
+        let pids = yield P.all(pidPromises);
+        let uniquePids = _.uniq(pids);
 
         expect(uniquePids.length).to.be.equal(4);
       }
@@ -667,24 +667,24 @@ describe('RemoteActor', function() {
     }));
 
     it('should support multiple hosts in "host" parameter', P.coroutine(function*() {
-      var remoteSystem2 = actors(systemConfig);
+      let remoteSystem2 = actors(systemConfig);
 
-      var rootActor = yield system.rootActor();
+      let rootActor = yield system.rootActor();
 
       yield remoteSystem.listen(6161);
       yield remoteSystem2.listen(6162);
 
       try {
-        var child = yield rootActor.createChild({
+        let child = yield rootActor.createChild({
           getPid: () => process.pid
         }, {
           mode: 'remote',
           host: ['127.0.0.1:6161', '127.0.0.1:6162']
         });
 
-        var pidPromises = _.times(4, () => child.sendAndReceive('getPid'));
-        var pids = yield P.all(pidPromises);
-        var uniquePids = _.uniq(pids);
+        let pidPromises = _.times(4, () => child.sendAndReceive('getPid'));
+        let pids = yield P.all(pidPromises);
+        let uniquePids = _.uniq(pids);
 
         expect(uniquePids.length).to.be.equal(2);
       }
@@ -694,16 +694,16 @@ describe('RemoteActor', function() {
     }));
 
     it('should be able to pass actor references through custom parameters', P.coroutine(function*() {
-      var rootActor = yield system.rootActor();
-      var localCounter = 0;
-      var localChild = yield rootActor.createChild({
+      let rootActor = yield system.rootActor();
+      let localCounter = 0;
+      let localChild = yield rootActor.createChild({
         tell: msg => {
           localCounter++;
 
           return msg.toUpperCase();
         }
       });
-      var remoteChild = yield rootActor.createChild({
+      let remoteChild = yield rootActor.createChild({
         initialize: function(selfActor) {
           this.localActor = selfActor.getCustomParameters().localActor;
         },
@@ -719,7 +719,7 @@ describe('RemoteActor', function() {
         }
       });
 
-      var result = yield remoteChild.sendAndReceive('tellLocal', 'Hello!');
+      let result = yield remoteChild.sendAndReceive('tellLocal', 'Hello!');
 
       expect(result).to.be.equal('HELLO!');
       expect(localCounter).to.be.equal(1);
@@ -728,17 +728,17 @@ describe('RemoteActor', function() {
 
   describe('createChildren()', function() {
     it('should create module actor children from a specified directory', P.coroutine(function*() {
-      var childActors = yield rootActor.createChildren(
+      let childActors = yield rootActor.createChildren(
         '/test-resources/actors/child-actors',
         { mode: 'remote', host: '127.0.0.1' });
 
       expect(childActors.length).to.be.equal(2);
 
-      var childActorNames = _.map(childActors, actor => actor.getName());
+      let childActorNames = _.map(childActors, actor => actor.getName());
 
       expect(childActorNames).to.have.members(['ChildActor1', 'ChildActor2']);
 
-      var childActorReplies = yield P.map(childActors, actor => actor.sendAndReceive('hello'));
+      let childActorReplies = yield P.map(childActors, actor => actor.sendAndReceive('hello'));
 
       expect(childActorReplies).to.have.members(['Hello from ChildActor1', 'Hello from ChildActor2']);
     }));
@@ -746,10 +746,10 @@ describe('RemoteActor', function() {
 
   describe('forwardToChild()', function() {
     it('should forward messages with given topics to a given child actor', P.coroutine(function*() {
-      var parent = yield rootActor.createChild({
+      let parent = yield rootActor.createChild({
         initialize: selfActor => {
           // Create first child that receives 'hello' messages and sends 'tell...' messages to parent.
-          var child1Promise = selfActor
+          let child1Promise = selfActor
             .createChild({
               initialize: function(selfActor) {
                 this.parent = selfActor.getParent();
@@ -765,7 +765,7 @@ describe('RemoteActor', function() {
             });
 
           // Create second child that receives 'tell...' messages and writes to mailbox.
-          var child2Promise = selfActor
+          let child2Promise = selfActor
             .createChild({
               initialize: function() {
                 this.mailbox = [];
@@ -790,7 +790,7 @@ describe('RemoteActor', function() {
 
       yield parent.sendAndReceive('hello', 'World!');
 
-      var child2Mailbox = yield parent.sendAndReceive('getMailbox');
+      let child2Mailbox = yield parent.sendAndReceive('getMailbox');
 
       expect(child2Mailbox).to.have.members(['World!']);
     }));
@@ -798,7 +798,7 @@ describe('RemoteActor', function() {
 
   describe('metrics()', function() {
     it('should collect metrics from target actor and all the actor sub-tree', P.coroutine(function*() {
-      var parent = yield rootActor.createChild({
+      let parent = yield rootActor.createChild({
         metrics: function() {
           return {
             parentMetric: 111
@@ -820,7 +820,7 @@ describe('RemoteActor', function() {
         }
       }, { name: 'Child2', mode: 'remote', host: '127.0.0.1' });
 
-      var metrics = yield parent.metrics();
+      let metrics = yield parent.metrics();
 
       expect(metrics).to.be.deep.equal({
         parentMetric: 111,
@@ -834,7 +834,7 @@ describe('RemoteActor', function() {
     }));
 
     it('should not collect metrics from destroyed actors', P.coroutine(function*() {
-      var parent = yield rootActor.createChild({
+      let parent = yield rootActor.createChild({
         metrics: function() {
           return {
             parentMetric: 111
@@ -848,7 +848,7 @@ describe('RemoteActor', function() {
           };
         }
       }, { name: 'Child1', mode: 'remote', host: '127.0.0.1' });
-      var child2 = yield parent.createChild({
+      let child2 = yield parent.createChild({
         metrics: function() {
           return {
             childMetric: 333
@@ -858,7 +858,7 @@ describe('RemoteActor', function() {
 
       yield child2.destroy();
 
-      var metrics = yield parent.metrics();
+      let metrics = yield parent.metrics();
 
       expect(metrics).to.be.deep.equal({
         parentMetric: 111,

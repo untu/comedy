@@ -94,7 +94,7 @@
     "no-lonely-if": "off",
     "dot-notation": "off",
     "array-callback-return": "off",
-    "no-var": "off",
+    "no-var": "warn",
     "comma-dangle": ["error", "never"],
     "require-yield": "error",
     "yield-star-spacing": ["warn", "after"],

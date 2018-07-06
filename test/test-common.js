@@ -7,9 +7,9 @@
 
 'use strict';
 
-var expect = require('chai').expect;
-var common = require('../lib/utils/common.js');
-var bson = require('bson');
+let expect = require('chai').expect;
+let common = require('../lib/utils/common.js');
+let bson = require('bson');
 
 describe('common', function() {
   describe('isPlainObject()', function() {
@@ -92,11 +92,11 @@ describe('common', function() {
         'jsonField.a': 1
       });
 
-      var input = [{
+      let input = [{
         'id': 2,
         'default_type_condition': '[{"condition": {"freeMemory": "30000"}, "state": 3}]'
       }];
-      var result = common.flatten(input, {
+      let result = common.flatten(input, {
         parseJson: true,
         keyFunction: function(key) {
           expect(key).to.be.a('string');

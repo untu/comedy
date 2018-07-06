@@ -7,15 +7,15 @@
 
 'use strict';
 
-var actors = require('../index');
-var chai = require('chai');
-var P = require('bluebird');
-var os = require('os');
+let actors = require('../index');
+let chai = require('chai');
+let P = require('bluebird');
+let os = require('os');
 
 chai.use(require('chai-like'));
 
-var expect = chai.expect;
-var testSystem;
+let expect = chai.expect;
+let testSystem;
 
 describe('Actor configuration', function() {
   afterEach(() => testSystem && testSystem.destroy());
@@ -51,11 +51,11 @@ describe('Actor configuration', function() {
       }
     }
 
-    var rootActor = yield testSystem.rootActor();
+    let rootActor = yield testSystem.rootActor();
     yield rootActor.createChild(TestRoot);
 
-    var tree = yield rootActor.tree();
-    var hostname = os.hostname();
+    let tree = yield rootActor.tree();
+    let hostname = os.hostname();
 
     expect(tree).to.be.like({
       name: 'Root',

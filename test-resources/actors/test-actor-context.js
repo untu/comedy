@@ -7,7 +7,7 @@
 
 'use strict';
 
-var dep = require('./test-actor-dependency.js');
+let dep = require('./test-actor-dependency.js');
 
 /**
  * A test actor system module context.

@@ -7,11 +7,11 @@
 
 'use strict';
 
-var common = require('../lib/utils/common.js');
-var CumulativeAverage = require('./cumulative-average.js');
-var P = require('bluebird');
-var _ = require('underscore');
-var tooBusy = require('toobusy-js');
+let common = require('../lib/utils/common.js');
+let CumulativeAverage = require('./cumulative-average.js');
+let P = require('bluebird');
+let _ = require('underscore');
+let tooBusy = require('toobusy-js');
 
 /**
  * Abstract throughput benchmark, that runs some number of parallel iterations
@@ -50,28 +50,28 @@ class AbstractThroughputBenchmark {
   _run(options) {
     options = options || {};
 
-    var runTime = options.runTime || common.millisecondTime(1, 'minutes');
-    var logInterval = 1000; // Display interval in milliseconds.
-    var concurrencyLevel = options.concurrencyLevel || 64;
-    var startTime = _.now();
-    var curMetricValue = 0;
-    var curResult = {
+    let runTime = options.runTime || common.millisecondTime(1, 'minutes');
+    let logInterval = 1000; // Display interval in milliseconds.
+    let concurrencyLevel = options.concurrencyLevel || 64;
+    let startTime = _.now();
+    let curMetricValue = 0;
+    let curResult = {
       numberOfIterations: 0,
       totalTime: 0,
       error: false
     };
-    var avgMemStats = {
+    let avgMemStats = {
       rss: new CumulativeAverage({ precision: 0 }),
       heapTotal: new CumulativeAverage({ precision: 0 }),
       heapUsed: new CumulativeAverage({ precision: 0 })
     };
-    var stop = false;
+    let stop = false;
 
     // Launch result recording.
-    var resultRecHandle = setInterval(() => {
+    let resultRecHandle = setInterval(() => {
       curResult.totalTime = Date.now() - startTime;
 
-      var metricValue = curResult.numberOfIterations;
+      let metricValue = curResult.numberOfIterations;
 
       if (this.metricName) {
         metricValue = curMetricValue;
@@ -84,18 +84,18 @@ class AbstractThroughputBenchmark {
         console.log('WARNING: event loop lag is ' + tooBusy.lag() + 'ms');
       }
 
-      var curMemUsage = process.memoryUsage();
+      let curMemUsage = process.memoryUsage();
       avgMemStats.rss.add(curMemUsage.rss);
       avgMemStats.heapTotal.add(curMemUsage.heapTotal);
       avgMemStats.heapUsed.add(curMemUsage.heapUsed);
     }, logInterval);
 
-    var result = () => {
-      var avgMemUsage = common.transformObject(
+    let result = () => {
+      let avgMemUsage = common.transformObject(
         avgMemStats,
         value => common.humanReadableNumber(value.getAndReset(), { bytes: true }));
 
-      var result0 = curResult;
+      let result0 = curResult;
 
       if (this.metricName) {
         result0 = _.defaults(curResult, common.pair(this.metricName, curMetricValue));
@@ -104,9 +104,9 @@ class AbstractThroughputBenchmark {
       return _.extend({}, result0, { averageMemoryUsage: avgMemUsage });
     };
 
-    var iterationLoop = () => {
+    let iterationLoop = () => {
       return new P(resolve => {
-        var iterationLoop0 = () => {
+        let iterationLoop0 = () => {
           this.iteration()
             .then(reqResult => {
               if (_.isUndefined(reqResult)) {
@@ -142,7 +142,7 @@ class AbstractThroughputBenchmark {
       });
     };
 
-    var runBenchmark = () => {
+    let runBenchmark = () => {
       return _.times(concurrencyLevel, () => iterationLoop());
     };
 
@@ -176,7 +176,7 @@ class AbstractThroughputBenchmark {
   run(options) {
     options = options || {};
 
-    var testTime = options.testTime || common.millisecondTime(1, 'minutes');
+    let testTime = options.testTime || common.millisecondTime(1, 'minutes');
 
     return P.resolve()
       .then(() => this.setUp())
@@ -199,8 +199,8 @@ class AbstractThroughputBenchmark {
   runWithWarmUp(options) {
     options = options || {};
 
-    var warmUpTime = options.warmUpTime || common.millisecondTime(30, 'seconds');
-    var testTime = options.testTime || common.millisecondTime(1, 'minutes');
+    let warmUpTime = options.warmUpTime || common.millisecondTime(30, 'seconds');
+    let testTime = options.testTime || common.millisecondTime(1, 'minutes');
 
     console.log(`Warming-up for ${warmUpTime / 1000} seconds...`);
 

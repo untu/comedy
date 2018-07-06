@@ -7,15 +7,15 @@
 
 'use strict';
 
-var actors = require('../index');
-var tu = require('../lib/utils/test.js');
-var expect = require('chai').expect;
-var isRunning = require('is-running');
-var P = require('bluebird');
-var _ = require('underscore');
+let actors = require('../index');
+let tu = require('../lib/utils/test.js');
+let expect = require('chai').expect;
+let isRunning = require('is-running');
+let P = require('bluebird');
+let _ = require('underscore');
 
-var system;
-var rootActor;
+let system;
+let rootActor;
 
 describe('ClusteredActor', function() {
   beforeEach(function() {
@@ -62,12 +62,12 @@ describe('ClusteredActor', function() {
       }
     }
 
-    var parent = yield rootActor.createChild(ParentBehaviour);
-    var router = yield parent.createChild(ChildBehaviour, { mode: 'forked', clusterSize: 2 });
+    let parent = yield rootActor.createChild(ParentBehaviour);
+    let router = yield parent.createChild(ChildBehaviour, { mode: 'forked', clusterSize: 2 });
 
     yield router.sendAndReceive('hello');
 
-    var helloReceivedCount = yield parent.sendAndReceive('getHelloReceivedCount');
+    let helloReceivedCount = yield parent.sendAndReceive('getHelloReceivedCount');
 
     expect(helloReceivedCount).to.be.equal(1);
   }));
@@ -99,14 +99,14 @@ describe('ClusteredActor', function() {
       }
 
       async test() {
-        var counters = {};
-        var maxDelta = 0;
+        let counters = {};
+        let maxDelta = 0;
 
-        for (var i = 0; i < 100; i++) {
-          var from = await this.router.sendAndReceive('test');
+        for (let i = 0; i < 100; i++) {
+          let from = await this.router.sendAndReceive('test');
           counters[from] && counters[from]++ || (counters[from] = 1);
 
-          var curDelta = _.reduce(counters, (memo, value) => Math.abs(value - memo), 0);
+          let curDelta = _.reduce(counters, (memo, value) => Math.abs(value - memo), 0);
 
           maxDelta = Math.max(maxDelta, curDelta);
         }
@@ -115,7 +115,7 @@ describe('ClusteredActor', function() {
       }
     }
 
-    var parent = yield rootActor.createChild(Parent);
+    let parent = yield rootActor.createChild(Parent);
 
     yield parent.sendAndReceive('test');
   }));
@@ -143,13 +143,13 @@ describe('ClusteredActor', function() {
      */
     class CustomBalancer {
       clusterChanged(actors) {
-        var _ = require('underscore');
+        let _ = require('underscore');
 
         this.table = _.chain(actors).map(actor => actor.getId()).sortBy().value();
       }
 
       forward(topic, msg) {
-        var tableIdx = msg.shard % this.table.length;
+        let tableIdx = msg.shard % this.table.length;
 
         return this.table[tableIdx];
       }
@@ -164,7 +164,7 @@ describe('ClusteredActor', function() {
     rootActor = yield system.rootActor();
 
     // Create clustered actor with custom balancer.
-    var parent = yield rootActor.createChild(Child, {
+    let parent = yield rootActor.createChild(Child, {
       mode: 'forked',
       clusterSize: 3,
       balancer: 'CustomBalancer'
@@ -174,7 +174,7 @@ describe('ClusteredActor', function() {
     yield P.mapSeries(_.range(2), idx => parent.sendAndReceive('test', { shard: 1, value: idx }));
     yield P.mapSeries(_.range(3), idx => parent.sendAndReceive('test', { shard: 2, value: idx }));
 
-    var result = yield parent.broadcastAndReceive('getReceived');
+    let result = yield parent.broadcastAndReceive('getReceived');
 
     expect(result).to.have.deep.members([
       [
@@ -210,7 +210,7 @@ describe('ClusteredActor', function() {
       }
     }
 
-    var numberOfClusterChanges = 0;
+    let numberOfClusterChanges = 0;
 
     /**
      * Custom balancer. Always routes to a single actor in the
@@ -236,14 +236,14 @@ describe('ClusteredActor', function() {
     rootActor = yield system.rootActor();
 
     // Create clustered actor with custom balancer.
-    var parent = yield rootActor.createChild(Child, {
+    let parent = yield rootActor.createChild(Child, {
       mode: 'forked',
       clusterSize: 3,
       balancer: 'CustomBalancer',
       onCrash: 'respawn'
     });
 
-    var currentId = yield parent.sendAndReceive('test');
+    let currentId = yield parent.sendAndReceive('test');
 
     parent.send('kill');
 
@@ -271,13 +271,13 @@ describe('ClusteredActor', function() {
     rootActor = yield system.rootActor();
 
     // Create clustered actor with custom balancer.
-    var parent = yield rootActor.createChild({}, {
+    let parent = yield rootActor.createChild({}, {
       mode: 'forked',
       clusterSize: 3,
       balancer: 'CustomBalancer'
     });
 
-    var error;
+    let error;
 
     yield parent.sendAndReceive('test', { shard: 0, value: 1 }).catch(err => {
       error = err;
@@ -307,13 +307,13 @@ describe('ClusteredActor', function() {
     rootActor = yield system.rootActor();
 
     // Create clustered actor with custom balancer.
-    var parent = yield rootActor.createChild({}, {
+    let parent = yield rootActor.createChild({}, {
       mode: 'forked',
       clusterSize: 3,
       balancer: 'CustomBalancer'
     });
 
-    var error;
+    let error;
 
     yield parent.sendAndReceive('test', { shard: 0, value: 1 }).catch(err => {
       error = err;
@@ -324,8 +324,8 @@ describe('ClusteredActor', function() {
   }));
 
   it('should properly destroy it\'s children', P.coroutine(function*() {
-    var initializeCounter = 0;
-    var destroyCounter = 0;
+    let initializeCounter = 0;
+    let destroyCounter = 0;
 
     /**
      * Child actor.
@@ -349,22 +349,22 @@ describe('ClusteredActor', function() {
       }
 
       forward(topic, msg) {
-        var _ = require('underscore');
-        var idx = _.random(this.actors.length);
+        let _ = require('underscore');
+        let idx = _.random(this.actors.length);
 
         return this.actors[idx];
       }
     }
 
     // Define custom system with our test balancer.
-    var system = actors({
+    let system = actors({
       test: true,
       balancers: [CustomBalancer]
     });
-    var rootActor = yield system.rootActor();
+    let rootActor = yield system.rootActor();
 
     // Create clustered actor with custom balancer.
-    var parent = yield rootActor.createChild(Child, {
+    let parent = yield rootActor.createChild(Child, {
       mode: 'in-memory',
       clusterSize: 3,
       balancer: 'CustomBalancer'
@@ -381,15 +381,15 @@ describe('ClusteredActor', function() {
 
   describe('forked mode', function() {
     it('should properly clusterize with round robin balancing strategy', P.coroutine(function*() {
-      var childDef = {
+      let childDef = {
         getPid: () => process.pid
       };
 
       // This should create local router and 3 sub-processes.
-      var router = yield rootActor.createChild(childDef, { mode: 'forked', clusterSize: 3 });
+      let router = yield rootActor.createChild(childDef, { mode: 'forked', clusterSize: 3 });
 
-      var promises = _.times(6, () => router.sendAndReceive('getPid'));
-      var results = yield P.all(promises);
+      let promises = _.times(6, () => router.sendAndReceive('getPid'));
+      let results = yield P.all(promises);
 
       // Results should be separate process PIDs.
       _.each(results, result => {
@@ -413,9 +413,9 @@ describe('ClusteredActor', function() {
         }
       }
 
-      var router = yield rootActor.createChild(ChildBehaviour, { mode: 'forked', clusterSize: 3 });
+      let router = yield rootActor.createChild(ChildBehaviour, { mode: 'forked', clusterSize: 3 });
 
-      var metrics = yield router.metrics();
+      let metrics = yield router.metrics();
 
       expect(_.keys(metrics)).to.have.members(['0', '1', '2', 'summary']);
       expect(_.values(metrics)).to.have.deep.members([
@@ -428,12 +428,12 @@ describe('ClusteredActor', function() {
     }));
 
     it('should return clustered actor mode from actor object', P.coroutine(function*() {
-      var childDef = {
+      let childDef = {
         getPid: () => process.pid
       };
 
       // This should create local router and 3 sub-processes.
-      var router = yield rootActor.createChild(childDef, { mode: 'forked', clusterSize: 3 });
+      let router = yield rootActor.createChild(childDef, { mode: 'forked', clusterSize: 3 });
 
       expect(router.getMode()).to.be.equal('forked');
     }));
@@ -456,11 +456,11 @@ describe('ClusteredActor', function() {
         }
       }
 
-      var router = yield rootActor.createChild(Child, { mode: 'forked', clusterSize: 3 });
+      let router = yield rootActor.createChild(Child, { mode: 'forked', clusterSize: 3 });
 
       yield router.broadcast('increment');
 
-      var results = yield router.broadcastAndReceive('get');
+      let results = yield router.broadcastAndReceive('get');
 
       expect(results).to.have.members([1, 1, 1]);
     }));
@@ -483,18 +483,18 @@ describe('ClusteredActor', function() {
         }
       }
 
-      var router = yield rootActor.createChild(Child, { mode: 'in-memory', clusterSize: 1 });
+      let router = yield rootActor.createChild(Child, { mode: 'in-memory', clusterSize: 1 });
 
       yield router.broadcast('increment');
 
-      var results = yield router.broadcastAndReceive('get');
+      let results = yield router.broadcastAndReceive('get');
 
       expect(results).to.have.members([1]);
     }));
 
     it('should not send messages to crashed forked actors', P.coroutine(function*() {
       // Define test behaviour.
-      var def = {
+      let def = {
         kill: () => {
           process.exit(1);
         },
@@ -503,10 +503,10 @@ describe('ClusteredActor', function() {
       };
 
       // Create clustered forked actor.
-      var actor = yield rootActor.createChild(def, { mode: 'forked', clusterSize: 2 });
+      let actor = yield rootActor.createChild(def, { mode: 'forked', clusterSize: 2 });
 
       // Get child actor PIDs.
-      var pids = yield P.map(_.range(2), () => actor.sendAndReceive('getPid'));
+      let pids = yield P.map(_.range(2), () => actor.sendAndReceive('getPid'));
 
       // Kill first child.
       yield actor.send('kill');
@@ -515,19 +515,19 @@ describe('ClusteredActor', function() {
       yield tu.waitForCondition(() => !isRunning(pids[0]));
 
       // Send getPid message again. Second PID should be received.
-      var pid2 = yield actor.sendAndReceive('getPid');
+      let pid2 = yield actor.sendAndReceive('getPid');
 
       expect(pid2).to.be.equal(pids[1]);
 
       // Send getPid message again. First actor should be skipped as crashed.
-      var pid = yield actor.sendAndReceive('getPid');
+      let pid = yield actor.sendAndReceive('getPid');
 
       expect(pid).to.be.equal(pids[1]);
     }));
   });
 
   describe('remote mode', function() {
-    var remoteSystem;
+    let remoteSystem;
 
     beforeEach(function() {
       remoteSystem = actors({
@@ -544,7 +544,7 @@ describe('ClusteredActor', function() {
 
     it('should not send messages to crashed remote actors', P.coroutine(function*() {
       // Define test behaviour.
-      var def = {
+      let def = {
         kill: () => {
           process.exit(1);
         },
@@ -553,14 +553,14 @@ describe('ClusteredActor', function() {
       };
 
       // Create clustered forked actor.
-      var actor = yield rootActor.createChild(def, {
+      let actor = yield rootActor.createChild(def, {
         mode: 'remote',
         host: '127.0.0.1',
         clusterSize: 2
       });
 
       // Get child actor PIDs.
-      var pids = yield P.map(_.range(2), () => actor.sendAndReceive('getPid'));
+      let pids = yield P.map(_.range(2), () => actor.sendAndReceive('getPid'));
 
       // Kill first child.
       yield actor.send('kill');
@@ -569,12 +569,12 @@ describe('ClusteredActor', function() {
       yield tu.waitForCondition(() => !isRunning(pids[0]));
 
       // Send getPid message again. Second PID should be received.
-      var pid2 = yield actor.sendAndReceive('getPid');
+      let pid2 = yield actor.sendAndReceive('getPid');
 
       expect(pid2).to.be.equal(pids[1]);
 
       // Send getPid message again. First actor should be skipped as crashed.
-      var pid = yield actor.sendAndReceive('getPid');
+      let pid = yield actor.sendAndReceive('getPid');
 
       expect(pid).to.be.equal(pids[1]);
     }));

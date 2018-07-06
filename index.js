@@ -11,7 +11,7 @@
  * Exports default actor system.
  */
 
-var ActorSystem = require('./lib/actor-system.js');
+let ActorSystem = require('./lib/actor-system.js');
 
 /**
  * Creates a new actor system with specified options.

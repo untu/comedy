@@ -7,12 +7,12 @@
 
 'use strict';
 
-var actors = require('../index');
-var expect = require('chai').expect;
-var P = require('bluebird');
-var _ = require('underscore');
+let actors = require('../index');
+let expect = require('chai').expect;
+let P = require('bluebird');
+let _ = require('underscore');
 
-var system;
+let system;
 
 describe('Resource injection', function() {
   afterEach(P.coroutine(function*() {
@@ -59,9 +59,9 @@ describe('Resource injection', function() {
       resources: [MessageResource]
     });
 
-    var actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor));
+    let actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor));
 
-    var response = yield actor.sendAndReceive('hello');
+    let response = yield actor.sendAndReceive('hello');
 
     expect(response).to.be.equal('Hi there!');
   }));
@@ -102,18 +102,18 @@ describe('Resource injection', function() {
       resources: [MessageResource]
     });
 
-    var actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor, { mode: 'forked' }));
+    let actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor, { mode: 'forked' }));
 
-    var response = yield actor.sendAndReceive('hello');
+    let response = yield actor.sendAndReceive('hello');
 
     expect(response).to.be.equal('Hi there!');
   }));
 
   it('should run resource lifecycle hooks for used resources', P.coroutine(function*() {
-    var messageResourceInitialized = false;
-    var messageResourceDestroyed = false;
-    var unusedResourceInitialized = false;
-    var unusedResourceDestroyed = false;
+    let messageResourceInitialized = false;
+    let messageResourceDestroyed = false;
+    let unusedResourceInitialized = false;
+    let unusedResourceDestroyed = false;
 
     /**
      * Test resource.
@@ -171,14 +171,14 @@ describe('Resource injection', function() {
       }
     }
 
-    var system = actors({
+    let system = actors({
       test: true,
       resources: [MessageResource, UnusedResource]
     });
 
-    var actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor));
+    let actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor));
 
-    var response = yield actor.sendAndReceive('hello');
+    let response = yield actor.sendAndReceive('hello');
 
     expect(response).to.be.equal('Hi there!');
 
@@ -213,9 +213,9 @@ describe('Resource injection', function() {
       resources: ['/test-resources/test-message-resource']
     });
 
-    var actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor));
+    let actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor));
 
-    var response = yield actor.sendAndReceive('hello');
+    let response = yield actor.sendAndReceive('hello');
 
     expect(response).to.be.equal('Hi there!');
   }));
@@ -243,9 +243,9 @@ describe('Resource injection', function() {
       resources: ['/test-resources/test-message-resource']
     });
 
-    var actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor, { mode: 'forked' }));
+    let actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor, { mode: 'forked' }));
 
-    var response = yield actor.sendAndReceive('hello');
+    let response = yield actor.sendAndReceive('hello');
 
     expect(response).to.be.equal('Hi there!');
   }));
@@ -274,9 +274,9 @@ describe('Resource injection', function() {
       additionalRequires: 'ts-node/register'
     });
 
-    var actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor));
+    let actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor));
 
-    var response = yield actor.sendAndReceive('hello');
+    let response = yield actor.sendAndReceive('hello');
 
     expect(response).to.be.equal('Hi there!');
   }));
@@ -305,9 +305,9 @@ describe('Resource injection', function() {
       additionalRequires: 'ts-node/register'
     });
 
-    var actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor, { mode: 'forked' }));
+    let actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor, { mode: 'forked' }));
 
-    var response = yield actor.sendAndReceive('hello');
+    let response = yield actor.sendAndReceive('hello');
 
     expect(response).to.be.equal('Hi there!');
   }));
@@ -338,9 +338,9 @@ describe('Resource injection', function() {
       }]
     });
 
-    var actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor));
+    let actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor));
 
-    var response = yield actor.sendAndReceive('hello');
+    let response = yield actor.sendAndReceive('hello');
 
     expect(response).to.be.equal('Hi there!');
   }));
@@ -368,9 +368,9 @@ describe('Resource injection', function() {
       resources: '/test-resources/'
     });
 
-    var actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor));
+    let actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor));
 
-    var response = yield actor.sendAndReceive('hello');
+    let response = yield actor.sendAndReceive('hello');
 
     expect(response).to.be.equal('Hi there!');
   }));
@@ -399,9 +399,9 @@ describe('Resource injection', function() {
       additionalRequires: 'ts-node/register'
     });
 
-    var actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor, { mode: 'in-memory' }));
+    let actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor, { mode: 'in-memory' }));
 
-    var response = yield actor.sendAndReceive('hello');
+    let response = yield actor.sendAndReceive('hello');
 
     expect(response).to.be.equal('Hi there!');
   }));
@@ -463,9 +463,9 @@ describe('Resource injection', function() {
       resources: [MyResourceDependency, MyResource]
     });
 
-    var actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor));
+    let actor = yield system.rootActor().then(rootActor => rootActor.createChild(MyActor));
 
-    var response = yield actor.sendAndReceive('getResourceValue');
+    let response = yield actor.sendAndReceive('getResourceValue');
 
     expect(response).to.be.equal('resource dependency');
   }));
@@ -532,7 +532,7 @@ describe('Resource injection', function() {
       resources: [Resource1, Resource2, Resource3]
     });
 
-    var error;
+    let error;
     yield system.rootActor()
       .then(rootActor => rootActor.createChild(MyActor))
       .catch(err => {
