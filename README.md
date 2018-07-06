@@ -36,6 +36,7 @@ single host (by spawning sub-processes) or even to multiple hosts in your networ
 - [Advanced Features](#advanced-features)
   * [Dropping messages on overload](#dropping-messages-on-overload)
   * [Custom balancers](#custom-balancers)
+  * [System bus](#system-bus)
 - [Upcoming Features](#upcoming-features)
   * [Optimized message serialization](#optimized-message-serialization)
   * [Hot code deployment](#hot-code-deployment)
