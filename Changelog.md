@@ -1,3 +1,6 @@
+### v 1.6.1:
+- Added missing type definitions for `SystemBus`. Moved `SystemBus` tests to TypeScript.
+
 ### v 1.6.0:
 - Added custom balancers.
 - Added Babel-transpiled projects support.
