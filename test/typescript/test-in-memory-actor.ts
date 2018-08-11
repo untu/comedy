@@ -5,8 +5,6 @@
  * on the Eclipse official site (https://www.eclipse.org/legal/epl-v10.html).
  */
 
-'use strict';
-
 /* eslint require-jsdoc: "off" */
 
 import * as actors from '../../';

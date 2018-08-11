@@ -27,6 +27,9 @@ export interface ParentActor {
   sendAndReceive(topic: string, ...message: any[]): Promise<any>;
 }
 
+export interface SystemBus extends EventEmitter {
+}
+
 export interface Actor extends EventEmitter {
   getId(): string;
 
@@ -59,6 +62,10 @@ export interface Actor extends EventEmitter {
   metrics(): Promise<Object>;
 
   destroy(): Promise<void>;
+
+  getBus(): SystemBus;
+
+  sendBusMessage(eventName: string, ...args: any[]): void;
 }
 
 export interface ActorDefinition {
@@ -79,6 +86,8 @@ export interface ActorSystem {
   rootActor(): Promise<Actor>;
 
   destroy(): Promise<void>;
+
+  listen(port?: number, host?: string): Promise<void>;
 }
 
 export function createSystem(options: Object): ActorSystem;
