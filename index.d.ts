@@ -87,6 +87,8 @@ export interface ActorSystem {
 
   destroy(): Promise<void>;
 
+  getBus(): SystemBus;
+
   listen(port?: number, host?: string): Promise<void>;
 }
 
