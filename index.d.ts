@@ -64,8 +64,6 @@ export interface Actor extends EventEmitter {
   destroy(): Promise<void>;
 
   getBus(): SystemBus;
-
-  sendBusMessage(eventName: string, ...args: any[]): void;
 }
 
 export interface ActorDefinition {

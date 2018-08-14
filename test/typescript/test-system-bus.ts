@@ -58,7 +58,7 @@ describe('SystemBus', function() {
         this.selfActor = selfActor;
         this.selfActor.getBus().on('test-message-ping', message => {
           if (message !== 'ping from B') { // To avoid message receiving by clustered siblings.
-            this.selfActor.sendBusMessage('test-message-pong', `pong from B`);
+            this.selfActor.getBus().emit('test-message-pong', `pong from B`);
           }
         });
 
@@ -73,13 +73,13 @@ describe('SystemBus', function() {
 
             this.selfActor.getBus().on('test-message-ping', message => {
               if (message !== 'ping from C') { // To avoid message receiving by clustered siblings.
-                this.selfActor.sendBusMessage('test-message-pong', `pong from C`);
+                this.selfActor.getBus().emit('test-message-pong', `pong from C`);
               }
             });
           }
 
           sendPing() {
-            this.selfActor.sendBusMessage('test-message-ping', `ping from C`);
+            this.selfActor.getBus().emit('test-message-ping', `ping from C`);
           }
         }
 
@@ -98,7 +98,7 @@ describe('SystemBus', function() {
       }
 
       sendPing() {
-        return this.selfActor.sendBusMessage('test-message-ping', `ping from B`);
+        return this.selfActor.getBus().emit('test-message-ping', `ping from B`);
       }
 
       sendChildPing() {
@@ -111,12 +111,20 @@ describe('SystemBus', function() {
         expect(message).to.be.equal('hi');
         done();
       });
-      rootActor.sendBusMessage('test-message', 'hi');
+      rootActor.getBus().emit('test-message', 'hi');
+    });
+
+    it('should emit events to local subscribers via actor system', done => {
+      rootActor.getBus().on('test-message', message => {
+        expect(message).to.be.equal('hi');
+        done();
+      });
+      system.getBus().emit('test-message', 'hi');
     });
 
     it('should broadcast emitted messages to all connected recipients in forked mode from actor A', async () => {
       await rootActor.createChild(TestActor, { mode: 'forked' });
-      rootActor.sendBusMessage('test-message-ping', 'ping from A');
+      rootActor.getBus().emit('test-message-ping', 'ping from A');
 
       return messagesExpectationPromise(['pong from B', 'pong from C']);
     });
@@ -139,7 +147,7 @@ describe('SystemBus', function() {
 
     it('should broadcast emitted messages to all connected recipients in forked clusterized mode', async () => {
       await rootActor.createChild(TestActor, { mode: 'forked', clusterSize: 3 });
-      rootActor.sendBusMessage('test-message-ping', 'ping from A');
+      rootActor.getBus().emit('test-message-ping', 'ping from A');
 
       return messagesExpectationPromise([
         'pong from B', 'pong from B', 'pong from B',
@@ -149,7 +157,7 @@ describe('SystemBus', function() {
 
     it('should broadcast emitted messages to all connected recipients in remote mode from actor A', async () => {
       await rootActor.createChild(TestActor, { mode: 'remote', host: '127.0.0.1' });
-      rootActor.sendBusMessage('test-message-ping', 'ping from A');
+      rootActor.getBus().emit('test-message-ping', 'ping from A');
 
       return messagesExpectationPromise(['pong from B', 'pong from C']);
     });
@@ -179,7 +187,7 @@ describe('SystemBus', function() {
       await rootActor.createChild(TestActor, { mode: 'forked' });
       bus.on('test-message-pong', listener);
       bus.removeListener('test-message-pong', listener);
-      rootActor.sendBusMessage('test-message-ping', 'ping from A');
+      rootActor.getBus().emit('test-message-ping', 'ping from A');
 
       return P.delay(3000);
     });
@@ -188,7 +196,7 @@ describe('SystemBus', function() {
       let childActorB = await rootActor.createChild(TestActor, { mode: 'forked' });
 
       await childActorB.sendAndReceive('destroyChild');
-      rootActor.sendBusMessage('test-message-ping', 'ping from A');
+      rootActor.getBus().emit('test-message-ping', 'ping from A');
 
       return messagesExpectationPromise(['pong from B']);
     });

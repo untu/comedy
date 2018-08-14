@@ -1326,7 +1326,7 @@ To receive a system-wide message, an actor needs to subscribe to it. The subscri
 class MyActor {
   initialize(selfActor) {
     // Subscribe to 'system-configuration-changed' topic.
-    selfActor.getSystem().getBus().on('system-configuration-changed', newConfig => {
+    selfActor.getBus().on('system-configuration-changed', newConfig => {
       console.log('New system configuration:', newConfig);
 
       // Do something useful with new configuration...
