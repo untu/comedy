@@ -1,3 +1,6 @@
+### v 1.6.2:
+- Added type definition for `ActorSystem.getBus()`.
+
 ### v 1.6.1:
 - Added missing type definitions for `SystemBus`. Moved `SystemBus` tests to TypeScript.
 
