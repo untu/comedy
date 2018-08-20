@@ -98,7 +98,7 @@ be discussed in later sections. For now, we'll be just using the defaults.
 an initial actor to start from. This actor is called a Root actor, and you can get it from
 actor system by using `rootActor()` method. The method returns not the actor itself, but
 a Promise of the Root actor. To get an actual reference, we use `Promise.then()` method.
-(Comedy uses a [Bluebird](http://bluebirdjs.com/) promise library. For more information 
+(Comedy uses [Bluebird](http://bluebirdjs.com/) promise library. For more information 
 about promise API, please refer to
 [Bluebird documentation](http://bluebirdjs.com/docs/api-reference.html)).
 3. *Create your actor as a child of a Root actor by using `createChild()` method.*
