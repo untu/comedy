@@ -36,8 +36,6 @@ describe('InMemoryActor (TypeScript)', function() {
   describe('initialize()', function() {
     it('should not receive messages until initialized', async function() {
       class LongStartingActor {
-        private initialized = false;
-        
         initialize(selfActor: Actor) {
           return selfActor
             .createChild({
@@ -45,9 +43,6 @@ describe('InMemoryActor (TypeScript)', function() {
                 // This should throw error as parent has not yet been initialized.
                 return selfActor.getParent().send('hello', 'Child');
               }
-            })
-            .then(() => {
-              this.initialized = true;
             });
         }
 
