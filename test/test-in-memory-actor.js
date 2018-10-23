@@ -12,6 +12,8 @@
 let actors = require('../index');
 let Actor = require('../lib/actor.js');
 let expect = require('chai').expect;
+let fs = require('fs');
+let path = require('path');
 let P = require('bluebird');
 let _ = require('underscore');
 
@@ -283,6 +285,19 @@ describe('InMemoryActor', function() {
             });
         });
     });
+
+    it('should support global module lookup', P.coroutine(function*() {
+      fs.copyFileSync(
+        path.join(__dirname, '../test-resources/actors/child-actors/child-actor-1.js'), '/tmp/child-actor-1.js');
+
+      let child = yield rootActor.createChild('//tmp/child-actor-1');
+
+      expect(child.getName()).to.be.equal('ChildActor1');
+
+      let resp = yield child.sendAndReceive('hello');
+
+      expect(resp).to.be.equal('Hello from ChildActor1');
+    }));
   });
 
   describe('createChildren()', function() {
