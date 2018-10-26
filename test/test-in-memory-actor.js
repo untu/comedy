@@ -292,7 +292,7 @@ describe('InMemoryActor', function() {
         path.join(__dirname, '../test-resources/actors/child-actors/child-actor-1.js'),
         path.join(os.tmpdir(), 'child-actor-1.js'));
 
-      let child = yield rootActor.createChild('//tmp/child-actor-1');
+      let child = yield rootActor.createChild(`//${os.tmpdir()}/child-actor-1`);
 
       expect(child.getName()).to.be.equal('ChildActor1');
 
