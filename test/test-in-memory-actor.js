@@ -13,6 +13,7 @@ let actors = require('../index');
 let Actor = require('../lib/actor.js');
 let expect = require('chai').expect;
 let fs = require('fs');
+let os = require('os');
 let path = require('path');
 let P = require('bluebird');
 let _ = require('underscore');
@@ -288,7 +289,8 @@ describe('InMemoryActor', function() {
 
     it('should support global module lookup', P.coroutine(function*() {
       fs.copyFileSync(
-        path.join(__dirname, '../test-resources/actors/child-actors/child-actor-1.js'), '/tmp/child-actor-1.js');
+        path.join(__dirname, '../test-resources/actors/child-actors/child-actor-1.js'),
+        path.join(os.tmpdir(), 'child-actor-1.js'));
 
       let child = yield rootActor.createChild('//tmp/child-actor-1');
 
