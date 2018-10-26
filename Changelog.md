@@ -1,3 +1,7 @@
+### v 1.6.3 (upcoming):
+- Tested compatibility with NodeJS 10.
+- Added actor global lookup capability through `//`.
+
 ### v 1.6.2:
 - Added type definition for `ActorSystem.getBus()`.
 
