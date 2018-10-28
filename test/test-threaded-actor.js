@@ -11,9 +11,6 @@
 
 let actors = require('../index');
 let expect = require('chai').expect;
-let http = require('http');
-let net = require('net');
-let request = require('supertest');
 let isRunning = require('is-running');
 let P = require('bluebird');
 let _ = require('underscore');
@@ -80,7 +77,7 @@ describe('ThreadedActor', function() {
       expect(expectedErr).to.be.instanceof(Error);
     }));
 
-    it('should be able to import modules in forked process', P.coroutine(function*() {
+    it('should be able to import modules in spawned worker process', P.coroutine(function*() {
       // Use module import in behaviour.
       let behaviour = {
         sayHello: () => {
@@ -329,93 +326,7 @@ describe('ThreadedActor', function() {
       expect(result).to.be.equal(`Hello ${process.pid} from Test`);
     }));
 
-    it('should support http.Server object transfer', P.coroutine(function*() {
-      let server = http.createServer();
-
-      server.listen(8888);
-
-      let child = yield rootActor.createChild({
-        setServer: function(server) {
-          // Handle HTTP requests.
-          server.on('request', (req, res) => {
-            res.writeHead(200, { 'Content-Type': 'text/plain' });
-            res.end('Hello!');
-          });
-
-          this.server = server;
-        },
-
-        destroy: function() {
-          return require('bluebird').fromCallback(cb => {
-            this.server.close(cb);
-          });
-        }
-      }, { mode: 'threaded' });
-
-      yield child.sendAndReceive('setServer', server);
-
-      // Close server in this process to avoid receiving connections locally.
-      yield P.fromCallback(cb => {
-        server.close(cb);
-      });
-
-      yield request('http://127.0.0.1:8888')
-        .get('/')
-        .expect(200)
-        .then(res => {
-          expect(res.text).to.be.equal('Hello!');
-        });
-    }));
-
-    it('should support net.Server object transfer', P.coroutine(function*() {
-      let server = net.createServer();
-
-      yield P.fromCallback(cb => {
-        server.listen(8889, '127.0.0.1', cb);
-      });
-
-      let child = yield rootActor.createChild({
-        setServer: function(server) {
-          // Send hello message on connection.
-          server.on('connection', socket => {
-            socket.end('Hello!');
-          });
-
-          this.server = server;
-        },
-
-        destroy: function() {
-          return require('bluebird').fromCallback(cb => {
-            this.server.close(cb);
-          });
-        }
-      }, { mode: 'threaded' });
-
-      yield child.sendAndReceive('setServer', server);
-
-      // Close server in this process to avoid receiving connections locally.
-      yield P.fromCallback(cb => {
-        server.close(cb);
-      });
-
-      let serverMessage = yield P.fromCallback(cb => {
-        let clientSocket = new net.Socket();
-
-        clientSocket.setEncoding('UTF8');
-
-        clientSocket.on('data', data => {
-          cb(null, data);
-        });
-
-        clientSocket.connect(8889, '127.0.0.1', (err) => {
-          if (err) return cb(err);
-        });
-      });
-
-      expect(serverMessage).to.be.equal('Hello!');
-    }));
-
-    it('should be able to pass actor references', P.coroutine(function*() {
+    it.skip('should be able to pass actor references', P.coroutine(function*() {
       let rootActor = yield system.rootActor();
       let localCounter = 0;
       let localChild = yield rootActor.createChild({
@@ -549,45 +460,6 @@ describe('ThreadedActor', function() {
         .then(result => expect(result).to.be.equal('Hello from TestActor'));
     });
 
-    it('should support crashed actor respawn', P.coroutine(function*() {
-      let dfd = P.pending();
-      let localChild = yield rootActor.createChild({
-        forkedReady: () => {
-          dfd.resolve();
-        }
-      }, { mode: 'in-memory' });
-      let forkedChild = yield localChild.createChild({
-        initialize: (selfActor) => {
-          process.nextTick(() => selfActor.getParent().send('forkedReady'));
-        },
-
-        kill: () => {
-          process.exit(1);
-        },
-
-        ping: () => 'pong'
-      }, { mode: 'threaded', onCrash: 'respawn' });
-
-      // Wait for forked actor to initialize first time.
-      yield dfd.promise;
-
-      for (let i = 0; i < 3; i++) {
-        // Create new promise.
-        dfd = P.pending();
-
-        // Kill forked actor.
-        yield forkedChild.send('kill');
-
-        // Wait for forked actor to respawn.
-        yield dfd.promise;
-
-        // Ping forked actor.
-        let resp = yield forkedChild.sendAndReceive('ping');
-
-        expect(resp).to.be.equal('pong');
-      }
-    }));
-
     it('should be able to load an actor from a given module', function() {
       return rootActor
         .createChild('/test-resources/actors/test-actor', { mode: 'threaded' })
@@ -636,7 +508,7 @@ describe('ThreadedActor', function() {
       expect(response).to.be.equal('Hi there!');
     }));
 
-    it('should be able to pass actor references through custom parameters', P.coroutine(function*() {
+    it.skip('should be able to pass actor references through custom parameters', P.coroutine(function*() {
       let rootActor = yield system.rootActor();
       let localCounter = 0;
       let localChild = yield rootActor.createChild({
@@ -665,88 +537,6 @@ describe('ThreadedActor', function() {
 
       expect(result).to.be.equal('HELLO!');
       expect(localCounter).to.be.equal(1);
-    }));
-
-    it('should be able to pass http.Server object as custom parameter to child actor', P.coroutine(function*() {
-      let server = http.createServer();
-
-      server.listen(8888);
-
-      yield rootActor.createChild({
-        initialize: function(selfActor) {
-          this.server = selfActor.getCustomParameters().server;
-
-          // Handle HTTP requests.
-          this.server.on('request', (req, res) => {
-            res.writeHead(200, { 'Content-Type': 'text/plain' });
-            res.end('Hello!');
-          });
-        },
-
-        destroy: function() {
-          return require('bluebird').fromCallback(cb => {
-            this.server.close(cb);
-          });
-        }
-      }, { mode: 'threaded', customParameters: { server: server } });
-
-      // Close server in this process to avoid receiving connections locally.
-      yield P.fromCallback(cb => {
-        server.close(cb);
-      });
-
-      yield request('http://127.0.0.1:8888')
-        .get('/')
-        .expect(200)
-        .then(res => {
-          expect(res.text).to.be.equal('Hello!');
-        });
-    }));
-
-    it('should be able to pass net.Server object as custom parameter to child actor', P.coroutine(function*() {
-      let server = net.createServer();
-
-      yield P.fromCallback(cb => {
-        server.listen(8889, '127.0.0.1', cb);
-      });
-
-      yield rootActor.createChild({
-        initialize: function(selfActor) {
-          this.server = selfActor.getCustomParameters().server;
-
-          // Send hello message on connection.
-          this.server.on('connection', socket => {
-            socket.end('Hello!');
-          });
-        },
-
-        destroy: function() {
-          return require('bluebird').fromCallback(cb => {
-            this.server.close(cb);
-          });
-        }
-      }, { mode: 'threaded', customParameters: { server: server } });
-
-      // Close server in this process to avoid receiving connections locally.
-      yield P.fromCallback(cb => {
-        server.close(cb);
-      });
-
-      let serverMessage = yield P.fromCallback(cb => {
-        let clientSocket = new net.Socket();
-
-        clientSocket.setEncoding('UTF8');
-
-        clientSocket.on('data', data => {
-          cb(null, data);
-        });
-
-        clientSocket.connect(8889, '127.0.0.1', (err) => {
-          if (err) return cb(err);
-        });
-      });
-
-      expect(serverMessage).to.be.equal('Hello!');
     }));
   });
 
