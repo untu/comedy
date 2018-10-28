@@ -25,8 +25,7 @@ let rootActor;
 describe('ThreadedActor', function() {
   beforeEach(function() {
     system = actors({
-      test: true,
-      additionalRequires: 'ts-node/register'
+      test: true
     });
 
     return system.rootActor().then(rootActor0 => {
