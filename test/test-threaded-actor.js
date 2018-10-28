@@ -10,7 +10,6 @@
 /* eslint require-jsdoc: "off" */
 
 let actors = require('../index');
-let tu = require('../lib/utils/test.js');
 let expect = require('chai').expect;
 let http = require('http');
 let net = require('net');
@@ -56,7 +55,7 @@ describe('ThreadedActor', function() {
         .catch(done);
     });
 
-    it('should fork a sub-process and perform message exchange', P.coroutine(function*() {
+    it('should spawn a worker process and perform message exchange', P.coroutine(function*() {
       let behaviour = {
         getPid: () => {
           return process.pid;
@@ -67,7 +66,7 @@ describe('ThreadedActor', function() {
       let forkedPid = yield forkedChild.sendAndReceive('getPid');
 
       expect(forkedPid).to.be.a.number;
-      expect(forkedPid).to.be.not.equal(process.pid);
+      expect(forkedPid).to.be.equal(process.pid);
 
       // Check that child process is running.
       expect(isRunning(forkedPid)).to.be.equal(true);
@@ -79,9 +78,6 @@ describe('ThreadedActor', function() {
       let expectedErr = yield forkedChild.sendAndReceive('getPid').catch(err => err);
 
       expect(expectedErr).to.be.instanceof(Error);
-
-      // The process should be stopped eventually.
-      yield tu.waitForCondition(() => !isRunning(forkedPid));
     }));
 
     it('should be able to import modules in forked process', P.coroutine(function*() {
