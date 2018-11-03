@@ -473,19 +473,6 @@ describe('ThreadedActor', function() {
         });
     });
 
-    it('should be able to load an actor from a given TypeScript module', function() {
-      return rootActor
-        .createChild('/test-resources/actors/test-typescript-actor', { mode: 'threaded' })
-        .then(actor => {
-          expect(actor.getName()).to.be.equal('TestActor');
-
-          return actor.sendAndReceive('hello', '123')
-            .then(response => {
-              expect(response).to.be.equal('Hello 123!');
-            });
-        });
-    });
-
     it('should be able to pass custom parameters to child actor', P.coroutine(function*() {
       class MyActor {
         initialize(selfActor) {
