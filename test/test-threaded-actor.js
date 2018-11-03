@@ -326,7 +326,7 @@ describe('ThreadedActor', function() {
       expect(result).to.be.equal(`Hello ${process.pid} from Test`);
     }));
 
-    it.skip('should be able to pass actor references', P.coroutine(function*() {
+    it('should be able to pass actor references', P.coroutine(function*() {
       let rootActor = yield system.rootActor();
       let localCounter = 0;
       let localChild = yield rootActor.createChild({
@@ -336,7 +336,7 @@ describe('ThreadedActor', function() {
           return msg.toUpperCase();
         }
       });
-      let forkedChild = yield rootActor.createChild({
+      let threadedChild = yield rootActor.createChild({
         setLocal: function(actor) {
           this.localActor = actor;
         },
@@ -346,9 +346,9 @@ describe('ThreadedActor', function() {
         }
       }, { mode: 'threaded' });
 
-      yield forkedChild.sendAndReceive('setLocal', localChild);
+      yield threadedChild.sendAndReceive('setLocal', localChild);
 
-      let result = yield forkedChild.sendAndReceive('tellLocal', 'Hello!');
+      let result = yield threadedChild.sendAndReceive('tellLocal', 'Hello!');
 
       expect(result).to.be.equal('HELLO!');
       expect(localCounter).to.be.equal(1);
@@ -495,7 +495,7 @@ describe('ThreadedActor', function() {
       expect(response).to.be.equal('Hi there!');
     }));
 
-    it.skip('should be able to pass actor references through custom parameters', P.coroutine(function*() {
+    it('should be able to pass actor references through custom parameters', P.coroutine(function*() {
       let rootActor = yield system.rootActor();
       let localCounter = 0;
       let localChild = yield rootActor.createChild({
