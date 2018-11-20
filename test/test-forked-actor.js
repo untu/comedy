@@ -860,6 +860,22 @@ describe('ForkedActor', function() {
       });
     }));
 
+    it('should collect metrics from forked actor', P.coroutine(function*() {
+      let forked = yield rootActor.createChild({
+        metrics: function() {
+          return {
+            metric: 111
+          };
+        }
+      }, { name: 'Child', mode: 'forked' });
+
+      let metrics = yield forked.metrics();
+
+      expect(metrics).to.be.deep.equal({
+        metric: 111
+      });
+    }));
+
     it('should not collect metrics from destroyed actors', P.coroutine(function*() {
       let parent = yield rootActor.createChild({
         metrics: function() {
