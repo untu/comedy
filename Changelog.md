@@ -1,4 +1,4 @@
-### v 1.7.0 (upcoming):
+### v 1.7.0:
 - Tested compatibility with NodeJS 10.
 - Added actor global lookup capability through `//`.
 - Implemented `'threaded'` actors through NodeJS 10 worker threads.
