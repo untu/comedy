@@ -63,4 +63,60 @@ describe('ActorSystem', function() {
 
     expect(hookList).to.be.deep.equal(['grandchild', 'child', 'root', 'resource']);
   }));
+
+  describe('Custom logger', function() {
+    it('should support custom loggers', P.coroutine(function*() {
+      let loggerMessages = {
+        error: [],
+        warn: [],
+        info: [],
+        debug: []
+      };
+
+      class MyLogger {
+        error(msg) {
+          loggerMessages.error.push(msg);
+        }
+
+        warn(msg) {
+          loggerMessages.warn.push(msg);
+        }
+
+        info(msg) {
+          loggerMessages.info.push(msg);
+        }
+
+        debug(msg) {
+          loggerMessages.debug.push(msg);
+        }
+      }
+
+      class MyActor {
+        initialize(selfActor) {
+          this.log = selfActor.getLog();
+        }
+
+        test(msg) {
+          this.log.info(msg);
+        }
+      }
+
+      testSystem = actors({
+        test: true,
+        root: MyActor,
+        logger: MyLogger,
+        loggerConfig: {
+          categories: {
+            default: "Silent",
+            MyActor: "Info"
+          }
+        }
+      });
+
+      yield testSystem.rootActor().then(actor => actor.sendAndReceive('test', 'Hello!'));
+
+      expect(loggerMessages.info).to.have.length(1);
+      expect(loggerMessages.info[0]).to.be.equal('Hello!');
+    }));
+  });
 });
