@@ -25,6 +25,7 @@ single host (by spawning sub-processes) or even to multiple hosts in your networ
   * [Remote Actors](#remote-actors)
     + [Named clusters](#named-clusters)
     + [Multiple hosts](#multiple-hosts)
+  * [Threaded Actors](#threaded-actors)
 - [Actor Lifecycle](#actor-lifecycle)
   * [initialize() lifecycle hook](#initialize-lifecycle-hook)
   * [destroy() lifecycle hook](#destroy-lifecycle-hook)
