@@ -558,6 +558,43 @@ rootActor.createChild(MyActor, { mode: 'remote', host: ['192.168.33.10', '192.16
 
 This works the same way as `"cluster"` parameter. The only difference is that now the cluster is unnamed.
 
+### Threaded Actors
+
+In NodeJS v10 *worker threads* were introduced. *Worker threads* are additional threads within the same NodeJS process,
+and they allow scaling the load between multiple CPU cores without forking sub-processes. This makes scaling more
+lightweight and fast, because *worker thread* is faster to spawn and consumes less resources than a separate OS
+process.
+
+Despite the fact that NodeJS *worker threads* run within the same process boundary, they are completely isolated from
+each other and can only interact by means of messaging. This fits quite nicely into actor paradigm.
+
+Comedy actors support a `"threaded"` mode. In this mode an actor is launched in a separate worker thread.
+
+In the example above, to run `MyActor` as a worker thread, you simply specify the following configuration:
+
+```json
+{
+  "MyActor": {
+    "mode": "threaded"
+  }
+}
+```
+
+And if you want to distribute the load between multiple worker threads (say, 3), you just add a `"clusterSize"` option,
+as usual:
+
+```json
+{
+  "MyActor": {
+    "mode": "threaded",
+    "clusterSize": 3
+  }
+}
+```
+
+> In NodeJS v10 worker threads are an experimental feature, so they are not enabled by default. To enable them,
+> you need to run your NodeJS executable with `--experimental-worker` option.
+
 ## Actor Lifecycle
 
 Like plain objects, actors live and die. The difference is that an actor instance can be created in a separate
