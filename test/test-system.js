@@ -74,19 +74,19 @@ describe('ActorSystem', function() {
       };
 
       class MyLogger {
-        error(msg) {
+        error(...msg) {
           loggerMessages.error.push(msg);
         }
 
-        warn(msg) {
+        warn(...msg) {
           loggerMessages.warn.push(msg);
         }
 
-        info(msg) {
+        info(...msg) {
           loggerMessages.info.push(msg);
         }
 
-        debug(msg) {
+        debug(...msg) {
           loggerMessages.debug.push(msg);
         }
       }
@@ -116,7 +116,7 @@ describe('ActorSystem', function() {
       yield testSystem.rootActor().then(actor => actor.sendAndReceive('test', 'Hello!'));
 
       expect(loggerMessages.info).to.have.length(1);
-      expect(loggerMessages.info[0]).to.be.equal('Hello!');
+      expect(loggerMessages.info[0][1]).to.be.equal('Hello!');
     }));
   });
 });
