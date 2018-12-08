@@ -1,3 +1,6 @@
+### v 1.8.0:
+- Added custom logger support.
+
 ### v 1.7.0:
 - Tested compatibility with NodeJS 10.
 - Added actor global lookup capability through `//`.
