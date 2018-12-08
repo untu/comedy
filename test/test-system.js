@@ -149,5 +149,42 @@ describe('ActorSystem', function() {
       expect(loggerMessages.info).to.have.length(1);
       expect(loggerMessages.info[0][1]).to.be.equal('Hello!');
     }));
+
+    it('should be able to pass custom logger across process boundary', P.coroutine(function*() {
+      class MyActor {
+        initialize(selfActor) {
+          this.log = selfActor.getLog();
+        }
+
+        test(msg) {
+          this.log.info(msg);
+        }
+
+        getLoggerMessages() {
+          return this.log.getImplementation().getLoggerMessages();
+        }
+      }
+
+      testSystem = actors({
+        test: true,
+        logger: '/test-resources/test-logger',
+        loggerConfig: {
+          categories: {
+            default: 'Silent',
+            MyActor: 'Info'
+          }
+        }
+      });
+
+      let rootActor = yield testSystem.rootActor();
+      let childActor = yield rootActor.createChild(MyActor, { mode: 'forked' });
+
+      yield childActor.sendAndReceive('test', 'Hello!');
+
+      let loggerMessages = yield childActor.sendAndReceive('getLoggerMessages');
+
+      expect(loggerMessages.info).to.have.length(1);
+      expect(loggerMessages.info[0][1]).to.be.equal('Hello!');
+    }));
   });
 });
