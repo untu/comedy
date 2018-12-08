@@ -107,13 +107,44 @@ describe('ActorSystem', function() {
         logger: MyLogger,
         loggerConfig: {
           categories: {
-            default: "Silent",
-            MyActor: "Info"
+            default: 'Silent',
+            MyActor: 'Info'
           }
         }
       });
 
       yield testSystem.rootActor().then(actor => actor.sendAndReceive('test', 'Hello!'));
+
+      expect(loggerMessages.info).to.have.length(1);
+      expect(loggerMessages.info[0][1]).to.be.equal('Hello!');
+    }));
+
+    it('should support custom loggers specified by module path', P.coroutine(function*() {
+      class MyActor {
+        initialize(selfActor) {
+          this.log = selfActor.getLog();
+        }
+
+        test(msg) {
+          this.log.info(msg);
+        }
+      }
+
+      testSystem = actors({
+        test: true,
+        root: MyActor,
+        logger: '/test-resources/test-logger',
+        loggerConfig: {
+          categories: {
+            default: 'Silent',
+            MyActor: 'Info'
+          }
+        }
+      });
+
+      yield testSystem.rootActor().then(actor => actor.sendAndReceive('test', 'Hello!'));
+
+      let loggerMessages = testSystem.getLog().getImplementation().getLoggerMessages();
 
       expect(loggerMessages.info).to.have.length(1);
       expect(loggerMessages.info[0][1]).to.be.equal('Hello!');
