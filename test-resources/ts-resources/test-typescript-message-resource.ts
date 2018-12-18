@@ -11,7 +11,7 @@ import {ResourceDefinition, ActorSystem} from '../../index';
  * Test TypeScript message resource.
  */
 export default class MessageResource implements ResourceDefinition<string> {
-  private message: string;
+  private message!: string;
 
   initialize(system: ActorSystem): Promise<void>|void {
     this.message = 'Hi there!';
