@@ -55,7 +55,7 @@
     "supertest": "^3.0.0",
     "tslint": "5.10.0",
     "ts-node": "7.0.1",
-    "typescript": "2.4.2"
+    "typescript": "3.0.3"
   },
   "dependencies": {
     "@types/bluebird": "3.5.20",
