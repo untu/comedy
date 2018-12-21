@@ -1,3 +1,6 @@
+### v 1.9.0 (upcoming):
+- Added `'disabled'` mode for disabling actors.
+
 ### v 1.8.0:
 - Added custom logger support.
 
