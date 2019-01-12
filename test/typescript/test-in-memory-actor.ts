@@ -346,5 +346,24 @@ describe('InMemoryActor (TypeScript)', function() {
 
       expect(destroyList).to.be.deep.equal(['grandchild', 'child']);
     });
+
+    it('should softly destroy an actor allowing it to drain it\'s mailbox', async function() {
+      let finishedTasks: string[] = [];
+      const childActor = await rootActor.createChild({
+        test: (msg: string) => {
+          return P.delay(1000).then(() => {
+            finishedTasks.push(msg);
+          });
+        }
+      });
+
+      _.times(3, i => {
+        childActor.send('test', `Message ${i + 1}`);
+      });
+
+      await childActor.destroy();
+
+      expect(finishedTasks).to.have.members(['Message 1', 'Message 2', 'Message 3']);
+    });
   });
 });
