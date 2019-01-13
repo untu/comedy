@@ -458,7 +458,7 @@ describe('ClusteredActor', function() {
 
       let router = yield rootActor.createChild(Child, { mode: 'forked', clusterSize: 3 });
 
-      yield router.broadcast('increment');
+      yield router.broadcastAndReceive('increment');
 
       let results = yield router.broadcastAndReceive('get');
 
