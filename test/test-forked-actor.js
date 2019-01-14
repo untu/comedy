@@ -914,9 +914,20 @@ describe('ForkedActor', function() {
 
   describe('destroy()', function() {
     it('should softly destroy an actor allowing it to drain it\'s mailbox (send)', P.coroutine(function*() {
+      let handlingDfd = P.pending();
+
       class ParentActor {
         constructor() {
+          this.handlingCount = 0;
           this.handledMessages = [];
+        }
+
+        handling() {
+          this.handlingCount++;
+
+          if (this.handlingCount == 3) {
+            handlingDfd.resolve();
+          }
         }
 
         handled(msg) {
@@ -933,8 +944,10 @@ describe('ForkedActor', function() {
           this.parent = selfActor.getParent();
         }
 
-        test(msg) {
-          return this.parent.sendAndReceive('handled', msg);
+        async test(msg) {
+          await this.parent.sendAndReceive('handling', msg);
+          await require('bluebird').delay(1000);
+          await this.parent.sendAndReceive('handled', msg);
         }
       }
 
@@ -944,6 +957,8 @@ describe('ForkedActor', function() {
       _.times(3, i => {
         childActor.send('test', `Message ${i + 1}`);
       });
+
+      yield handlingDfd.promise; // Wait for message handling to start.
 
       yield childActor.destroy();
 
