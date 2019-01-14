@@ -152,7 +152,7 @@ modifying anything inside this class.
 ### Module-Defined Actors
 
 If your class is defined in a separate file, making a module (which is most likely the case), you
-can simply a specify a path to this module to `createChild()` method.
+can simply a specify a path to this module in `createChild()` method.
 
 Let's say, our `MyActor` class from previous example is defined in a separate module called
 `MyActor.js` that resides in `actors` folder:
