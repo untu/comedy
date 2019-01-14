@@ -911,4 +911,45 @@ describe('ForkedActor', function() {
       });
     }));
   });
+
+  describe('destroy()', function() {
+    it('should softly destroy an actor allowing it to drain it\'s mailbox (send)', P.coroutine(function*() {
+      class ParentActor {
+        constructor() {
+          this.handledMessages = [];
+        }
+
+        handled(msg) {
+          this.handledMessages.push(msg);
+        }
+
+        getHandled() {
+          return this.handledMessages;
+        }
+      }
+
+      class ChildActor {
+        initialize(selfActor) {
+          this.parent = selfActor.getParent();
+        }
+
+        test(msg) {
+          return this.parent.sendAndReceive('handled', msg);
+        }
+      }
+
+      let parentActor = yield rootActor.createChild(ParentActor, { mode: 'in-memory' });
+      let childActor = yield parentActor.createChild(ChildActor, { mode: 'forked' });
+
+      _.times(3, i => {
+        childActor.send('test', `Message ${i + 1}`);
+      });
+
+      yield childActor.destroy();
+
+      let handledMessages = yield parentActor.sendAndReceive('getHandled');
+
+      expect(handledMessages).to.have.members(['Message 1', 'Message 2', 'Message 3']);
+    }));
+  });
 });
