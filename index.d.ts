@@ -51,6 +51,8 @@ export interface Actor extends EventEmitter {
 
   createChildren(modulePath: string): Promise<Actor[]>;
 
+  changeConfiguration(config: object): Promise<void>;
+
   send(topic: string, ...message: any[]): Promise<void>;
 
   sendAndReceive(topic: string, ...message: any[]): Promise<any>;
