@@ -153,11 +153,6 @@ describe('RemoteActor', function() {
 
     it('should be able to send a message to parent actor', P.coroutine(function*() {
       let replyMsg = yield new P((resolve, reject) => {
-        let parentBehaviour = {
-          reply: function(msg) {
-            resolve(msg);
-          }
-        };
         let childBehaviour = {
           initialize: function(selfActor) {
             this.parent = selfActor.getParent();
@@ -167,10 +162,22 @@ describe('RemoteActor', function() {
             return this.parent.sendAndReceive('reply', 'Hi!');
           }
         };
+        let parentBehaviour = {
+          initialize: async function(selfActor) {
+            this.child = await selfActor.createChild(childBehaviour, { mode: 'remote', host: '127.0.0.1' });
+          },
+
+          reply: function(msg) {
+            resolve(msg);
+          },
+
+          sayHelloToChild: function() {
+            return this.child.sendAndReceive('sayHello');
+          }
+        };
 
         rootActor.createChild(parentBehaviour)
-          .then(parent => parent.createChild(childBehaviour, { mode: 'remote', host: '127.0.0.1' }))
-          .then(child => child.sendAndReceive('sayHello'))
+          .then(parent => parent.sendAndReceive('sayHelloToChild'))
           .catch(reject);
       });
 
@@ -179,11 +186,6 @@ describe('RemoteActor', function() {
 
     it('should be able to forward messages to parent', P.coroutine(function*() {
       let replyMsg = yield new P((resolve, reject) => {
-        let parentBehaviour = {
-          reply: function(msg) {
-            resolve(msg);
-          }
-        };
         let childBehaviour = {
           initialize: function(selfActor) {
             selfActor.forwardToParent('reply');
@@ -205,10 +207,22 @@ describe('RemoteActor', function() {
             return this.child.sendAndReceive('sayHello');
           }
         };
+        let parentBehaviour = {
+          initialize: async function(selfActor) {
+            this.child = await selfActor.createChild(childBehaviour, { mode: 'remote', host: '127.0.0.1' });
+          },
+
+          reply: function(msg) {
+            resolve(msg);
+          },
+
+          sayHelloToChild: function() {
+            return this.child.sendAndReceive('sayHello');
+          }
+        };
 
         rootActor.createChild(parentBehaviour)
-          .then(parent => parent.createChild(childBehaviour, { mode: 'remote', host: '127.0.0.1' }))
-          .then(child => child.sendAndReceive('sayHello'))
+          .then(parent => parent.sendAndReceive('sayHelloToChild'))
           .catch(reject);
       });
 
@@ -417,21 +431,28 @@ describe('RemoteActor', function() {
     it('should support variable arguments', P.coroutine(function*() {
       let replyDfd = P.pending();
       let parent = yield rootActor.createChild({
-        helloReply: function(from, to) {
-          replyDfd.resolve(`Hello reply from ${from} to ${to}.`);
-        }
-      }, { mode: 'in-memory' });
-      let child = yield parent.createChild({
-        initialize: function(selfActor) {
-          this.parent = selfActor.getParent();
+        initialize: async function(selfActor) {
+          this.child = await selfActor.createChild({
+            initialize: function(selfActor) {
+              this.parent = selfActor.getParent();
+            },
+
+            hello: function(from, to) {
+              this.parent.send('helloReply', to, from);
+            }
+          }, { mode: 'remote', host: '127.0.0.1' });
         },
 
-        hello: function(from, to) {
-          this.parent.send('helloReply', to, from);
-        }
-      }, { mode: 'remote', host: '127.0.0.1' });
+        helloReply: function(from, to) {
+          replyDfd.resolve(`Hello reply from ${from} to ${to}.`);
+        },
 
-      yield child.send('hello', 'Bob', 'Alice');
+        test: function() {
+          return this.child.send('hello', 'Bob', 'Alice');
+        }
+      }, { mode: 'in-memory' });
+
+      yield parent.send('test');
 
       let result = yield replyDfd.promise;
 
@@ -520,14 +541,9 @@ describe('RemoteActor', function() {
 
     it('should support crashed actor respawn', P.coroutine(function*() {
       let dfd = P.pending();
-      let localChild = yield rootActor.createChild({
-        remoteReady: () => {
-          dfd.resolve();
-        }
-      }, { mode: 'in-memory' });
-      let remoteChild = yield localChild.createChild({
+      let childBehaviour = {
         initialize: (selfActor) => {
-          process.nextTick(() => selfActor.getParent().send('remoteReady'));
+          process.nextTick(() => selfActor.getParent().send('forkedReady'));
         },
 
         kill: () => {
@@ -535,23 +551,43 @@ describe('RemoteActor', function() {
         },
 
         ping: () => 'pong'
-      }, { mode: 'remote', host: '127.0.0.1', onCrash: 'respawn' });
+      };
+      let parent = yield rootActor.createChild({
+        initialize: function(selfActor) {
+          return selfActor.createChild(childBehaviour, { mode: 'remote', host: '127.0.0.1', onCrash: 'respawn' })
+            .then(child => {
+              this.child = child;
+            });
+        },
+
+        forkedReady: function() {
+          dfd.resolve();
+        },
+
+        killChild: function() {
+          return this.child.send('kill');
+        },
+
+        pingChild: function() {
+          return this.child.sendAndReceive('ping');
+        }
+      }, { mode: 'in-memory' });
 
       // Wait for forked actor to initialize first time.
       yield dfd.promise;
 
-      for (let i = 0; i < 2; i++) {
+      for (let i = 0; i < 3; i++) {
         // Create new promise.
         dfd = P.pending();
 
         // Kill forked actor.
-        yield remoteChild.send('kill');
+        yield parent.send('killChild');
 
-        // Wait for remote actor to respawn.
+        // Wait for forked actor to respawn.
         yield dfd.promise;
 
-        // Ping remote actor.
-        let resp = yield remoteChild.sendAndReceive('ping');
+        // Ping forked actor.
+        let resp = yield parent.sendAndReceive('pingChild');
 
         expect(resp).to.be.equal('pong');
       }
@@ -799,26 +835,31 @@ describe('RemoteActor', function() {
   describe('metrics()', function() {
     it('should collect metrics from target actor and all the actor sub-tree', P.coroutine(function*() {
       let parent = yield rootActor.createChild({
+        initialize: function(selfActor) {
+          return P.join(
+            selfActor.createChild({
+              metrics: function() {
+                return {
+                  childMetric: 222
+                };
+              }
+            }, { name: 'Child1', mode: 'remote', host: '127.0.0.1' }),
+            selfActor.createChild({
+              metrics: function() {
+                return {
+                  childMetric: 333
+                };
+              }
+            }, { name: 'Child2', mode: 'remote', host: '127.0.0.1' })
+          );
+        },
+
         metrics: function() {
           return {
             parentMetric: 111
           };
         }
       });
-      yield parent.createChild({
-        metrics: function() {
-          return {
-            childMetric: 222
-          };
-        }
-      }, { name: 'Child1', mode: 'remote', host: '127.0.0.1' });
-      yield parent.createChild({
-        metrics: function() {
-          return {
-            childMetric: 333
-          };
-        }
-      }, { name: 'Child2', mode: 'remote', host: '127.0.0.1' });
 
       let metrics = yield parent.metrics();
 
@@ -835,28 +876,35 @@ describe('RemoteActor', function() {
 
     it('should not collect metrics from destroyed actors', P.coroutine(function*() {
       let parent = yield rootActor.createChild({
+        initialize: async function(selfActor) {
+          this.child1 = await selfActor.createChild({
+            metrics: function() {
+              return {
+                childMetric: 222
+              };
+            }
+          }, { name: 'Child1', mode: 'remote', host: '127.0.0.1' });
+          this.child2 = await selfActor.createChild({
+            metrics: function() {
+              return {
+                childMetric: 333
+              };
+            }
+          }, { name: 'Child2', mode: 'remote', host: '127.0.0.1' });
+        },
+
         metrics: function() {
           return {
             parentMetric: 111
           };
+        },
+
+        killChild2: function() {
+          return this.child2.destroy();
         }
       });
-      yield parent.createChild({
-        metrics: function() {
-          return {
-            childMetric: 222
-          };
-        }
-      }, { name: 'Child1', mode: 'remote', host: '127.0.0.1' });
-      let child2 = yield parent.createChild({
-        metrics: function() {
-          return {
-            childMetric: 333
-          };
-        }
-      }, { name: 'Child2', mode: 'remote', host: '127.0.0.1' });
 
-      yield child2.destroy();
+      yield parent.sendAndReceive('killChild2');
 
       let metrics = yield parent.metrics();
 
