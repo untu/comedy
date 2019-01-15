@@ -103,11 +103,6 @@ describe('ForkedActor', function() {
 
     it('should be able to send a message to parent actor', P.coroutine(function*() {
       let replyMsg = yield new P((resolve, reject) => {
-        let parentBehaviour = {
-          reply: function(msg) {
-            resolve(msg);
-          }
-        };
         let childBehaviour = {
           initialize: function(selfActor) {
             this.parent = selfActor.getParent();
@@ -117,10 +112,24 @@ describe('ForkedActor', function() {
             return this.parent.sendAndReceive('reply', 'Hi!');
           }
         };
+        let parentBehaviour = {
+          initialize: function(selfActor) {
+            return selfActor.createChild(childBehaviour, { mode: 'forked' }).then(child => {
+              this.child = child;
+            });
+          },
+
+          reply: function(msg) {
+            resolve(msg);
+          },
+
+          sayHelloToChild: function() {
+            return this.child.sendAndReceive('sayHello');
+          }
+        };
 
         rootActor.createChild(parentBehaviour)
-          .then(parent => parent.createChild(childBehaviour, { mode: 'forked' }))
-          .then(child => child.sendAndReceive('sayHello'))
+          .then(parent => parent.sendAndReceive('sayHelloToChild'))
           .catch(reject);
       });
 
@@ -129,11 +138,6 @@ describe('ForkedActor', function() {
 
     it('should be able to forward messages to parent', P.coroutine(function*() {
       let replyMsg = yield new P((resolve, reject) => {
-        let parentBehaviour = {
-          reply: function(msg) {
-            resolve(msg);
-          }
-        };
         let childBehaviour = {
           initialize: function(selfActor) {
             selfActor.forwardToParent('reply');
@@ -155,10 +159,24 @@ describe('ForkedActor', function() {
             return this.child.sendAndReceive('sayHello');
           }
         };
+        let parentBehaviour = {
+          initialize: function(selfActor) {
+            return selfActor.createChild(childBehaviour, { mode: 'forked' }).then(child => {
+              this.child = child;
+            });
+          },
+
+          reply: function(msg) {
+            resolve(msg);
+          },
+
+          sayHelloToChild: function() {
+            return this.child.sendAndReceive('sayHello');
+          }
+        };
 
         rootActor.createChild(parentBehaviour)
-          .then(parent => parent.createChild(childBehaviour, { mode: 'forked' }))
-          .then(child => child.sendAndReceive('sayHello'))
+          .then(parent => parent.sendAndReceive('sayHelloToChild'))
           .catch(reject);
       });
 
