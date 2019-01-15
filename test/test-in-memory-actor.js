@@ -119,11 +119,7 @@ describe('InMemoryActor', function() {
             externalState += msg.count;
           }
         })
-        .then(testActor => {
-          expect(testActor.getParent().getId()).to.be.equal(rootActor.getId());
-
-          return testActor.send('myMessage', { count: 3 });
-        })
+        .then(testActor => testActor.send('myMessage', { count: 3 }))
         .then(() => {
           expect(externalState).to.be.equal(3);
         });
@@ -341,16 +337,24 @@ describe('InMemoryActor', function() {
     it('should forward messages with given topics to parent actor', P.coroutine(function*() {
       let result = 0;
 
-      let childActor = yield rootActor.createChild({
+      let parentActor = yield rootActor.createChild({
+        initialize: async function(selfActor) {
+          this.child = await selfActor.createChild({
+            initialize: selfActor => selfActor.forwardToParent('plus', 'times')
+          });
+        },
+
         plus: n => result += n,
-        times: n => result *= n
-      });
-      let grandChildActor = yield childActor.createChild({
-        initialize: selfActor => selfActor.forwardToParent('plus', 'times')
+
+        times: n => result *= n,
+
+        sendToChild: function(op, val) {
+          return this.child.sendAndReceive(op, val);
+        }
       });
 
-      yield grandChildActor.send('plus', 2);
-      yield grandChildActor.send('times', 3);
+      yield parentActor.sendAndReceive('sendToChild', 'plus', 2);
+      yield parentActor.sendAndReceive('sendToChild', 'times', 3);
 
       expect(result).to.be.equal(6);
     }));
@@ -358,16 +362,24 @@ describe('InMemoryActor', function() {
     it('should support regular expressions', P.coroutine(function*() {
       let result = 0;
 
-      let childActor = yield rootActor.createChild({
+      let parentActor = yield rootActor.createChild({
+        initialize: async function(selfActor) {
+          this.child = await selfActor.createChild({
+            initialize: selfActor => selfActor.forwardToParent(/^math/)
+          });
+        },
+
         mathPlus: n => result += n,
-        mathTimes: n => result *= n
-      });
-      let grandChildActor = yield childActor.createChild({
-        initialize: selfActor => selfActor.forwardToParent(/^math/)
+
+        mathTimes: n => result *= n,
+
+        sendToChild: function(op, val) {
+          return this.child.sendAndReceive(op, val);
+        }
       });
 
-      yield grandChildActor.send('mathPlus', 2);
-      yield grandChildActor.send('mathTimes', 3);
+      yield parentActor.sendAndReceive('sendToChild', 'mathPlus', 2);
+      yield parentActor.sendAndReceive('sendToChild', 'mathTimes', 3);
 
       expect(result).to.be.equal(6);
     }));
@@ -419,26 +431,31 @@ describe('InMemoryActor', function() {
   describe('metrics()', function() {
     it('should collect metrics from target actor and all the actor sub-tree', P.coroutine(function*() {
       let parent = yield rootActor.createChild({
+        initialize: function(selfActor) {
+          return P.join(
+            selfActor.createChild({
+              metrics: function() {
+                return {
+                  childMetric: 222
+                };
+              }
+            }, { name: 'Child1', mode: 'in-memory' }),
+            selfActor.createChild({
+              metrics: function() {
+                return {
+                  childMetric: 333
+                };
+              }
+            }, { name: 'Child2', mode: 'in-memory' })
+          );
+        },
+
         metrics: function() {
           return {
             parentMetric: 111
           };
         }
       });
-      yield parent.createChild({
-        metrics: function() {
-          return {
-            childMetric: 222
-          };
-        }
-      }, { name: 'Child1' });
-      yield parent.createChild({
-        metrics: function() {
-          return {
-            childMetric: 333
-          };
-        }
-      }, { name: 'Child2' });
 
       let metrics = yield parent.metrics();
 
@@ -455,28 +472,35 @@ describe('InMemoryActor', function() {
 
     it('should not collect metrics from destroyed actors', P.coroutine(function*() {
       let parent = yield rootActor.createChild({
+        initialize: async function(selfActor) {
+          this.child1 = await selfActor.createChild({
+            metrics: function() {
+              return {
+                childMetric: 222
+              };
+            }
+          }, { name: 'Child1', mode: 'in-memory' });
+          this.child2 = await selfActor.createChild({
+            metrics: function() {
+              return {
+                childMetric: 333
+              };
+            }
+          }, { name: 'Child2', mode: 'in-memory' });
+        },
+
         metrics: function() {
           return {
             parentMetric: 111
           };
+        },
+
+        killChild2: function() {
+          return this.child2.destroy();
         }
       });
-      yield parent.createChild({
-        metrics: function() {
-          return {
-            childMetric: 222
-          };
-        }
-      }, { name: 'Child1' });
-      let child2 = yield parent.createChild({
-        metrics: function() {
-          return {
-            childMetric: 333
-          };
-        }
-      }, { name: 'Child2' });
 
-      yield child2.destroy();
+      yield parent.sendAndReceive('killChild2');
 
       let metrics = yield parent.metrics();
 
@@ -503,11 +527,14 @@ describe('InMemoryActor', function() {
 
     it('should destroy children before destroying self', P.coroutine(function*() {
       let destroyList = [];
-      let childActor = yield rootActor.createChild({
+      yield rootActor.createChild({
+        initialize: function(selfActor) {
+          return selfActor.createChild({
+            destroy: () => destroyList.push('grandchild')
+          });
+        },
+
         destroy: () => destroyList.push('child')
-      });
-      yield childActor.createChild({
-        destroy: () => destroyList.push('grandchild')
       });
 
       yield rootActor.destroy();
