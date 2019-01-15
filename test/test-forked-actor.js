@@ -868,26 +868,31 @@ describe('ForkedActor', function() {
   describe('metrics()', function() {
     it('should collect metrics from target actor and all the actor sub-tree', P.coroutine(function*() {
       let parent = yield rootActor.createChild({
+        initialize: function(selfActor) {
+          return P.join(
+            selfActor.createChild({
+              metrics: function() {
+                return {
+                  childMetric: 222
+                };
+              }
+            }, { name: 'Child1', mode: 'forked' }),
+            selfActor.createChild({
+              metrics: function() {
+                return {
+                  childMetric: 333
+                };
+              }
+            }, { name: 'Child2', mode: 'forked' })
+          );
+        },
+
         metrics: function() {
           return {
             parentMetric: 111
           };
         }
       });
-      yield parent.createChild({
-        metrics: function() {
-          return {
-            childMetric: 222
-          };
-        }
-      }, { name: 'Child1', mode: 'forked' });
-      yield parent.createChild({
-        metrics: function() {
-          return {
-            childMetric: 333
-          };
-        }
-      }, { name: 'Child2', mode: 'forked' });
 
       let metrics = yield parent.metrics();
 
@@ -920,28 +925,35 @@ describe('ForkedActor', function() {
 
     it('should not collect metrics from destroyed actors', P.coroutine(function*() {
       let parent = yield rootActor.createChild({
+        initialize: async function(selfActor) {
+          this.child1 = await selfActor.createChild({
+            metrics: function() {
+              return {
+                childMetric: 222
+              };
+            }
+          }, { name: 'Child1', mode: 'forked' });
+          this.child2 = await selfActor.createChild({
+            metrics: function() {
+              return {
+                childMetric: 333
+              };
+            }
+          }, { name: 'Child2', mode: 'forked' });
+        },
+
         metrics: function() {
           return {
             parentMetric: 111
           };
+        },
+
+        killChild2: function() {
+          return this.child2.destroy();
         }
       });
-      yield parent.createChild({
-        metrics: function() {
-          return {
-            childMetric: 222
-          };
-        }
-      }, { name: 'Child1', mode: 'forked' });
-      let child2 = yield parent.createChild({
-        metrics: function() {
-          return {
-            childMetric: 333
-          };
-        }
-      }, { name: 'Child2', mode: 'forked' });
 
-      yield child2.destroy();
+      yield parent.sendAndReceive('killChild2');
 
       let metrics = yield parent.metrics();
 
@@ -956,31 +968,6 @@ describe('ForkedActor', function() {
 
   describe('destroy()', function() {
     it('should softly destroy an actor allowing it to drain it\'s mailbox (send)', P.coroutine(function*() {
-      let handlingDfd = P.pending();
-
-      class ParentActor {
-        constructor() {
-          this.handlingCount = 0;
-          this.handledMessages = [];
-        }
-
-        handling() {
-          this.handlingCount++;
-
-          if (this.handlingCount == 3) {
-            handlingDfd.resolve();
-          }
-        }
-
-        handled(msg) {
-          this.handledMessages.push(msg);
-        }
-
-        getHandled() {
-          return this.handledMessages;
-        }
-      }
-
       class ChildActor {
         initialize(selfActor) {
           this.parent = selfActor.getParent();
@@ -993,16 +980,47 @@ describe('ForkedActor', function() {
         }
       }
 
+      class ParentActor {
+        constructor() {
+          this.handlingCount = 0;
+          this.handledMessages = [];
+          this.handlingDfd = P.pending();
+        }
+
+        async initialize(selfActor) {
+          this.child = await selfActor.createChild(ChildActor, { mode: 'forked' });
+        }
+
+        handling() {
+          this.handlingCount++;
+
+          if (this.handlingCount == 3) {
+            this.handlingDfd.resolve();
+          }
+        }
+
+        handled(msg) {
+          this.handledMessages.push(msg);
+        }
+
+        getHandled() {
+          return this.handledMessages;
+        }
+
+        async test() {
+          _.times(3, i => {
+            this.child.send('test', `Message ${i + 1}`);
+          });
+
+          await this.handlingDfd.promise; // Wait for message handling to start.
+
+          await this.child.destroy();
+        }
+      }
+
       let parentActor = yield rootActor.createChild(ParentActor, { mode: 'in-memory' });
-      let childActor = yield parentActor.createChild(ChildActor, { mode: 'forked' });
 
-      _.times(3, i => {
-        childActor.send('test', `Message ${i + 1}`);
-      });
-
-      yield handlingDfd.promise; // Wait for message handling to start.
-
-      yield childActor.destroy();
+      yield parentActor.sendAndReceive('test');
 
       let handledMessages = yield parentActor.sendAndReceive('getHandled');
 
