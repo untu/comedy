@@ -584,12 +584,7 @@ describe('ForkedActor', function() {
 
     it('should support crashed actor respawn', P.coroutine(function*() {
       let dfd = P.pending();
-      let localChild = yield rootActor.createChild({
-        forkedReady: () => {
-          dfd.resolve();
-        }
-      }, { mode: 'in-memory' });
-      let forkedChild = yield localChild.createChild({
+      let childBehaviour = {
         initialize: (selfActor) => {
           process.nextTick(() => selfActor.getParent().send('forkedReady'));
         },
@@ -599,7 +594,26 @@ describe('ForkedActor', function() {
         },
 
         ping: () => 'pong'
-      }, { mode: 'forked', onCrash: 'respawn' });
+      };
+      let parent = yield rootActor.createChild({
+        initialize: function(selfActor) {
+          return selfActor.createChild(childBehaviour, { mode: 'forked', onCrash: 'respawn' }).then(child => {
+            this.child = child;
+          });
+        },
+
+        forkedReady: function() {
+          dfd.resolve();
+        },
+
+        killChild: function() {
+          return this.child.send('kill');
+        },
+
+        pingChild: function() {
+          return this.child.sendAndReceive('ping');
+        }
+      }, { mode: 'in-memory' });
 
       // Wait for forked actor to initialize first time.
       yield dfd.promise;
@@ -609,13 +623,13 @@ describe('ForkedActor', function() {
         dfd = P.pending();
 
         // Kill forked actor.
-        yield forkedChild.send('kill');
+        yield parent.send('killChild');
 
         // Wait for forked actor to respawn.
         yield dfd.promise;
 
         // Ping forked actor.
-        let resp = yield forkedChild.sendAndReceive('ping');
+        let resp = yield parent.sendAndReceive('pingChild');
 
         expect(resp).to.be.equal('pong');
       }
