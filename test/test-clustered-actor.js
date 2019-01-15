@@ -40,8 +40,7 @@ describe('ClusteredActor', function() {
       }
 
       hello() {
-        return this.parent.sendAndReceive('helloReceived')
-          .return('Hello!');
+        return this.parent.sendAndReceive('helloReceived').return('Hello!');
       }
     }
 
@@ -51,6 +50,14 @@ describe('ClusteredActor', function() {
     class ParentBehaviour {
       constructor() {
         this.helloReceivedCount = 0;
+      }
+
+      async initialize(selfActor) {
+        this.child = await selfActor.createChild(ChildBehaviour, { mode: 'forked', clusterSize: 2 });
+      }
+
+      helloToChild() {
+        return this.child.sendAndReceive('hello');
       }
 
       helloReceived() {
@@ -63,9 +70,8 @@ describe('ClusteredActor', function() {
     }
 
     let parent = yield rootActor.createChild(ParentBehaviour);
-    let router = yield parent.createChild(ChildBehaviour, { mode: 'forked', clusterSize: 2 });
 
-    yield router.sendAndReceive('hello');
+    yield parent.sendAndReceive('helloToChild');
 
     let helloReceivedCount = yield parent.sendAndReceive('getHelloReceivedCount');
 
