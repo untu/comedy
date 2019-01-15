@@ -470,12 +470,7 @@ describe('ForkedActor', function() {
   describe('send()', function() {
     it('should support variable arguments', P.coroutine(function*() {
       let replyDfd = P.pending();
-      let parent = yield rootActor.createChild({
-        helloReply: function(from, to) {
-          replyDfd.resolve(`Hello reply from ${from} to ${to}.`);
-        }
-      }, { mode: 'in-memory' });
-      let child = yield parent.createChild({
+      let childBehaviour = {
         initialize: function(selfActor) {
           this.parent = selfActor.getParent();
         },
@@ -483,9 +478,24 @@ describe('ForkedActor', function() {
         hello: function(from, to) {
           this.parent.send('helloReply', to, from);
         }
-      }, { mode: 'forked' });
+      };
+      let parent = yield rootActor.createChild({
+        initialize: function(selfActor) {
+          return selfActor.createChild(childBehaviour, { mode: 'forked' }).then(child => {
+            this.child = child;
+          });
+        },
 
-      yield child.send('hello', 'Bob', 'Alice');
+        helloReply: function(from, to) {
+          replyDfd.resolve(`Hello reply from ${from} to ${to}.`);
+        },
+
+        helloToChild: function() {
+          return this.child.send('hello', 'Bob', 'Alice');
+        }
+      }, { mode: 'in-memory' });
+
+      yield parent.send('helloToChild');
 
       let result = yield replyDfd.promise;
 
