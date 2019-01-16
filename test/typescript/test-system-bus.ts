@@ -7,7 +7,7 @@
 
 import * as actors from '../../';
 import {expect} from 'chai';
-import {Actor, ActorSystem} from '../../index';
+import {Actor, ActorRef, ActorSystem} from '../../index';
 import P = require('bluebird');
 import {describe, afterEach, beforeEach, it} from 'mocha';
 
@@ -59,7 +59,7 @@ describe('SystemBus', function() {
      */
     class TestActor {
       private selfActor: Actor;
-      private childActorC: Actor;
+      private childActorC: ActorRef;
 
       initialize(selfActor: Actor) {
         this.selfActor = selfActor;
