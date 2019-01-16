@@ -19,7 +19,7 @@ export interface Logger {
   error(...messages: any[]): void;
 }
 
-export interface ParentActor {
+export interface ParentActorRef {
   getId(): string;
 
   send(topic: string, ...message: any[]): Promise<void>;
@@ -30,14 +30,12 @@ export interface ParentActor {
 export interface SystemBus extends EventEmitter {
 }
 
-export interface Actor extends EventEmitter {
+export interface ActorRef extends EventEmitter {
   getId(): string;
 
   getName(): string;
 
   getLog(): Logger;
-
-  getParent(): ParentActor;
 
   getSystem(): ActorSystem;
 
@@ -47,25 +45,33 @@ export interface Actor extends EventEmitter {
 
   getCustomParameters(): any;
 
-  createChild(behaviour: ActorDefinition|Object, options?: Object): Promise<Actor>;
-
-  createChildren(modulePath: string): Promise<Actor[]>;
-
   changeConfiguration(config: object): Promise<void>;
 
   send(topic: string, ...message: any[]): Promise<void>;
 
   sendAndReceive(topic: string, ...message: any[]): Promise<any>;
 
+  broadcast(topic: string, ...message: any[]): Promise<void>;
+
+  broadcastAndReceive(topic: string, ...message: any[]): Promise<any[]>;
+
   forwardToParent(...topics: Array<string|RegExp>): void;
 
-  forwardToChild(child: Actor, ...topics: Array<string|RegExp>): void;
+  forwardToChild(child: ActorRef, ...topics: Array<string|RegExp>): void;
 
   metrics(): Promise<Object>;
 
   destroy(): Promise<void>;
 
   getBus(): SystemBus;
+}
+
+export interface Actor extends ActorRef {
+  getParent(): ParentActorRef;
+
+  createChild(behaviour: ActorDefinition|Object, options?: Object): Promise<ActorRef>;
+
+  createChildren(modulePath: string): Promise<ActorRef[]>;
 }
 
 export interface ActorDefinition {

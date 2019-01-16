@@ -75,11 +75,7 @@ describe('InMemoryActor (TypeScript)', function() {
             externalState += msg.count;
           }
         })
-        .then(testActor => {
-          expect(testActor.getParent().getId()).to.be.equal(rootActor.getId());
-
-          return testActor.send('myMessage', { count: 3 });
-        })
+        .then(testActor => testActor.send('myMessage', { count: 3 }))
         .then(() => {
           expect(externalState).to.be.equal(3);
         });
@@ -208,16 +204,24 @@ describe('InMemoryActor (TypeScript)', function() {
     it('should forward messages with given topics to parent actor', async function() {
       let result = 0;
 
-      const childActor = await rootActor.createChild({
+      const parentActor = await rootActor.createChild({
+        initialize: async function(selfActor: Actor) {
+          this.child = await selfActor.createChild({
+            initialize: selfActor => selfActor.forwardToParent('plus', 'times')
+          });
+        },
+
         plus: (n: number) => result += n,
-        times: (n: number) => result *= n
-      });
-      const grandChildActor = await childActor.createChild({
-        initialize: selfActor => selfActor.forwardToParent('plus', 'times')
+
+        times: (n: number) => result *= n,
+
+        sendToChild: function(op: string, val: number) {
+          return this.child.sendAndReceive(op, val);
+        }
       });
 
-      await grandChildActor.send('plus', 2);
-      await grandChildActor.send('times', 3);
+      await parentActor.sendAndReceive('sendToChild', 'plus', 2);
+      await parentActor.sendAndReceive('sendToChild', 'times', 3);
 
       expect(result).to.be.equal(6);
     });
@@ -225,16 +229,24 @@ describe('InMemoryActor (TypeScript)', function() {
     it('should support regular expressions', async function() {
       let result = 0;
 
-      const childActor = await rootActor.createChild({
+      const parentActor = await rootActor.createChild({
+        initialize: async function(selfActor: Actor) {
+          this.child = await selfActor.createChild({
+            initialize: selfActor => selfActor.forwardToParent(/^math/)
+          });
+        },
+
         mathPlus: (n: number) => result += n,
-        mathTimes: (n: number) => result *= n
-      });
-      const grandChildActor = await childActor.createChild({
-        initialize: selfActor => selfActor.forwardToParent(/^math/)
+
+        mathTimes: (n: number) => result *= n,
+
+        sendToChild: function(op: string, val: number) {
+          return this.child.sendAndReceive(op, val);
+        }
       });
 
-      await grandChildActor.send('mathPlus', 2);
-      await grandChildActor.send('mathTimes', 3);
+      await parentActor.sendAndReceive('sendToChild', 'mathPlus', 2);
+      await parentActor.sendAndReceive('sendToChild', 'mathTimes', 3);
 
       expect(result).to.be.equal(6);
     });
@@ -285,29 +297,34 @@ describe('InMemoryActor (TypeScript)', function() {
 
   describe('metrics()', function() {
     it('should collect metrics from target actor and all the actor sub-tree', async function() {
-      const parent = await rootActor.createChild({
+      let parent = await rootActor.createChild({
+        initialize: function(selfActor) {
+          return P.join(
+            selfActor.createChild({
+              metrics: function() {
+                return {
+                  childMetric: 222
+                };
+              }
+            }, { name: 'Child1', mode: 'in-memory' }),
+            selfActor.createChild({
+              metrics: function() {
+                return {
+                  childMetric: 333
+                };
+              }
+            }, { name: 'Child2', mode: 'in-memory' })
+          );
+        },
+
         metrics: function() {
           return {
             parentMetric: 111
           };
         }
       });
-      await parent.createChild({
-        metrics: function() {
-          return {
-            childMetric: 222
-          };
-        }
-      }, { name: 'Child1' });
-      await parent.createChild({
-        metrics: function() {
-          return {
-            childMetric: 333
-          };
-        }
-      }, { name: 'Child2' });
 
-      const metrics = await parent.metrics();
+      let metrics = await parent.metrics();
 
       expect(metrics).to.be.deep.equal({
         parentMetric: 111,
@@ -335,11 +352,14 @@ describe('InMemoryActor (TypeScript)', function() {
 
     it('should destroy children before destroying self', async function() {
       let destroyList: string[] = [];
-      const childActor = await rootActor.createChild({
+      await rootActor.createChild({
+        initialize: function(selfActor: Actor) {
+          return selfActor.createChild({
+            destroy: () => destroyList.push('grandchild')
+          });
+        },
+
         destroy: () => destroyList.push('child')
-      });
-      await childActor.createChild({
-        destroy: () => destroyList.push('grandchild')
       });
 
       await rootActor.destroy();
