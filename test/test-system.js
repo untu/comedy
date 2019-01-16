@@ -52,11 +52,15 @@ describe('ActorSystem', function() {
     });
 
     let rootActor = yield testSystem.rootActor();
-    let childActor = yield rootActor.createChild({
+
+    yield rootActor.createChild({
+      initialize: function(selfActor) {
+        return selfActor.createChild({
+          destroy: () => hookList.push('grandchild')
+        });
+      },
+
       destroy: () => hookList.push('child')
-    });
-    yield childActor.createChild({
-      destroy: () => hookList.push('grandchild')
     });
 
     yield testSystem.destroy();
