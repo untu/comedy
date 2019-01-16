@@ -97,11 +97,6 @@ describe('ThreadedActor', function() {
 
       it('should be able to send a message to parent actor', P.coroutine(function*() {
         let replyMsg = yield new P((resolve, reject) => {
-          let parentBehaviour = {
-            reply: function(msg) {
-              resolve(msg);
-            }
-          };
           let childBehaviour = {
             initialize: function(selfActor) {
               this.parent = selfActor.getParent();
@@ -111,10 +106,22 @@ describe('ThreadedActor', function() {
               return this.parent.sendAndReceive('reply', 'Hi!');
             }
           };
+          let parentBehaviour = {
+            initialize: async function(selfActor) {
+              this.child = await selfActor.createChild(childBehaviour, { mode: 'threaded' });
+            },
+
+            reply: function(msg) {
+              resolve(msg);
+            },
+
+            sayHelloToChild: function() {
+              return this.child.sendAndReceive('sayHello');
+            }
+          };
 
           rootActor.createChild(parentBehaviour)
-            .then(parent => parent.createChild(childBehaviour, { mode: 'threaded' }))
-            .then(child => child.sendAndReceive('sayHello'))
+            .then(parent => parent.sendAndReceive('sayHelloToChild'))
             .catch(reject);
         });
 
@@ -123,11 +130,6 @@ describe('ThreadedActor', function() {
 
       it('should be able to forward messages to parent', P.coroutine(function*() {
         let replyMsg = yield new P((resolve, reject) => {
-          let parentBehaviour = {
-            reply: function(msg) {
-              resolve(msg);
-            }
-          };
           let childBehaviour = {
             initialize: function(selfActor) {
               selfActor.forwardToParent('reply');
@@ -149,10 +151,22 @@ describe('ThreadedActor', function() {
               return this.child.sendAndReceive('sayHello');
             }
           };
+          let parentBehaviour = {
+            initialize: async function(selfActor) {
+              this.child = await selfActor.createChild(childBehaviour, { mode: 'threaded' });
+            },
+
+            reply: function(msg) {
+              resolve(msg);
+            },
+
+            sayHelloToChild: function() {
+              return this.child.sendAndReceive('sayHello');
+            }
+          };
 
           rootActor.createChild(parentBehaviour)
-            .then(parent => parent.createChild(childBehaviour, { mode: 'threaded' }))
-            .then(child => child.sendAndReceive('sayHello'))
+            .then(parent => parent.sendAndReceive('sayHelloToChild'))
             .catch(reject);
         });
 
@@ -361,12 +375,7 @@ describe('ThreadedActor', function() {
     describe('send()', function() {
       it('should support variable arguments', P.coroutine(function*() {
         let replyDfd = P.pending();
-        let parent = yield rootActor.createChild({
-          helloReply: function(from, to) {
-            replyDfd.resolve(`Hello reply from ${from} to ${to}.`);
-          }
-        }, { mode: 'in-memory' });
-        let child = yield parent.createChild({
+        let childBehaviour = {
           initialize: function(selfActor) {
             this.parent = selfActor.getParent();
           },
@@ -374,9 +383,24 @@ describe('ThreadedActor', function() {
           hello: function(from, to) {
             this.parent.send('helloReply', to, from);
           }
-        }, { mode: 'threaded' });
+        };
+        let parent = yield rootActor.createChild({
+          initialize: function(selfActor) {
+            return selfActor.createChild(childBehaviour, { mode: 'threaded' }).then(child => {
+              this.child = child;
+            });
+          },
 
-        yield child.send('hello', 'Bob', 'Alice');
+          helloReply: function(from, to) {
+            replyDfd.resolve(`Hello reply from ${from} to ${to}.`);
+          },
+
+          helloToChild: function() {
+            return this.child.send('hello', 'Bob', 'Alice');
+          }
+        }, { mode: 'in-memory' });
+
+        yield parent.send('helloToChild');
 
         let result = yield replyDfd.promise;
 
