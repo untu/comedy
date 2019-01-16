@@ -29,7 +29,7 @@ describe('Hot configuration change', () => {
 
   afterEach(() => system.destroy());
 
-  it('should be able to programmatically change actor mode', async function() {
+  it('should be able to programmatically change actor mode ("in-memory" -> "forked")', async function() {
     let testActor = await rootActor.createChild({
       test: () => process.pid
     }, { mode: 'in-memory' });
@@ -40,15 +40,41 @@ describe('Hot configuration change', () => {
 
     await testActor.changeConfiguration({ mode: 'forked' });
 
-    let remotePid = await testActor.sendAndReceive('test');
+    let forkedPid = await testActor.sendAndReceive('test');
 
-    expect(remotePid).to.be.a('number');
-    expect(remotePid).to.be.not.equal(localPid);
+    expect(forkedPid).to.be.a('number');
+    expect(forkedPid).to.be.not.equal(localPid);
 
     await testActor.changeConfiguration({ mode: 'in-memory' });
 
     let localPid2 = await testActor.sendAndReceive('test');
 
     expect(localPid2).to.be.equal(localPid);
+  });
+
+  it('should be able to programmatically change actor mode ("forked" -> "in-memory")', async function() {
+    let testActor = await rootActor.createChild({
+      test: () => process.pid
+    }, { mode: 'forked' });
+
+    let forkedPid = await testActor.sendAndReceive('test');
+
+    expect(forkedPid).to.be.a('number');
+    expect(forkedPid).to.be.not.equal(process.pid);
+
+    await testActor.changeConfiguration({ mode: 'in-memory' });
+
+    let localPid = await testActor.sendAndReceive('test');
+
+    expect(localPid).to.be.a('number');
+    expect(localPid).to.be.equal(process.pid);
+
+    await testActor.changeConfiguration({ mode: 'forked' });
+
+    let forkedPid2 = await testActor.sendAndReceive('test');
+
+    expect(forkedPid2).to.be.a('number');
+    expect(forkedPid2).to.be.not.equal(process.pid);
+    expect(forkedPid2).to.be.not.equal(forkedPid);
   });
 });
