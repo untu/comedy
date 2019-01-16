@@ -625,26 +625,31 @@ describe('ThreadedActor', function() {
     describe('metrics()', function() {
       it('should collect metrics from target actor and all the actor sub-tree', P.coroutine(function*() {
         let parent = yield rootActor.createChild({
+          initialize: function(selfActor) {
+            return P.join(
+              selfActor.createChild({
+                metrics: function() {
+                  return {
+                    childMetric: 222
+                  };
+                }
+              }, { name: 'Child1', mode: 'threaded' }),
+              selfActor.createChild({
+                metrics: function() {
+                  return {
+                    childMetric: 333
+                  };
+                }
+              }, { name: 'Child2', mode: 'threaded' })
+            );
+          },
+
           metrics: function() {
             return {
               parentMetric: 111
             };
           }
         });
-        yield parent.createChild({
-          metrics: function() {
-            return {
-              childMetric: 222
-            };
-          }
-        }, { name: 'Child1', mode: 'threaded' });
-        yield parent.createChild({
-          metrics: function() {
-            return {
-              childMetric: 333
-            };
-          }
-        }, { name: 'Child2', mode: 'threaded' });
 
         let metrics = yield parent.metrics();
 
@@ -661,28 +666,35 @@ describe('ThreadedActor', function() {
 
       it('should not collect metrics from destroyed actors', P.coroutine(function*() {
         let parent = yield rootActor.createChild({
+          initialize: async function(selfActor) {
+            this.child1 = await selfActor.createChild({
+              metrics: function() {
+                return {
+                  childMetric: 222
+                };
+              }
+            }, { name: 'Child1', mode: 'threaded' });
+            this.child2 = await selfActor.createChild({
+              metrics: function() {
+                return {
+                  childMetric: 333
+                };
+              }
+            }, { name: 'Child2', mode: 'threaded' });
+          },
+
           metrics: function() {
             return {
               parentMetric: 111
             };
+          },
+
+          killChild2: function() {
+            return this.child2.destroy();
           }
         });
-        yield parent.createChild({
-          metrics: function() {
-            return {
-              childMetric: 222
-            };
-          }
-        }, { name: 'Child1', mode: 'threaded' });
-        let child2 = yield parent.createChild({
-          metrics: function() {
-            return {
-              childMetric: 333
-            };
-          }
-        }, { name: 'Child2', mode: 'threaded' });
 
-        yield child2.destroy();
+        yield parent.sendAndReceive('killChild2');
 
         let metrics = yield parent.metrics();
 
