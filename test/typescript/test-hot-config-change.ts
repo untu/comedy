@@ -44,5 +44,11 @@ describe('Hot configuration change', () => {
 
     expect(remotePid).to.be.a('number');
     expect(remotePid).to.be.not.equal(localPid);
+
+    await testActor.changeConfiguration({ mode: 'in-memory' });
+
+    let localPid2 = await testActor.sendAndReceive('test');
+
+    expect(localPid2).to.be.equal(localPid);
   });
 });
