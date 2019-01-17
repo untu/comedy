@@ -77,4 +77,53 @@ describe('Hot configuration change', () => {
     expect(forkedPid2).to.be.not.equal(process.pid);
     expect(forkedPid2).to.be.not.equal(forkedPid);
   });
+
+  it('should be able to programmatically change clustering mode', async function() {
+    let mode = 'forked';
+    let testActor = await rootActor.createChild({
+      test: () => process.pid
+    }, { mode });
+
+    let forkedPid = await testActor.sendAndReceive('test');
+
+    expect(forkedPid).to.be.a('number');
+    expect(forkedPid).to.be.not.equal(process.pid);
+
+    await testActor.changeConfiguration({ mode, clusterSize: 2 });
+
+    let pid1 = await testActor.sendAndReceive('test');
+    let pid2 = await testActor.sendAndReceive('test');
+
+    expect(pid1).to.be.a('number');
+    expect(pid1).to.be.not.equal(forkedPid);
+    expect(pid2).to.be.a('number');
+    expect(pid2).to.be.not.equal(forkedPid);
+    expect(pid2).to.be.not.equal(pid1);
+
+    await testActor.changeConfiguration({ mode, clusterSize: 3 });
+
+    let pid3 = await testActor.sendAndReceive('test');
+
+    expect(pid3).to.be.a('number');
+    expect(pid3).to.be.not.equal(pid1);
+    expect(pid3).to.be.not.equal(pid2);
+
+    let pid11 = await testActor.sendAndReceive('test');
+
+    expect(pid11).to.be.equal(pid1);
+
+    let pid22 = await testActor.sendAndReceive('test');
+
+    expect(pid22).to.be.equal(pid2);
+
+    await testActor.changeConfiguration({ mode, clusterSize: 2 });
+
+    let pid33 = await testActor.sendAndReceive('test');
+
+    expect(pid33).to.be.equal(pid3);
+
+    let pid222 = await testActor.sendAndReceive('test');
+
+    expect(pid222).to.be.equal(pid2);
+  });
 });
