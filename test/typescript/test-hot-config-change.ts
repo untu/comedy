@@ -107,7 +107,7 @@ describe('Hot configuration change', () => {
 
     let pid3 = await testActor.sendAndReceive('test');
 
-    expect(pid3).to.be.equal(4);
+    expect(pid3).to.be.equal(5); // Additional PID was used for balancer actor.
 
     let pid11 = await testActor.sendAndReceive('test');
 
