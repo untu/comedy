@@ -126,6 +126,12 @@ describe('Hot configuration change', () => {
     let pid33 = await testActor.sendAndReceive('test');
 
     expect(pid33).to.be.equal(pid3);
+
+    await testActor.changeConfiguration({ mode });
+
+    let finalPid = await testActor.sendAndReceive('test');
+
+    expect(finalPid).to.be.equal(6);
   });
 
   it('should be able to programmatically change clustering mode in "forked" mode', async function() {
@@ -175,5 +181,14 @@ describe('Hot configuration change', () => {
     let pid33 = await testActor.sendAndReceive('test');
 
     expect(pid33).to.be.equal(pid3);
+
+    await testActor.changeConfiguration({ mode });
+
+    let finalPid = await testActor.sendAndReceive('test');
+
+    expect(finalPid).to.be.a('number');
+    expect(finalPid).to.be.not.equal(pid1);
+    expect(finalPid).to.be.not.equal(pid2);
+    expect(finalPid).to.be.not.equal(pid3);
   });
 });
