@@ -119,13 +119,13 @@ describe('Hot configuration change', () => {
 
     await testActor.changeConfiguration({ mode, clusterSize: 2 });
 
-    let pid33 = await testActor.sendAndReceive('test');
-
-    expect(pid33).to.be.equal(pid3);
-
     let pid222 = await testActor.sendAndReceive('test');
 
     expect(pid222).to.be.equal(pid2);
+
+    let pid33 = await testActor.sendAndReceive('test');
+
+    expect(pid33).to.be.equal(pid3);
   });
 
   it('should be able to programmatically change clustering mode in "forked" mode', async function() {
@@ -168,12 +168,12 @@ describe('Hot configuration change', () => {
 
     await testActor.changeConfiguration({ mode, clusterSize: 2 });
 
-    let pid33 = await testActor.sendAndReceive('test');
-
-    expect(pid33).to.be.equal(pid3);
-
     let pid222 = await testActor.sendAndReceive('test');
 
     expect(pid222).to.be.equal(pid2);
+
+    let pid33 = await testActor.sendAndReceive('test');
+
+    expect(pid33).to.be.equal(pid3);
   });
 });
