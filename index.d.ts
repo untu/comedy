@@ -47,6 +47,8 @@ export interface ActorRef extends EventEmitter {
 
   changeConfiguration(config: object): Promise<void>;
 
+  changeGlobalConfiguration(config: object): Promise<void>;
+
   send(topic: string, ...message: any[]): Promise<void>;
 
   sendAndReceive(topic: string, ...message: any[]): Promise<any>;

@@ -248,6 +248,32 @@ describe('Hot configuration change', () => {
           { self: 'in-memory' }
         ]
       });
+
+      await parentActor.changeGlobalConfiguration({
+        SomeOtherActor: { mode: 'forked' }
+      });
+
+      let modes2 = await parentActor.sendAndReceive('collectModes');
+
+      expect(modes2).to.be.deep.equal(modes1);
+
+      await parentActor.changeGlobalConfiguration({
+        SubChild: { mode: 'forked' },
+        SomeOtherActor: { mode: 'forked' }
+      });
+
+      let modes3 = await parentActor.sendAndReceive('collectModes');
+
+      expect(modes3).to.be.deep.equal({
+        self: 'in-memory',
+        children: [
+          {
+            self: 'in-memory',
+            children: [{ self: 'forked' }]
+          },
+          { self: 'in-memory' }
+        ]
+      });
     });
   });
 });
