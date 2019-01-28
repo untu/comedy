@@ -9,7 +9,7 @@
 
 import * as actors from '../../';
 import {expect} from 'chai';
-import {Actor, ActorSystem} from '../../index';
+import {Actor, ActorRef, ActorSystem} from '../../index';
 import {afterEach, beforeEach} from 'mocha';
 
 let system: ActorSystem;
@@ -195,8 +195,10 @@ describe('Hot configuration change', () => {
   });
 
   describe('changeGlobalConfiguration()', () => {
-    it('should change global actor configuration recursively', async function() {
-      let parentActor = await rootActor.createChild({
+    let parentActor: ActorRef;
+
+    beforeEach(async function() {
+      parentActor = await rootActor.createChild({
         async initialize(selfActor: Actor) {
           this.mode = selfActor.getMode();
           this.child1 = await selfActor.createChild({
@@ -236,7 +238,9 @@ describe('Hot configuration change', () => {
           };
         }
       }, { name: 'Parent' });
+    });
 
+    it('should change global actor configuration for actor and it\'s children', async function() {
       let modes1 = await parentActor.sendAndReceive('collectModes');
 
       expect(modes1).to.be.deep.equal({
@@ -302,6 +306,39 @@ describe('Hot configuration change', () => {
       let modes5 = await parentActor.sendAndReceive('collectModes');
 
       expect(modes5).to.be.deep.equal({
+        self: 'in-memory',
+        children: [
+          {
+            self: 'forked',
+            children: [{ self: 'forked' }]
+          },
+          { self: 'in-memory' }
+        ]
+      });
+    });
+
+    it('should change global actor configuration recursively', async function() {
+      let modes1 = await parentActor.sendAndReceive('collectModes');
+
+      expect(modes1).to.be.deep.equal({
+        self: 'in-memory',
+        children: [
+          {
+            self: 'in-memory',
+            children: [{ self: 'in-memory' }]
+          },
+          { self: 'in-memory' }
+        ]
+      });
+
+      await parentActor.changeGlobalConfiguration({
+        Child1: { mode: 'forked' },
+        SubChild: { mode: 'forked' }
+      });
+
+      let modes2 = await parentActor.sendAndReceive('collectModes');
+
+      expect(modes2).to.be.deep.equal({
         self: 'in-memory',
         children: [
           {
