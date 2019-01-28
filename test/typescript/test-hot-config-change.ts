@@ -200,12 +200,13 @@ describe('Hot configuration change', () => {
         async initialize(selfActor: Actor) {
           this.mode = selfActor.getMode();
           this.child1 = await selfActor.createChild({
-            async initialize(selfActor: Actor) {
+            initialize: async function(selfActor: Actor) {
               this.mode = selfActor.getMode();
+
               this.child = await selfActor.createChild({}, { name: 'SubChild' });
             },
 
-            async collectModes() {
+            collectModes: function() {
               return {
                 self: this.mode,
                 children: [{ self: this.child.getMode() }]
@@ -213,11 +214,11 @@ describe('Hot configuration change', () => {
             }
           }, { name: 'Child1' });
           this.child2 = await selfActor.createChild({
-            initialize(selfActor: Actor) {
+            initialize: function(selfActor: Actor) {
               this.mode = selfActor.getMode();
             },
 
-            async collectModes() {
+            collectModes: function() {
               return {
                 self: this.mode
               };
@@ -270,6 +271,24 @@ describe('Hot configuration change', () => {
           {
             self: 'in-memory',
             children: [{ self: 'forked' }]
+          },
+          { self: 'in-memory' }
+        ]
+      });
+
+      await parentActor.changeGlobalConfiguration({
+        Child1: { mode: 'forked' },
+        SubChild: { mode: 'in-memory' }
+      });
+
+      let modes4 = await parentActor.sendAndReceive('collectModes');
+
+      expect(modes4).to.be.deep.equal({
+        self: 'in-memory',
+        children: [
+          {
+            self: 'forked',
+            children: [{ self: 'in-memory' }]
           },
           { self: 'in-memory' }
         ]
