@@ -354,6 +354,24 @@ describe('Hot configuration change', () => {
           { self: 'in-memory' }
         ]
       });
+
+      await parentActor.changeGlobalConfiguration({
+        Child1: { mode: 'threaded' },
+        SubChild: { mode: 'threaded' },
+      });
+
+      let modes2 = await parentActor.sendAndReceive('collectModes');
+
+      expect(modes2).to.be.deep.equal({
+        self: 'in-memory',
+        children: [
+          {
+            self: 'threaded',
+            children: [{ self: 'threaded' }]
+          },
+          { self: 'in-memory' }
+        ]
+      });
     });
 
     it('should work for "remote" mode');
