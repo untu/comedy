@@ -318,27 +318,14 @@ describe('Hot configuration change', () => {
     });
 
     it('should change global actor configuration recursively', async function() {
-      let modes1 = await parentActor.sendAndReceive('collectModes');
-
-      expect(modes1).to.be.deep.equal({
-        self: 'in-memory',
-        children: [
-          {
-            self: 'in-memory',
-            children: [{ self: 'in-memory' }]
-          },
-          { self: 'in-memory' }
-        ]
-      });
-
       await parentActor.changeGlobalConfiguration({
         Child1: { mode: 'forked' },
         SubChild: { mode: 'forked' }
       });
 
-      let modes2 = await parentActor.sendAndReceive('collectModes');
+      let modes = await parentActor.sendAndReceive('collectModes');
 
-      expect(modes2).to.be.deep.equal({
+      expect(modes).to.be.deep.equal({
         self: 'in-memory',
         children: [
           {
@@ -349,5 +336,26 @@ describe('Hot configuration change', () => {
         ]
       });
     });
+
+    it('should work for "threaded" mode', async function() {
+      await parentActor.changeGlobalConfiguration({
+        Child1: { mode: 'threaded' }
+      });
+
+      let modes = await parentActor.sendAndReceive('collectModes');
+
+      expect(modes).to.be.deep.equal({
+        self: 'in-memory',
+        children: [
+          {
+            self: 'threaded',
+            children: [{ self: 'in-memory' }]
+          },
+          { self: 'in-memory' }
+        ]
+      });
+    });
+
+    it('should work for "remote" mode');
   });
 });
