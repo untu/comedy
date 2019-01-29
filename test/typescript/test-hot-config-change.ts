@@ -374,6 +374,53 @@ describe('Hot configuration change', () => {
       });
     });
 
-    it('should work for "remote" mode');
+    it('should work for "remote" mode', async function() {
+      let remoteSystem = actors.createSystem({
+        test: true,
+        additionalRequires: 'ts-node/register'
+      });
+
+      try {
+        await remoteSystem.listen();
+
+        await parentActor.changeGlobalConfiguration({
+          Child1: { mode: 'remote', host: '127.0.0.1' }
+        });
+
+        let modes = await parentActor.sendAndReceive('collectModes');
+
+        expect(modes).to.be.deep.equal({
+          self: 'in-memory',
+          children: [
+            {
+              self: 'remote',
+              children: [{ self: 'in-memory' }]
+            },
+            { self: 'in-memory' }
+          ]
+        });
+
+        await parentActor.changeGlobalConfiguration({
+          Child1: { mode: 'remote', host: '127.0.0.1' },
+          SubChild: { mode: 'remote', host: '127.0.0.1' }
+        });
+
+        let modes2 = await parentActor.sendAndReceive('collectModes');
+
+        expect(modes2).to.be.deep.equal({
+          self: 'in-memory',
+          children: [
+            {
+              self: 'remote',
+              children: [{ self: 'remote' }]
+            },
+            { self: 'in-memory' }
+          ]
+        });
+      }
+      finally {
+        await remoteSystem.destroy();
+      }
+    });
   });
 });
