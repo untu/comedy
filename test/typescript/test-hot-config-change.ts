@@ -510,5 +510,43 @@ describe('Hot configuration change', () => {
         ]
       });
     });
+
+    it('should use "in-memory" mode by default', async function() {
+      let modes1 = await parentActor.sendAndReceive('collectModes');
+
+      expect(modes1).to.be.deep.equal({
+        self: 'in-memory',
+        children: [
+          {
+            self: 'in-memory',
+            children: [{ self: 'in-memory' }]
+          },
+          { self: 'in-memory' }
+        ]
+      });
+
+      await parentActor.changeGlobalConfiguration({
+        Child1: { mode: 'forked' }
+      });
+
+      let modes2 = await parentActor.sendAndReceive('collectModes');
+
+      expect(modes2).to.be.deep.equal({
+        self: 'in-memory',
+        children: [
+          {
+            self: 'forked',
+            children: [{ self: 'in-memory' }]
+          },
+          { self: 'in-memory' }
+        ]
+      });
+
+      await parentActor.changeGlobalConfiguration({});
+
+      let modes3 = await parentActor.sendAndReceive('collectModes');
+
+      expect(modes3).to.be.deep.equal(modes1);
+    });
   });
 });
