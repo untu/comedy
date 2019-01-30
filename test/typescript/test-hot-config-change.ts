@@ -112,7 +112,7 @@ describe('Hot configuration change', () => {
 
       let pid3 = await testActor.sendAndReceive('test');
 
-      expect(pid3).to.be.equal(5); // Additional PID was used for balancer actor.
+      expect(pid3).to.be.equal(4);
 
       let pid11 = await testActor.sendAndReceive('test');
 
@@ -136,7 +136,7 @@ describe('Hot configuration change', () => {
 
       let finalPid = await testActor.sendAndReceive('test');
 
-      expect(finalPid).to.be.equal(6);
+      expect(finalPid).to.be.equal(5);
     });
 
     it('should be able to programmatically change clustering mode in "forked" mode', async function() {
