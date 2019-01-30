@@ -8,13 +8,11 @@
 /* eslint require-jsdoc: "off" */
 
 import * as actors from '../../';
-import {expect, use} from 'chai';
+import {expect} from 'chai';
 import {Actor, ActorRef, ActorSystem} from '../../index';
 import {afterEach, beforeEach} from 'mocha';
 import * as common from '../../lib/utils/common';
 import _ = require('underscore');
-
-use(require('chai-like'));
 
 let system: ActorSystem;
 let rootActor: Actor;
@@ -465,33 +463,39 @@ describe('Hot configuration change', () => {
       let tree = await parentActor.tree();
 
       let tree0 = common.transformObjectRecursive(tree, (value, key) => {
-        return _.contains(['name', 'children'], key);
+        return _.contains(['name', 'mode', 'children'], key);
       });
 
       expect(tree0).to.be.deep.equal({
         name: 'Parent',
+        mode: 'in-memory',
         location: {},
         children: [
           {
             name: 'Child1RoundRobinBalancer',
+            mode: 'forked',
             location: {},
             children: [
               {
                 name: 'Child1',
+                mode: 'forked',
                 location: {},
                 children: [
                   {
                     name: 'SubChild',
+                    mode: 'in-memory',
                     location: {}
                   }
                 ]
               },
               {
                 name: 'Child1',
+                mode: 'forked',
                 location: {},
                 children: [
                   {
                     name: 'SubChild',
+                    mode: 'in-memory',
                     location: {}
                   }
                 ]
@@ -500,6 +504,7 @@ describe('Hot configuration change', () => {
           },
           {
             name: 'Child2',
+            mode: 'in-memory',
             location: {}
           }
         ]
