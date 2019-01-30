@@ -66,6 +66,8 @@ export interface ActorRef extends EventEmitter {
   destroy(): Promise<void>;
 
   getBus(): SystemBus;
+
+  tree(): Promise<Object>;
 }
 
 export interface Actor extends ActorRef {

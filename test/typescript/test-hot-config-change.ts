@@ -8,9 +8,13 @@
 /* eslint require-jsdoc: "off" */
 
 import * as actors from '../../';
-import {expect} from 'chai';
+import {expect, use} from 'chai';
 import {Actor, ActorRef, ActorSystem} from '../../index';
 import {afterEach, beforeEach} from 'mocha';
+import * as common from '../../lib/utils/common';
+import _ = require('underscore');
+
+use(require('chai-like'));
 
 let system: ActorSystem;
 let rootActor: Actor;
@@ -421,6 +425,85 @@ describe('Hot configuration change', () => {
       finally {
         await remoteSystem.destroy();
       }
+    });
+
+    it('should correctly change clustering settings', async function() {
+      let modes1 = await parentActor.sendAndReceive('collectModes');
+
+      expect(modes1).to.be.deep.equal({
+        self: 'in-memory',
+        children: [
+          {
+            self: 'in-memory',
+            children: [{ self: 'in-memory' }]
+          },
+          { self: 'in-memory' }
+        ]
+      });
+
+      await parentActor.changeGlobalConfiguration({
+        Child1: { mode: 'forked' }
+      });
+
+      let modes2 = await parentActor.sendAndReceive('collectModes');
+
+      expect(modes2).to.be.deep.equal({
+        self: 'in-memory',
+        children: [
+          {
+            self: 'forked',
+            children: [{ self: 'in-memory' }]
+          },
+          { self: 'in-memory' }
+        ]
+      });
+
+      await parentActor.changeGlobalConfiguration({
+        Child1: { mode: 'forked', clusterSize: 2 }
+      });
+
+      let tree = await parentActor.tree();
+
+      let tree0 = common.transformObjectRecursive(tree, (value, key) => {
+        return _.contains(['name', 'children'], key);
+      });
+
+      expect(tree0).to.be.deep.equal({
+        name: 'Parent',
+        location: {},
+        children: [
+          {
+            name: 'Child1RoundRobinBalancer',
+            location: {},
+            children: [
+              {
+                name: 'Child1',
+                location: {},
+                children: [
+                  {
+                    name: 'SubChild',
+                    location: {}
+                  }
+                ]
+              },
+              {
+                name: 'Child1',
+                location: {},
+                children: [
+                  {
+                    name: 'SubChild',
+                    location: {}
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            name: 'Child2',
+            location: {}
+          }
+        ]
+      });
     });
   });
 });
