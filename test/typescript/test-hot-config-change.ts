@@ -802,7 +802,7 @@ describe('Hot configuration change', () => {
 
       expect(responses1).to.have.length(2);
 
-      await parentActor.changeGlobalConfiguration({
+      await rootActor.changeGlobalConfiguration({
         TestActor: {
           mode: 'threaded',
           clusterSize: 3
