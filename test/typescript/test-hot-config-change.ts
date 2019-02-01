@@ -907,7 +907,7 @@ describe('Hot configuration change', () => {
 
     it('should correctly scale-up module-defined actors', async function() {
       let moduleDefinedActor = await rootActor.createChild('/test-resources/actors/test-actor', {
-        mode: 'threaded',
+        mode: 'forked',
         clusterSize: 2
       });
 
@@ -917,7 +917,7 @@ describe('Hot configuration change', () => {
 
       await rootActor.changeGlobalConfiguration({
         TestActor: {
-          mode: 'threaded',
+          mode: 'forked',
           clusterSize: 3
         }
       });
