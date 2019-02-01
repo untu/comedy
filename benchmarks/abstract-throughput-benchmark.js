@@ -8,7 +8,8 @@
 'use strict';
 
 let common = require('../lib/utils/common.js');
-let CumulativeAverage = require('./cumulative-average.js');
+let bmUtils = require('./utils/benchmark-utils.js');
+let CumulativeAverage = require('./utils/cumulative-average.js');
 let P = require('bluebird');
 let _ = require('underscore');
 let tooBusy = require('toobusy-js');
@@ -50,7 +51,7 @@ class AbstractThroughputBenchmark {
   _run(options) {
     options = options || {};
 
-    let runTime = options.runTime || common.millisecondTime(1, 'minutes');
+    let runTime = options.runTime || bmUtils.millisecondTime(1, 'minutes');
     let logInterval = 1000; // Display interval in milliseconds.
     let concurrencyLevel = options.concurrencyLevel || 64;
     let startTime = _.now();
@@ -93,7 +94,7 @@ class AbstractThroughputBenchmark {
     let result = () => {
       let avgMemUsage = common.transformObject(
         avgMemStats,
-        value => common.humanReadableNumber(value.getAndReset(), { bytes: true }));
+        value => bmUtils.humanReadableNumber(value.getAndReset(), { bytes: true }));
 
       let result0 = curResult;
 
@@ -176,7 +177,7 @@ class AbstractThroughputBenchmark {
   run(options) {
     options = options || {};
 
-    let testTime = options.testTime || common.millisecondTime(1, 'minutes');
+    let testTime = options.testTime || bmUtils.millisecondTime(1, 'minutes');
 
     return P.resolve()
       .then(() => this.setUp())
@@ -199,8 +200,8 @@ class AbstractThroughputBenchmark {
   runWithWarmUp(options) {
     options = options || {};
 
-    let warmUpTime = options.warmUpTime || common.millisecondTime(30, 'seconds');
-    let testTime = options.testTime || common.millisecondTime(1, 'minutes');
+    let warmUpTime = options.warmUpTime || bmUtils.millisecondTime(30, 'seconds');
+    let testTime = options.testTime || bmUtils.millisecondTime(1, 'minutes');
 
     console.log(`Warming-up for ${warmUpTime / 1000} seconds...`);
 
