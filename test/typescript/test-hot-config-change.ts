@@ -754,6 +754,119 @@ describe('Hot configuration change', () => {
       });
     });
 
+    it('should correctly change scaled mode', async function() {
+      await parentActor.changeGlobalConfiguration({
+        Child1: {
+          mode: 'threaded',
+          clusterSize: 2
+        }
+      });
+
+      let tree1 = await parentActor.tree();
+
+      let tree01 = common.transformObjectRecursive(tree1, (value, key) => {
+        return _.contains(['name', 'mode', 'children'], key);
+      });
+
+      expect(tree01).to.be.deep.equal({
+        name: 'Parent',
+        mode: 'in-memory',
+        location: {},
+        children: [
+          {
+            name: 'Child1RoundRobinBalancer',
+            mode: 'threaded',
+            location: {},
+            children: [
+              {
+                name: 'Child1',
+                mode: 'threaded',
+                location: {},
+                children: [
+                  {
+                    name: 'SubChild',
+                    mode: 'in-memory',
+                    location: {}
+                  }
+                ]
+              },
+              {
+                name: 'Child1',
+                mode: 'threaded',
+                location: {},
+                children: [
+                  {
+                    name: 'SubChild',
+                    mode: 'in-memory',
+                    location: {}
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            name: 'Child2',
+            mode: 'in-memory',
+            location: {}
+          }
+        ]
+      });
+
+      await parentActor.changeGlobalConfiguration({
+        Child1: { mode: 'forked', clusterSize: 2 }
+      });
+
+      let tree2 = await parentActor.tree();
+
+      let tree02 = common.transformObjectRecursive(tree2, (value, key) => {
+        return _.contains(['name', 'mode', 'children'], key);
+      });
+
+      expect(tree02).to.be.deep.equal({
+        name: 'Parent',
+        mode: 'in-memory',
+        location: {},
+        children: [
+          {
+            name: 'Child1RoundRobinBalancer',
+            mode: 'forked',
+            location: {},
+            children: [
+              {
+                name: 'Child1',
+                mode: 'forked',
+                location: {},
+                children: [
+                  {
+                    name: 'SubChild',
+                    mode: 'in-memory',
+                    location: {}
+                  }
+                ]
+              },
+              {
+                name: 'Child1',
+                mode: 'forked',
+                location: {},
+                children: [
+                  {
+                    name: 'SubChild',
+                    mode: 'in-memory',
+                    location: {}
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            name: 'Child2',
+            mode: 'in-memory',
+            location: {}
+          }
+        ]
+      });
+    });
+
     it('should use "in-memory" mode by default', async function() {
       let modes1 = await parentActor.sendAndReceive('collectModes');
 
