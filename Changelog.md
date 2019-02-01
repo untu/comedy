@@ -1,3 +1,7 @@
+### v 2.0.0 (upcoming):
+- Implemented hot configuration change.
+- **Breaking change:** removed possibility to create actor children from outside of an actor.
+
 ### v 1.9.0:
 - Added `'disabled'` mode for disabling actors.
 
