@@ -1,4 +1,4 @@
-### v 2.0.0 (upcoming):
+### v 2.0.0:
 - Implemented hot configuration change.
 - **Breaking change:** removed possibility to create actor children from outside of an actor.
 
