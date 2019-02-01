@@ -21,6 +21,7 @@ single host (by spawning sub-processes) or even to multiple hosts in your networ
 - [Scaling](#scaling)
   * [Programmatic configuration](#programmatic-configuration)
   * [Using configuration file](#using-configuration-file)
+  * [Hot configuration change](#hot-configuration-change)
   * [Scaling to multiple instances](#scaling-to-multiple-instances)
   * [Remote Actors](#remote-actors)
     + [Named clusters](#named-clusters)
@@ -41,11 +42,15 @@ single host (by spawning sub-processes) or even to multiple hosts in your networ
 - [Upcoming Features](#upcoming-features)
   * [Optimized message serialization](#optimized-message-serialization)
   * [Hot code deployment](#hot-code-deployment)
-  * [Hot configuration change](#hot-configuration-change)
   * [Automatic actor clustering according to load](#automatic-actor-clustering-according-to-load)
+- [Breaking Changes in v 2.0](#breaking-changes-in-v-20)
+  * [No external actor child creation](#no-external-actor-child-creation)
+  * [Programmatic configuration](#programmatic-configuration-1)
 - [About](#about)
 
 <!-- tocstop -->
+
+> **Note:** Breaking changes in version 2.0 are covered [here](#programmatic-configuration-1).
 
 ## Installation
 
@@ -329,6 +334,11 @@ configuration: only those configuration properties that are missing in programma
 configuration are taken from file configuration. So, for example, if you have programmaticaly
 specified that the actor should run in in-memory mode, there is no way to override it
 using the file configuration.
+
+### Hot configuration change
+
+Starting from Comedy 2.0, no application restart is needed when you modify actor configuration file.
+Comedy automatically detects changes and dynamically rebuilds actor hierarchy where needed.
 
 ### Scaling to multiple instances
 
@@ -1418,12 +1428,6 @@ the dependent modules are installed on a remote machine.
 
 It would be more convenient if Comedy deploys these modules automatically as a part of actor initialization process.
 
-### Hot configuration change
-
-Currently, if you change something in your `actors.json` file, you need to restart your application for changes to
-take effect. A better option would be if Comedy automatically detects changes in `actors.json` and switches actor
-modes accordingly (spawns additional processes or removes unneeded ones) without application restart.
-
 ### Automatic actor clustering according to load
 
 You may not know your load in advance. Manually changing cluster size for clustered actors as load changes is
@@ -1432,9 +1436,50 @@ metrics (a function for calculating cluster size from metrics can be specified i
 load increases, Comedy could automatically spawn additional actors to handle load, and when load reduces - destroy
 unneeded actors.
 
+## Breaking Changes in v 2.0
+
+Comedy 2.0 brings a couple of breaking changes to it's interface. These changes are described below.
+
+### No external actor child creation
+
+In Comedy 2.0 there is no longer a possibility to create a child for an actor from outside of an actor.
+The following code will **no longer work**:
+
+```javascript
+async initialize(selfActor) {
+  // OK to create immediate child with selfActor reference.
+  let childActor = await selfActor.createChild(ChildActorDefinition);
+
+  // Will NOT work! The state of childActor is private and cannot be manipulated from outside!
+  let grandChildActor = await childActor.createChild(GrandChildActorDefinition);
+}
+```
+
+In Comedy 2.0 you can only create child actors inside an actor with `selfActor` reference. The only exception
+is a root actor, which still has `createChild()` method publicly available:
+
+```javascript
+let system = actors();
+let rootActor = await system.rootActor();
+let level1Child = await rootActor.createChild(SomeDef); // OK.
+let level2ChildNok = await level1Child.createChild(SomeOtherDef); // Not OK!
+
+await rootActor.createChild({
+  initialize: async function(selfActor) {
+    this.level2ChildOk = await selfActor.createChild(SomeOtherDef); // OK.
+  }
+});
+```
+
+### Programmatic configuration
+
+Programmatic actor configuration no longer takes priority over file configuration. If Comedy 2.0 finds
+a configuration for your actor in `actors.json` configuration file, it will override your programmatic
+configuration for this actor.
+
 ## About
 
-Comedy is developed as a part of [SAYMON](http://www.saymon.info/en-version/) project and is actively used in all
+Comedy is developed as a part of [SAYMON](https://www.saymon.info/en-version/) project and is actively used in all
 SAYMON production installations.
 
 Comedy was initially inspired by [Drama](https://github.com/stagas/drama) framework.
