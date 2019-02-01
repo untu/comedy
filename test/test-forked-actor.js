@@ -618,7 +618,7 @@ describe('ForkedActor', function() {
       // Wait for forked actor to initialize first time.
       yield dfd.promise;
 
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 2; i++) {
         // Create new promise.
         dfd = P.pending();
 
