@@ -791,5 +791,27 @@ describe('Hot configuration change', () => {
 
       expect(modes3).to.be.deep.equal(modes1);
     });
+
+    it('should correctly scale-up module-defined actors', async function() {
+      let moduleDefinedActor = await rootActor.createChild('/test-resources/actors/test-actor', {
+        mode: 'threaded',
+        clusterSize: 2
+      });
+
+      let responses1 = await moduleDefinedActor.broadcastAndReceive('hello', 1);
+
+      expect(responses1).to.have.length(2);
+
+      await parentActor.changeGlobalConfiguration({
+        TestActor: {
+          mode: 'threaded',
+          clusterSize: 3
+        }
+      });
+
+      let responses2 = await moduleDefinedActor.broadcastAndReceive('hello', 2);
+
+      expect(responses2).to.have.length(3);
+    });
   });
 });
