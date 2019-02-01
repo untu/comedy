@@ -9,7 +9,6 @@
 
 let actors = require('../index');
 let chai = require('chai');
-let P = require('bluebird');
 let os = require('os');
 
 chai.use(require('chai-like'));
@@ -20,7 +19,7 @@ let testSystem;
 describe('Actor configuration', function() {
   afterEach(() => testSystem && testSystem.destroy());
 
-  it('should properly configure actors in forked process', P.coroutine(function*() {
+  it('should properly configure actors in forked process', async function() {
     testSystem = actors({
       config: {
         testRoot: {
@@ -51,10 +50,10 @@ describe('Actor configuration', function() {
       }
     }
 
-    let rootActor = yield testSystem.rootActor();
-    yield rootActor.createChild(TestRoot);
+    let rootActor = await testSystem.rootActor();
+    await rootActor.createChild(TestRoot);
 
-    let tree = yield rootActor.tree();
+    let tree = await rootActor.tree();
     let hostname = os.hostname();
 
     expect(tree).to.be.like({
@@ -85,5 +84,21 @@ describe('Actor configuration', function() {
         }
       ]
     });
-  }));
+  });
+
+  it('should take less priority than local actor parameters in createChild()', async function() {
+    testSystem = actors({
+      config: {
+        Test: {
+          mode: 'forked'
+        }
+      },
+      test: true
+    });
+
+    let rootActor = await testSystem.rootActor();
+    let testActor = await rootActor.createChild({}, { name: 'Test', mode: 'in-memory' });
+
+    expect(testActor.getMode()).to.be.equal('in-memory');
+  });
 });

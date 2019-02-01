@@ -45,7 +45,6 @@ single host (by spawning sub-processes) or even to multiple hosts in your networ
   * [Automatic actor clustering according to load](#automatic-actor-clustering-according-to-load)
 - [Breaking Changes in v 2.0](#breaking-changes-in-v-20)
   * [No external actor child creation](#no-external-actor-child-creation)
-  * [Programmatic configuration](#programmatic-configuration-1)
 - [About](#about)
 
 <!-- tocstop -->
@@ -1438,7 +1437,7 @@ unneeded actors.
 
 ## Breaking Changes in v 2.0
 
-Comedy 2.0 brings a couple of breaking changes to it's interface. These changes are described below.
+Comedy 2.0 brings a breaking change to it's interface. This change is described below.
 
 ### No external actor child creation
 
@@ -1470,12 +1469,6 @@ await rootActor.createChild({
   }
 });
 ```
-
-### Programmatic configuration
-
-Programmatic actor configuration no longer takes priority over file configuration. If Comedy 2.0 finds
-a configuration for your actor in `actors.json` configuration file, it will override your programmatic
-configuration for this actor.
 
 ## About
 
