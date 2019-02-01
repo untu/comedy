@@ -1,4 +1,4 @@
-### v 1.9.0 (upcoming):
+### v 1.9.0:
 - Added `'disabled'` mode for disabling actors.
 
 ### v 1.8.0:
