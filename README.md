@@ -4,6 +4,8 @@
 [![Windows Tests](https://ci.appveyor.com/api/projects/status/m1vorqhe2yk09h5t/branch/master?svg=true&passingText=Windows%20Tests%20OK&failingText=Windows%20Tests%20FAIL&pendingText=Windows%20Tests%20pending)](https://ci.appveyor.com/project/weekens/comedy)
 [![codecov](https://codecov.io/gh/untu/comedy/branch/master/graph/badge.svg)](https://codecov.io/gh/untu/comedy)
 
+![Logo](logo.png)
+
 Comedy is a Node.js actor framework.
 
 Actors are all about flexible scalability. After describing your application
