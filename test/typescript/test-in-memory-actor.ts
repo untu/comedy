@@ -34,7 +34,7 @@ describe('InMemoryActor (TypeScript)', function() {
   });
 
   describe('initialize()', function() {
-    it('should not receive messages until initialized', async function() {
+    it('should not receive messages until initialized', async () => {
       class LongStartingActor {
         initialize(selfActor: Actor) {
           return selfActor
@@ -119,7 +119,7 @@ describe('InMemoryActor (TypeScript)', function() {
     it('should support TypeScript class behaviour definitions', function() {
       class TestActor {
         private name: string;
-        
+
         initialize(selfActor: Actor) {
           this.name = 'TestActor ' + selfActor.getId();
         }
@@ -163,7 +163,7 @@ describe('InMemoryActor (TypeScript)', function() {
   });
 
   describe('createChildren()', function() {
-    it('should create module actor children from a specified directory', async function() {
+    it('should create module actor children from a specified directory', async () => {
       const childActors = await rootActor.createChildren('/test-resources/actors/child-actors');
 
       expect(childActors.length).to.be.equal(2);
@@ -177,10 +177,10 @@ describe('InMemoryActor (TypeScript)', function() {
       expect(childActorReplies).to.have.members(['Hello from ChildActor1', 'Hello from ChildActor2']);
     });
 
-    it('should be able to pass custom parameters to child actor', async function() {
+    it('should be able to pass custom parameters to child actor', async () => {
       class MyActor {
         private helloResponse: string;
-        
+
         initialize(selfActor: Actor) {
           const customParameters: any = selfActor.getCustomParameters();
           this.helloResponse = customParameters.helloResponse;
@@ -201,7 +201,7 @@ describe('InMemoryActor (TypeScript)', function() {
   });
 
   describe('forwardToParent()', function() {
-    it('should forward messages with given topics to parent actor', async function() {
+    it('should forward messages with given topics to parent actor', async () => {
       let result = 0;
 
       const parentActor = await rootActor.createChild({
@@ -226,7 +226,7 @@ describe('InMemoryActor (TypeScript)', function() {
       expect(result).to.be.equal(6);
     });
 
-    it('should support regular expressions', async function() {
+    it('should support regular expressions', async () => {
       let result = 0;
 
       const parentActor = await rootActor.createChild({
@@ -253,18 +253,18 @@ describe('InMemoryActor (TypeScript)', function() {
   });
 
   describe('forwardToChild()', function() {
-    it('should forward messages with given topics to a given child actor', async function() {
+    it('should forward messages with given topics to a given child actor', async () => {
       let child2Mailbox: string[] = [];
       const parent = await rootActor.createChild({
         initialize: selfActor => {
           // Create first child that receives 'hello' messages and sends 'tell...' messages to parent.
           const child1Promise = selfActor
             .createChild({
-              initialize: selfActor => {
+              initialize: function (selfActor) {
                 this.parent = selfActor.getParent();
               },
 
-              hello: (msg: string) => {
+              hello: function (msg: string) {
                 return this.parent.sendAndReceive('tellChild2', msg);
               }
             })
@@ -285,7 +285,7 @@ describe('InMemoryActor (TypeScript)', function() {
               return selfActor.forwardToChild(child2, /^tell.*/);
             });
 
-          return P.join(child1Promise, child2Promise);
+          return P.all([child1Promise, child2Promise]);
         }
       });
 
@@ -296,10 +296,10 @@ describe('InMemoryActor (TypeScript)', function() {
   });
 
   describe('metrics()', function() {
-    it('should collect metrics from target actor and all the actor sub-tree', async function() {
+    it('should collect metrics from target actor and all the actor sub-tree', async () => {
       let parent = await rootActor.createChild({
         initialize: function(selfActor) {
-          return P.join(
+          return P.all([
             selfActor.createChild({
               metrics: function() {
                 return {
@@ -314,7 +314,7 @@ describe('InMemoryActor (TypeScript)', function() {
                 };
               }
             }, { name: 'Child2', mode: 'in-memory' })
-          );
+          ]);
         },
 
         metrics: function() {
@@ -339,7 +339,7 @@ describe('InMemoryActor (TypeScript)', function() {
   });
 
   describe('destroy()', function() {
-    it('should call destroy() method in behaviour object', async function() {
+    it('should call destroy() method in behaviour object', async () => {
       let destroyed = false;
       const childActor = await rootActor.createChild({
         destroy: () => destroyed = true
@@ -350,7 +350,7 @@ describe('InMemoryActor (TypeScript)', function() {
       expect(destroyed).to.be.equal(true);
     });
 
-    it('should destroy children before destroying self', async function() {
+    it('should destroy children before destroying self', async () => {
       let destroyList: string[] = [];
       await rootActor.createChild({
         initialize: function(selfActor: Actor) {
@@ -367,7 +367,7 @@ describe('InMemoryActor (TypeScript)', function() {
       expect(destroyList).to.be.deep.equal(['grandchild', 'child']);
     });
 
-    it('should softly destroy an actor allowing it to drain it\'s mailbox (send)', async function() {
+    it('should softly destroy an actor allowing it to drain it\'s mailbox (send)', async () => {
       let finishedTasks: string[] = [];
       const childActor = await rootActor.createChild({
         test: (msg: string) => {
@@ -386,7 +386,7 @@ describe('InMemoryActor (TypeScript)', function() {
       expect(finishedTasks).to.have.members(['Message 1', 'Message 2', 'Message 3']);
     });
 
-    it('should softly destroy an actor allowing it to drain it\'s mailbox (sendAndReceive)', async function() {
+    it('should softly destroy an actor allowing it to drain it\'s mailbox (sendAndReceive)', async () => {
       let finishedTasks: string[] = [];
       const childActor = await rootActor.createChild({
         test: (msg: string) => {

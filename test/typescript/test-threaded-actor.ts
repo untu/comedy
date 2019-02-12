@@ -5,44 +5,40 @@
  * on the Eclipse official site (https://www.eclipse.org/legal/epl-v10.html).
  */
 
-'use strict';
+import {ActorSystem, Actor, ActorRef} from '../../index';
+import {afterEach} from 'mocha';
+import * as actors from '../../index';
+import {expect} from 'chai';
+import * as isRunning from 'is-running';
+import * as P from 'bluebird';
+import * as _ from 'underscore';
+import * as common from '../../lib/utils/common.js';
 
-/* eslint require-jsdoc: "off" */
+let system: ActorSystem;
+let rootActor: Actor;
 
-let actors = require('../index');
-let common = require('../lib/utils/common.js');
-let expect = require('chai').expect;
-let isRunning = require('is-running');
-let P = require('bluebird');
-let _ = require('underscore');
-
-let system;
-let rootActor;
-
-describe('ThreadedActor', function() {
-  beforeEach(function() {
-    system = actors({
+describe('ThreadedActor', function () {
+  beforeEach(async () => {
+    system = actors.createSystem({
       test: true
     });
 
-    return system.rootActor().then(rootActor0 => {
-      rootActor = rootActor0;
-    });
+    rootActor = await system.rootActor();
   });
 
-  afterEach(function() {
+  afterEach(function () {
     return system.destroy();
   });
 
   if (common.getNodeJsVersions().major >= 10) {
-    describe('sendAndReceive()', function() {
-      it('should throw error if handler threw error', function(done) {
+    describe('sendAndReceive()', function () {
+      it('should throw error if handler threw error', function (done) {
         rootActor
           .createChild({
             myMessage: () => {
               throw new Error('Sorry!');
             }
-          }, { mode: 'threaded' })
+          }, {mode: 'threaded'})
           .then(testActor => testActor.sendAndReceive('myMessage', 'Hi!'))
           .then(() => {
             done('Expected error!');
@@ -54,32 +50,32 @@ describe('ThreadedActor', function() {
           .catch(done);
       });
 
-      it('should spawn a worker process and perform message exchange', P.coroutine(function*() {
+      it('should spawn a worker process and perform message exchange', async () => {
         let behaviour = {
           getPid: () => {
             return process.pid;
           }
         };
 
-        let forkedChild = yield rootActor.createChild(behaviour, { mode: 'threaded' });
-        let forkedPid = yield forkedChild.sendAndReceive('getPid');
+        let forkedChild = await rootActor.createChild(behaviour, {mode: 'threaded'});
+        let forkedPid = await forkedChild.sendAndReceive('getPid');
 
-        expect(forkedPid).to.be.a.number;
+        expect(forkedPid).to.be.a('number');
         expect(forkedPid).to.be.equal(process.pid);
 
         // Check that child process is running.
         expect(isRunning(forkedPid)).to.be.equal(true);
 
         // Destroy forked actor.
-        yield forkedChild.destroy();
+        await forkedChild.destroy();
 
         // From this point, any additional communication should not be possible.
-        let expectedErr = yield forkedChild.sendAndReceive('getPid').catch(err => err);
+        let expectedErr = await forkedChild.sendAndReceive('getPid').catch(err => err);
 
         expect(expectedErr).to.be.instanceof(Error);
-      }));
+      });
 
-      it('should be able to import modules in spawned worker process', P.coroutine(function*() {
+      it('should be able to import modules in spawned worker process', async () => {
         // Use module import in behaviour.
         let behaviour = {
           sayHello: () => {
@@ -89,33 +85,33 @@ describe('ThreadedActor', function() {
           }
         };
 
-        let forkedChild = yield rootActor.createChild(behaviour, { mode: 'threaded' });
-        let result = yield forkedChild.sendAndReceive('sayHello');
+        let forkedChild = await rootActor.createChild(behaviour, {mode: 'threaded'});
+        let result = await forkedChild.sendAndReceive('sayHello');
 
         expect(result).to.be.equal('Hello!');
-      }));
+      });
 
-      it('should be able to send a message to parent actor', P.coroutine(function*() {
-        let replyMsg = yield new P((resolve, reject) => {
+      it('should be able to send a message to parent actor', async () => {
+        let replyMsg = await new P((resolve, reject) => {
           let childBehaviour = {
-            initialize: function(selfActor) {
+            initialize: function (selfActor: Actor) {
               this.parent = selfActor.getParent();
             },
 
-            sayHello: function() {
+            sayHello: function () {
               return this.parent.sendAndReceive('reply', 'Hi!');
             }
           };
           let parentBehaviour = {
-            initialize: async function(selfActor) {
-              this.child = await selfActor.createChild(childBehaviour, { mode: 'threaded' });
+            initialize: async function (selfActor: Actor) {
+              this.child = await selfActor.createChild(childBehaviour, {mode: 'threaded'});
             },
 
-            reply: function(msg) {
+            reply: function (msg: string) {
               resolve(msg);
             },
 
-            sayHelloToChild: function() {
+            sayHelloToChild: function () {
               return this.child.sendAndReceive('sayHello');
             }
           };
@@ -126,41 +122,41 @@ describe('ThreadedActor', function() {
         });
 
         expect(replyMsg).to.be.equal('Hi!');
-      }));
+      });
 
-      it('should be able to forward messages to parent', P.coroutine(function*() {
-        let replyMsg = yield new P((resolve, reject) => {
+      it('should be able to forward messages to parent', async () => {
+        let replyMsg = await new P((resolve, reject) => {
           let childBehaviour = {
-            initialize: function(selfActor) {
+            initialize: function (selfActor: Actor) {
               selfActor.forwardToParent('reply');
 
               return selfActor
                 .createChild({
-                  initialize: function(selfActor) {
+                  initialize: function (selfActor) {
                     this.parent = selfActor.getParent();
                   },
 
-                  sayHello: function() {
+                  sayHello: function () {
                     return this.parent.sendAndReceive('reply', 'Hi!');
                   }
                 })
                 .then(child => this.child = child);
             },
 
-            sayHello: function() {
+            sayHello: function () {
               return this.child.sendAndReceive('sayHello');
             }
           };
           let parentBehaviour = {
-            initialize: async function(selfActor) {
-              this.child = await selfActor.createChild(childBehaviour, { mode: 'threaded' });
+            initialize: async function (selfActor: Actor) {
+              this.child = await selfActor.createChild(childBehaviour, {mode: 'threaded'});
             },
 
-            reply: function(msg) {
+            reply: function (msg: string) {
               resolve(msg);
             },
 
-            sayHelloToChild: function() {
+            sayHelloToChild: function () {
               return this.child.sendAndReceive('sayHello');
             }
           };
@@ -171,11 +167,13 @@ describe('ThreadedActor', function() {
         });
 
         expect(replyMsg).to.be.equal('Hi!');
-      }));
+      });
 
-      it('should support custom object marshallers in object form', P.coroutine(function*() {
+      it('should support custom object marshallers in object form', async () => {
         class TestMessageClass {
-          constructor(pid) {
+          private readonly pid: number;
+
+          constructor(pid: number) {
             this.pid = pid;
           }
 
@@ -184,17 +182,17 @@ describe('ThreadedActor', function() {
           }
         }
 
-        yield system.destroy();
+        await system.destroy();
 
-        system = actors({
+        system = actors.createSystem({
           test: true,
           marshallers: [
             {
               type: TestMessageClass,
-              marshall: function(msg) {
-                return { pid: msg.pid };
+              marshall: function (msg: any) {
+                return {pid: msg.pid};
               },
-              unmarshall: function(msg) {
+              unmarshall: function (msg: any) {
                 return {
                   getPid: () => msg.pid
                 };
@@ -203,25 +201,27 @@ describe('ThreadedActor', function() {
           ]
         });
 
-        let rootActor = yield system.rootActor();
-        let child = yield rootActor.createChild(
+        let rootActor = await system.rootActor();
+        let child = await rootActor.createChild(
           {
-            sayHello: (msg) => 'Hello ' + msg.getPid()
+            sayHello: (msg: any) => 'Hello ' + msg.getPid()
           },
-          { mode: 'threaded' });
+          {mode: 'threaded'});
 
-        let result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid));
+        let result = await child.sendAndReceive('sayHello', new TestMessageClass(process.pid));
 
         expect(result).to.be.equal('Hello ' + process.pid);
-      }));
+      });
 
-      it('should support custom object marshallers in class form', P.coroutine(function*() {
+      it('should support custom object marshallers in class form', async () => {
         class TestMessageClass {
+          private readonly pid: number;
+
           static typeName() {
             return 'TestMessageClass';
           }
 
-          constructor(pid) {
+          constructor(pid: number) {
             this.pid = pid;
           }
 
@@ -235,43 +235,45 @@ describe('ThreadedActor', function() {
             return 'TestMessageClass';
           }
 
-          marshall(msg) {
-            return { pid: msg.pid };
+          marshall(msg: any) {
+            return {pid: msg.pid};
           }
 
-          unmarshall(msg) {
+          unmarshall(msg: any) {
             return {
               getPid: () => msg.pid
             };
           }
         }
 
-        yield system.destroy();
+        await system.destroy();
 
-        system = actors({
+        system = actors.createSystem({
           test: true,
           marshallers: [TestMessageClassMarshaller]
         });
 
-        let rootActor = yield system.rootActor();
-        let child = yield rootActor.createChild(
+        let rootActor = await system.rootActor();
+        let child = await rootActor.createChild(
           {
-            sayHello: (msg) => 'Hello ' + msg.getPid()
+            sayHello: (msg: any) => 'Hello ' + msg.getPid()
           },
-          { mode: 'threaded' });
+          {mode: 'threaded'});
 
-        let result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid));
+        let result = await child.sendAndReceive('sayHello', new TestMessageClass(process.pid));
 
         expect(result).to.be.equal('Hello ' + process.pid);
-      }));
+      });
 
-      it('should support custom module-based object marshallers in class form', P.coroutine(function*() {
+      it('should support custom module-based object marshallers in class form', async () => {
         class TestMessageClass {
+          private readonly pid: number;
+
           static typeName() {
             return 'TestMessageClass';
           }
 
-          constructor(pid) {
+          constructor(pid: number) {
             this.pid = pid;
           }
 
@@ -280,42 +282,44 @@ describe('ThreadedActor', function() {
           }
         }
 
-        yield system.destroy();
+        await system.destroy();
 
-        system = actors({
+        system = actors.createSystem({
           test: true,
           marshallers: ['/test-resources/actors/test-message-class-marshaller']
         });
 
-        let rootActor = yield system.rootActor();
-        let child = yield rootActor.createChild(
+        let rootActor = await system.rootActor();
+        let child = await rootActor.createChild(
           {
-            sayHello: (msg) => 'Hello ' + msg.getPid()
+            sayHello: (msg: any) => 'Hello ' + msg.getPid()
           },
-          { mode: 'threaded' });
+          {mode: 'threaded'});
 
-        let result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid));
+        let result = await child.sendAndReceive('sayHello', new TestMessageClass(process.pid));
 
         expect(result).to.be.equal('Hello ' + process.pid);
-      }));
+      });
 
-      it('should support variable arguments', P.coroutine(function*() {
-        let child = yield rootActor.createChild({
-          hello: (from, to) => `Hello from ${from} to ${to}.`
-        }, { mode: 'threaded' });
+      it('should support variable arguments', async () => {
+        let child = await rootActor.createChild({
+          hello: (from: string, to: string) => `Hello from ${from} to ${to}.`
+        }, {mode: 'threaded'});
 
-        let result = yield child.sendAndReceive('hello', 'Bob', 'Alice');
+        let result = await child.sendAndReceive('hello', 'Bob', 'Alice');
 
         expect(result).to.be.equal('Hello from Bob to Alice.');
-      }));
+      });
 
-      it('should be able to marshall each variable argument with a custom marshaller', P.coroutine(function*() {
+      it('should be able to marshall each variable argument with a custom marshaller', async () => {
         class TestMessageClass {
+          private readonly pid: number;
+
           static typeName() {
             return 'TestMessageClass';
           }
 
-          constructor(pid) {
+          constructor(pid: number) {
             this.pid = pid;
           }
 
@@ -324,93 +328,95 @@ describe('ThreadedActor', function() {
           }
         }
 
-        yield system.destroy();
+        await system.destroy();
 
-        system = actors({
+        system = actors.createSystem({
           test: true,
           marshallers: ['/test-resources/actors/test-message-class-marshaller']
         });
 
-        let rootActor = yield system.rootActor();
-        let child = yield rootActor.createChild(
+        let rootActor = await system.rootActor();
+        let child = await rootActor.createChild(
           {
-            sayHello: (msg, from) => `Hello ${msg.getPid()} from ${from}`
+            sayHello: (msg: any, from: string) => `Hello ${msg.getPid()} from ${from}`
           },
-          { mode: 'threaded' });
+          {mode: 'threaded'});
 
-        let result = yield child.sendAndReceive('sayHello', new TestMessageClass(process.pid), 'Test');
+        let result = await child.sendAndReceive('sayHello', new TestMessageClass(process.pid), 'Test');
 
         expect(result).to.be.equal(`Hello ${process.pid} from Test`);
-      }));
+      });
 
-      it('should be able to pass actor references', P.coroutine(function*() {
-        let rootActor = yield system.rootActor();
+      it('should be able to pass actor references', async () => {
+        let rootActor = await system.rootActor();
         let localCounter = 0;
-        let localChild = yield rootActor.createChild({
-          tell: msg => {
+        let localChild = await rootActor.createChild({
+          tell: (msg: string) => {
             localCounter++;
 
             return msg.toUpperCase();
           }
         });
-        let threadedChild = yield rootActor.createChild({
-          setLocal: function(actor) {
+        let threadedChild = await rootActor.createChild({
+          setLocal: function (actor: ActorRef) {
             this.localActor = actor;
           },
 
-          tellLocal: function(msg) {
+          tellLocal: function (msg: string) {
             return this.localActor.sendAndReceive('tell', msg);
           }
-        }, { mode: 'threaded' });
+        }, {mode: 'threaded'});
 
-        yield threadedChild.sendAndReceive('setLocal', localChild);
+        await threadedChild.sendAndReceive('setLocal', localChild);
 
-        let result = yield threadedChild.sendAndReceive('tellLocal', 'Hello!');
+        let result = await threadedChild.sendAndReceive('tellLocal', 'Hello!');
 
         expect(result).to.be.equal('HELLO!');
         expect(localCounter).to.be.equal(1);
-      }));
+      });
     });
 
-    describe('send()', function() {
-      it('should support variable arguments', P.coroutine(function*() {
-        let replyDfd = P.pending();
+    describe('send()', function () {
+      it('should support variable arguments', async () => {
+        let replyDfd = P.defer();
         let childBehaviour = {
-          initialize: function(selfActor) {
+          initialize: function (selfActor: Actor) {
             this.parent = selfActor.getParent();
           },
 
-          hello: function(from, to) {
+          hello: function (from: string, to: string) {
             this.parent.send('helloReply', to, from);
           }
         };
-        let parent = yield rootActor.createChild({
-          initialize: function(selfActor) {
-            return selfActor.createChild(childBehaviour, { mode: 'threaded' }).then(child => {
+        let parent = await rootActor.createChild({
+          initialize: function (selfActor) {
+            return selfActor.createChild(childBehaviour, {mode: 'threaded'}).then(child => {
               this.child = child;
             });
           },
 
-          helloReply: function(from, to) {
+          helloReply: function (from: string, to: string) {
             replyDfd.resolve(`Hello reply from ${from} to ${to}.`);
           },
 
-          helloToChild: function() {
+          helloToChild: function () {
             return this.child.send('hello', 'Bob', 'Alice');
           }
-        }, { mode: 'in-memory' });
+        }, {mode: 'in-memory'});
 
-        yield parent.send('helloToChild');
+        await parent.send('helloToChild');
 
-        let result = yield replyDfd.promise;
+        let result = await replyDfd.promise;
 
         expect(result).to.be.equal('Hello reply from Alice to Bob.');
-      }));
+      });
     });
 
-    describe('createChild()', function() {
-      it('should support ES6 class behaviour definitions', function() {
+    describe('createChild()', function () {
+      it('should support ES6 class behaviour definitions', function () {
         class TestBase {
+          protected name: string;
+
           sayHello() {
             return 'Hello from ' + this.name;
           }
@@ -423,51 +429,51 @@ describe('ThreadedActor', function() {
         }
 
         return rootActor
-          .createChild(TestActor, { mode: 'threaded' })
+          .createChild(TestActor, {mode: 'threaded'})
           .then(testActor => testActor.sendAndReceive('sayHello'))
           .then(result => expect(result).to.be.equal('Hello from TestActor'));
       });
 
-      it('should support ES5 class behaviour definitions', function() {
-        let TestActor = function() {
+      it('should support ES5 class behaviour definitions', function () {
+        let TestActor = function () {
         };
 
-        TestActor.prototype.initialize = function() {
+        TestActor.prototype.initialize = function () {
           this.name = 'TestActor';
         };
-        TestActor.prototype.sayHello = function() {
+        TestActor.prototype.sayHello = function () {
           return 'Hello from ' + this.name;
         };
 
         return rootActor
-          .createChild(TestActor, { mode: 'threaded' })
+          .createChild(TestActor, {mode: 'threaded'})
           .then(testActor => testActor.sendAndReceive('sayHello'))
           .then(result => expect(result).to.be.equal('Hello from TestActor'));
       });
 
-      it('should support ES5 class behaviour definitions in named function form', function() {
+      it('should support ES5 class behaviour definitions in named function form', function () {
         function TestActor() {
           this.name = 'TestActor';
         }
 
-        TestActor.prototype.initialize = function() {
+        TestActor.prototype.initialize = function () {
           this.name += ' initialized';
         };
-        TestActor.prototype.sayHello = function() {
+        TestActor.prototype.sayHello = function () {
           return 'Hello from ' + this.name;
         };
 
         return rootActor
-          .createChild(TestActor, { mode: 'threaded' })
+          .createChild(TestActor, {mode: 'threaded'})
           .then(testActor => testActor.sendAndReceive('sayHello'))
           .then(result => expect(result).to.be.equal('Hello from TestActor initialized'));
       });
 
-      it('should support ES5 class behaviour definition with inheritance', function() {
+      it('should support ES5 class behaviour definition with inheritance', function () {
         function TestBase() {
         }
 
-        TestBase.prototype.sayHello = function() {
+        TestBase.prototype.sayHello = function () {
           return 'Hello from ' + this.name;
         };
 
@@ -477,19 +483,19 @@ describe('ThreadedActor', function() {
 
         actors.inherits(TestActor, TestBase);
 
-        TestActor.prototype.initialize = function() {
+        TestActor.prototype.initialize = function () {
           this.name = 'TestActor';
         };
 
         return rootActor
-          .createChild(TestActor, { mode: 'threaded' })
+          .createChild(TestActor, {mode: 'threaded'})
           .then(testActor => testActor.sendAndReceive('sayHello'))
           .then(result => expect(result).to.be.equal('Hello from TestActor'));
       });
 
-      it('should be able to load an actor from a given module', function() {
+      it('should be able to load an actor from a given module', function () {
         return rootActor
-          .createChild('/test-resources/actors/test-actor', { mode: 'threaded' })
+          .createChild('/test-resources/actors/test-actor', {mode: 'threaded'})
           .then(actor => {
             expect(actor.getName()).to.be.equal('TestActor');
 
@@ -500,9 +506,11 @@ describe('ThreadedActor', function() {
           });
       });
 
-      it('should be able to pass custom parameters to child actor', P.coroutine(function*() {
+      it('should be able to pass custom parameters to child actor', async () => {
         class MyActor {
-          initialize(selfActor) {
+          private helloResponse: string;
+
+          initialize(selfActor: Actor) {
             this.helloResponse = selfActor.getCustomParameters().helloResponse;
           }
 
@@ -512,32 +520,32 @@ describe('ThreadedActor', function() {
         }
 
         // Create child actor with custom parameter.
-        let childActor = yield rootActor.createChild(MyActor, {
+        let childActor = await rootActor.createChild(MyActor, {
           mode: 'threaded',
-          customParameters: { helloResponse: 'Hi there!' }
+          customParameters: {helloResponse: 'Hi there!'}
         });
 
-        let response = yield childActor.sendAndReceive('hello');
+        let response = await childActor.sendAndReceive('hello');
 
         expect(response).to.be.equal('Hi there!');
-      }));
+      });
 
-      it('should be able to pass actor references through custom parameters', P.coroutine(function*() {
-        let rootActor = yield system.rootActor();
+      it('should be able to pass actor references through custom parameters', async () => {
+        let rootActor = await system.rootActor();
         let localCounter = 0;
-        let localChild = yield rootActor.createChild({
-          tell: msg => {
+        let localChild = await rootActor.createChild({
+          tell: (msg: string) => {
             localCounter++;
 
             return msg.toUpperCase();
           }
         });
-        let forkedChild = yield rootActor.createChild({
-          initialize: function(selfActor) {
+        let forkedChild = await rootActor.createChild({
+          initialize: function (selfActor) {
             this.localActor = selfActor.getCustomParameters().localActor;
           },
 
-          tellLocal: function(msg) {
+          tellLocal: function (msg: string) {
             return this.localActor.sendAndReceive('tell', msg);
           }
         }, {
@@ -547,16 +555,16 @@ describe('ThreadedActor', function() {
           }
         });
 
-        let result = yield forkedChild.sendAndReceive('tellLocal', 'Hello!');
+        let result = await forkedChild.sendAndReceive('tellLocal', 'Hello!');
 
         expect(result).to.be.equal('HELLO!');
         expect(localCounter).to.be.equal(1);
-      }));
+      });
     });
 
-    describe('createChildren()', function() {
-      it('should create module actor children from a specified directory', P.coroutine(function*() {
-        let childActors = yield rootActor.createChildren('/test-resources/actors/child-actors', { mode: 'threaded' });
+    describe('createChildren()', function () {
+      it('should create module actor children from a specified directory', async () => {
+        let childActors = await rootActor.createChildren('/test-resources/actors/child-actors', {mode: 'threaded'});
 
         expect(childActors.length).to.be.equal(2);
 
@@ -564,27 +572,27 @@ describe('ThreadedActor', function() {
 
         expect(childActorNames).to.have.members(['ChildActor1', 'ChildActor2']);
 
-        let childActorReplies = yield P.map(childActors, actor => actor.sendAndReceive('hello'));
+        let childActorReplies = await P.map(childActors, actor => actor.sendAndReceive('hello'));
 
         expect(childActorReplies).to.have.members(['Hello from ChildActor1', 'Hello from ChildActor2']);
-      }));
+      });
     });
 
-    describe('forwardToChild()', function() {
-      it('should forward messages with given topics to a given child actor', P.coroutine(function*() {
-        let parent = yield rootActor.createChild({
+    describe('forwardToChild()', function () {
+      it('should forward messages with given topics to a given child actor', async () => {
+        let parent = await rootActor.createChild({
           initialize: selfActor => {
             // Create first child that receives 'hello' messages and sends 'tell...' messages to parent.
             let child1Promise = selfActor
               .createChild({
-                initialize: function(selfActor) {
+                initialize: function (selfActor) {
                   this.parent = selfActor.getParent();
                 },
 
-                hello: function(msg) {
+                hello: function (msg: string) {
                   return this.parent.sendAndReceive('tellChild2', msg);
                 }
-              }, { mode: 'threaded' })
+              }, {mode: 'threaded'})
               .then(child1 => {
                 // Forward 'hello' messages to this child.
                 return selfActor.forwardToChild(child1, 'hello');
@@ -593,65 +601,65 @@ describe('ThreadedActor', function() {
             // Create second child that receives 'tell...' messages and writes to mailbox.
             let child2Promise = selfActor
               .createChild({
-                initialize: function() {
+                initialize: function () {
                   this.mailbox = [];
                 },
 
-                tellChild2: function(msg) {
+                tellChild2: function (msg: string) {
                   this.mailbox.push(msg);
                 },
 
-                getMailbox: function() {
+                getMailbox: function () {
                   return this.mailbox;
                 }
-              }, { mode: 'threaded' })
+              }, {mode: 'threaded'})
               .then(child2 => {
                 // Forward 'tell...' and 'getMailbox' messages to this child.
                 return selfActor.forwardToChild(child2, /^tell.*/, 'getMailbox');
               });
 
-            return P.join(child1Promise, child2Promise);
+            return P.all([child1Promise, child2Promise]);
           }
         });
 
-        yield parent.sendAndReceive('hello', 'World!');
+        await parent.sendAndReceive('hello', 'World!');
 
-        let child2Mailbox = yield parent.sendAndReceive('getMailbox');
+        let child2Mailbox = await parent.sendAndReceive('getMailbox');
 
         expect(child2Mailbox).to.have.members(['World!']);
-      }));
+      });
     });
 
-    describe('metrics()', function() {
-      it('should collect metrics from target actor and all the actor sub-tree', P.coroutine(function*() {
-        let parent = yield rootActor.createChild({
-          initialize: function(selfActor) {
-            return P.join(
+    describe('metrics()', function () {
+      it('should collect metrics from target actor and all the actor sub-tree', async () => {
+        let parent = await rootActor.createChild({
+          initialize: function (selfActor) {
+            return P.all([
               selfActor.createChild({
-                metrics: function() {
+                metrics: function () {
                   return {
                     childMetric: 222
                   };
                 }
-              }, { name: 'Child1', mode: 'threaded' }),
+              }, {name: 'Child1', mode: 'threaded'}),
               selfActor.createChild({
-                metrics: function() {
+                metrics: function () {
                   return {
                     childMetric: 333
                   };
                 }
-              }, { name: 'Child2', mode: 'threaded' })
-            );
+              }, {name: 'Child2', mode: 'threaded'})
+            ]);
           },
 
-          metrics: function() {
+          metrics: function () {
             return {
               parentMetric: 111
             };
           }
         });
 
-        let metrics = yield parent.metrics();
+        let metrics = await parent.metrics();
 
         expect(metrics).to.be.deep.equal({
           parentMetric: 111,
@@ -662,41 +670,41 @@ describe('ThreadedActor', function() {
             childMetric: 333
           }
         });
-      }));
+      });
 
-      it('should not collect metrics from destroyed actors', P.coroutine(function*() {
-        let parent = yield rootActor.createChild({
-          initialize: async function(selfActor) {
+      it('should not collect metrics from destroyed actors', async () => {
+        let parent = await rootActor.createChild({
+          initialize: async function (selfActor) {
             this.child1 = await selfActor.createChild({
-              metrics: function() {
+              metrics: function () {
                 return {
                   childMetric: 222
                 };
               }
-            }, { name: 'Child1', mode: 'threaded' });
+            }, {name: 'Child1', mode: 'threaded'});
             this.child2 = await selfActor.createChild({
-              metrics: function() {
+              metrics: function () {
                 return {
                   childMetric: 333
                 };
               }
-            }, { name: 'Child2', mode: 'threaded' });
+            }, {name: 'Child2', mode: 'threaded'});
           },
 
-          metrics: function() {
+          metrics: function () {
             return {
               parentMetric: 111
             };
           },
 
-          killChild2: function() {
+          killChild2: function () {
             return this.child2.destroy();
           }
         });
 
-        yield parent.sendAndReceive('killChild2');
+        await parent.sendAndReceive('killChild2');
 
-        let metrics = yield parent.metrics();
+        let metrics = await parent.metrics();
 
         expect(metrics).to.be.deep.equal({
           parentMetric: 111,
@@ -704,23 +712,21 @@ describe('ThreadedActor', function() {
             childMetric: 222
           }
         });
-      }));
+      });
     });
-  }
-  else {
-    describe('createChild()', function() {
-      it('should throw not supported error', P.coroutine(function*() {
+  } else {
+    describe('createChild()', function () {
+      it('should throw not supported error', async () => {
         let error;
 
         try {
-          yield rootActor.createChild({}, { mode: 'threaded' });
-        }
-        catch (err) {
+          await rootActor.createChild({}, {mode: 'threaded'});
+        } catch (err) {
           error = err;
         }
 
         expect(error).to.be.an.instanceOf(Error);
-      }));
+      });
     });
   }
 });

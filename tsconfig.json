@@ -12,7 +12,7 @@
     "newLine": "lf",
     "outDir": "target",
     "types": ["node", "mocha"],
-    "typeRoots": ["./node_modules/@types"]
+    "typeRoots": ["./node_modules/@types", "./test-resources/ts-resources/types"]
   },
   "exclude": [
     "node_modules",

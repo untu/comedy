@@ -29,7 +29,7 @@ describe('DisabledActor', () => {
     return system.destroy();
   });
 
-  it('should not be launched by actor system', async function() {
+  it('should not be launched by actor system', async () => {
     let initialized = false;
 
     class TestActor {
@@ -43,7 +43,7 @@ describe('DisabledActor', () => {
     expect(initialized).to.be.equal(false);
   });
 
-  it('should throw error on attempt to send a message to a disabled actor', async function() {
+  it('should throw error on attempt to send a message to a disabled actor', async () => {
     class TestActor {
       test() {
         return 'OK!';

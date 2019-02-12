@@ -6,6 +6,7 @@
  */
 
 import {EventEmitter} from 'events';
+import * as P from 'bluebird';
 
 export interface Logger {
   isDebug(): boolean;
@@ -17,6 +18,7 @@ export interface Logger {
   warn(...messages: any[]): void;
 
   error(...messages: any[]): void;
+  getImplementation(): any;
 }
 
 export interface ParentActorRef {
@@ -24,7 +26,7 @@ export interface ParentActorRef {
 
   send(topic: string, ...message: any[]): Promise<void>;
 
-  sendAndReceive(topic: string, ...message: any[]): Promise<any>;
+  sendAndReceive(topic: string, ...message: any[]): P<any>;
 }
 
 export interface SystemBus extends EventEmitter {
@@ -51,7 +53,7 @@ export interface ActorRef extends EventEmitter {
 
   send(topic: string, ...message: any[]): Promise<void>;
 
-  sendAndReceive(topic: string, ...message: any[]): Promise<any>;
+  sendAndReceive(topic: string, ...message: any[]): P<any>;
 
   broadcast(topic: string, ...message: any[]): Promise<void>;
 
@@ -61,7 +63,7 @@ export interface ActorRef extends EventEmitter {
 
   forwardToChild(child: ActorRef, ...topics: Array<string|RegExp>): void;
 
-  metrics(): Promise<Object>;
+  metrics(): Promise<{summary: { count: Number }}>;
 
   destroy(): Promise<void>;
 
@@ -75,7 +77,7 @@ export interface Actor extends ActorRef {
 
   createChild(behaviour: ActorDefinition|Object, options?: Object): Promise<ActorRef>;
 
-  createChildren(modulePath: string): Promise<ActorRef[]>;
+  createChildren(modulePath: string, options?: Object): Promise<ActorRef[]>;
 }
 
 export interface ActorDefinition {
@@ -100,6 +102,10 @@ export interface ActorSystem {
   getBus(): SystemBus;
 
   listen(port?: number, host?: string): Promise<void>;
+
+  getLog(): Logger;
 }
 
 export function createSystem(options: Object): ActorSystem;
+
+export function inherits(subClass: any, superClass: any): void;
