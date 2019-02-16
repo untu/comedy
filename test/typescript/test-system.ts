@@ -5,7 +5,7 @@
  * on the Eclipse official site (https://www.eclipse.org/legal/epl-v10.html).
  */
 
-import {ActorSystem, Actor, Logger} from '../../index';
+import {ActorSystem, Actor} from '../../index';
 import {afterEach} from 'mocha';
 import * as actors from '../../index';
 import {expect} from 'chai';
@@ -98,7 +98,7 @@ describe('ActorSystem', function() {
       }
 
       class MyActor {
-        private log: Logger;
+        private log: any;
         initialize(selfActor: Actor) {
           this.log = selfActor.getLog();
         }
@@ -134,7 +134,7 @@ describe('ActorSystem', function() {
       }
 
       class MyActor {
-        private log: Logger;
+        private log: any;
         initialize(selfActor: Actor) {
           this.log = selfActor.getLog();
         }
@@ -168,7 +168,7 @@ describe('ActorSystem', function() {
 
     it('should support custom loggers specified by module path', async () => {
       class MyActor {
-        private log: Logger;
+        private log: any;
         initialize(selfActor: Actor) {
           this.log = selfActor.getLog();
         }
@@ -200,7 +200,7 @@ describe('ActorSystem', function() {
 
     it('should be able to pass custom logger across process boundary', async () => {
       class MyActor {
-        private log: Logger;
+        private log: any;
         initialize(selfActor: Actor) {
           this.log = selfActor.getLog();
         }

@@ -41,6 +41,7 @@ describe('ClusteredActor', function () {
       }
 
       hello() {
+        // @ts-ignore
         return this.parent.sendAndReceive('helloReceived').return('Hello!');
       }
     }

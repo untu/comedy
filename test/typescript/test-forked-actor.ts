@@ -5,9 +5,6 @@
  * on the Eclipse official site (https://www.eclipse.org/legal/epl-v10.html).
  */
 
-'use strict';
-
-/* eslint require-jsdoc: "off" */
 import {Actor, ActorRef, ActorSystem, ParentActorRef} from '../../index';
 import {afterEach} from 'mocha';
 import * as tu from '../../lib/utils/test';

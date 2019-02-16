@@ -11,17 +11,24 @@ import {Socket} from 'net';
 export class MessageSocket extends EventEmitter {
 
   constructor(socket: Socket);
+
   // @ts-ignore
   on(event: string | symbol, listener: (...args: any[]) => void): void;
+
   // @ts-ignore
   once(event: string | symbol, listener: (...args: any[]) => void): void;
+
   // @ts-ignore
-  removeListener(event: string | symbol, listener: (...args: any[]) => void): void;
+  removeListener(eventName: string | symbol, listener: (...args: any[]) => void): void;
+
+  // @ts-ignore
+  removeAllListeners(eventName?: string | symbol): void;
 
   write(message: object, cb: Function): void;
+
   send(message: object, cb?: Function): void;
-  makePacket(message: object): Buffer;
+
   end(): void;
+
   destroy(): void;
-  _handleIncomingData(data: Buffer): void;
 }
