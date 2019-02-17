@@ -28,6 +28,8 @@ export class MessageSocket extends EventEmitter {
 
   send(message: object, cb?: Function): void;
 
+  makePacket(message: object): Buffer;
+
   end(): void;
 
   destroy(): void;
