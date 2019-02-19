@@ -32,7 +32,7 @@ describe('Hot configuration change', () => {
   afterEach(() => system.destroy());
 
   describe('changeConfiguration()', () => {
-    it('should be able to programmatically change actor mode ("in-memory" -> "forked")', async function() {
+    it('should be able to programmatically change actor mode ("in-memory" -> "forked")', async () => {
       let testActor = await rootActor.createChild({
         test: () => process.pid
       }, { mode: 'in-memory' });
@@ -55,7 +55,7 @@ describe('Hot configuration change', () => {
       expect(localPid2).to.be.equal(localPid);
     });
 
-    it('should be able to programmatically change actor mode ("forked" -> "in-memory")', async function() {
+    it('should be able to programmatically change actor mode ("forked" -> "in-memory")', async () => {
       let testActor = await rootActor.createChild({
         test: () => process.pid
       }, { mode: 'forked' });
@@ -81,7 +81,7 @@ describe('Hot configuration change', () => {
       expect(forkedPid2).to.be.not.equal(forkedPid);
     });
 
-    it('should be able to programmatically change clustering mode in "in-memory" mode', async function() {
+    it('should be able to programmatically change clustering mode in "in-memory" mode', async () => {
       let mode = 'in-memory';
       let pidCounter = 1;
       let testActor = await rootActor.createChild({
@@ -137,7 +137,7 @@ describe('Hot configuration change', () => {
       expect(finalPid).to.be.equal(5);
     });
 
-    it('should be able to programmatically change clustering mode in "forked" mode', async function() {
+    it('should be able to programmatically change clustering mode in "forked" mode', async () => {
       let mode = 'forked';
       let testActor = await rootActor.createChild({
         test: () => process.pid
@@ -242,7 +242,7 @@ describe('Hot configuration change', () => {
       }, { name: 'Parent' });
     });
 
-    it('should change global actor configuration for actor and it\'s children', async function() {
+    it('should change global actor configuration for actor and it\'s children', async () => {
       let modes1 = await parentActor.sendAndReceive('collectModes');
 
       expect(modes1).to.be.deep.equal({
@@ -319,7 +319,7 @@ describe('Hot configuration change', () => {
       });
     });
 
-    it('should change global actor configuration recursively', async function() {
+    it('should change global actor configuration recursively', async () => {
       await parentActor.changeGlobalConfiguration({
         Child1: { mode: 'forked' },
         SubChild: { mode: 'forked' }
@@ -339,7 +339,7 @@ describe('Hot configuration change', () => {
       });
     });
 
-    it('should work for "threaded" mode', async function() {
+    it('should work for "threaded" mode', async () => {
       await parentActor.changeGlobalConfiguration({
         Child1: { mode: 'threaded' }
       });
@@ -376,7 +376,7 @@ describe('Hot configuration change', () => {
       });
     });
 
-    it('should work for "remote" mode', async function() {
+    it('should work for "remote" mode', async () => {
       let remoteSystem = actors.createSystem({
         test: true,
         additionalRequires: 'ts-node/register'
@@ -425,7 +425,7 @@ describe('Hot configuration change', () => {
       }
     });
 
-    it('should correctly change clustering settings (scale up)', async function() {
+    it('should correctly change clustering settings (scale up)', async () => {
       let modes1 = await parentActor.sendAndReceive('collectModes');
 
       expect(modes1).to.be.deep.equal({
@@ -577,7 +577,7 @@ describe('Hot configuration change', () => {
       });
     });
 
-    it('should correctly change clustering settings (scale down)', async function() {
+    it('should correctly change clustering settings (scale down)', async () => {
       let modes1 = await parentActor.sendAndReceive('collectModes');
 
       expect(modes1).to.be.deep.equal({
@@ -754,7 +754,7 @@ describe('Hot configuration change', () => {
       });
     });
 
-    it('should correctly change scaled mode', async function() {
+    it('should correctly change scaled mode', async () => {
       await parentActor.changeGlobalConfiguration({
         Child1: {
           mode: 'threaded',
@@ -867,7 +867,7 @@ describe('Hot configuration change', () => {
       });
     });
 
-    it('should use "in-memory" mode by default', async function() {
+    it('should use "in-memory" mode by default', async () => {
       let modes1 = await parentActor.sendAndReceive('collectModes');
 
       expect(modes1).to.be.deep.equal({
@@ -905,7 +905,7 @@ describe('Hot configuration change', () => {
       expect(modes3).to.be.deep.equal(modes1);
     });
 
-    it('should correctly scale-up module-defined actors', async function() {
+    it('should correctly scale-up module-defined actors', async () => {
       let moduleDefinedActor = await rootActor.createChild('/test-resources/actors/test-actor', {
         mode: 'forked',
         clusterSize: 2

@@ -61,7 +61,7 @@ export interface ActorRef extends EventEmitter {
 
   forwardToChild(child: ActorRef, ...topics: Array<string|RegExp>): void;
 
-  metrics(): Promise<Object>;
+  metrics(): Promise<any>;
 
   destroy(): Promise<void>;
 
@@ -75,7 +75,7 @@ export interface Actor extends ActorRef {
 
   createChild(behaviour: ActorDefinition|Object, options?: Object): Promise<ActorRef>;
 
-  createChildren(modulePath: string): Promise<ActorRef[]>;
+  createChildren(modulePath: string, options?: Object): Promise<ActorRef[]>;
 }
 
 export interface ActorDefinition {
@@ -100,6 +100,10 @@ export interface ActorSystem {
   getBus(): SystemBus;
 
   listen(port?: number, host?: string): Promise<void>;
+
+  getLog(): any;
 }
 
 export function createSystem(options: Object): ActorSystem;
+
+export function inherits(subClass: any, superClass: any): void;

@@ -16,7 +16,7 @@
   ],
   "scripts": {
     "validate": "grunt validate",
-    "test": "node --experimental-worker node_modules/mocha/bin/_mocha -R spec --recursive --timeout 20000 --require ts-node/register --compilers ts:typescript",
+    "test": "cross-env TS_NODE_FILES=true node --experimental-worker node_modules/mocha/bin/_mocha -R spec --recursive --timeout 20000 --require ts-node/register --compilers ts:typescript",
     "coverage": "nyc --reporter=lcov npm test",
     "docs": "markdown-toc -i README.md",
     "version": "npm run docs",
@@ -36,8 +36,11 @@
   },
   "homepage": "https://github.com/untu/comedy#readme",
   "devDependencies": {
+    "@types/bson": "^1.0.11",
+    "@types/supertest": "^2.0.7",
     "chai": "^3.5.0",
     "chai-like": "^0.1.10",
+    "cross-env": "^5.2.0",
     "eslint": "4.3.0",
     "eslint-config-google": "0.6.0",
     "eslint-plugin-jsdoc": "2.3.1",
@@ -53,8 +56,8 @@
     "np": "^2.13.1",
     "nyc": "^11.0.3",
     "supertest": "^3.0.0",
-    "tslint": "5.10.0",
     "ts-node": "8.0.2",
+    "tslint": "5.10.0",
     "typescript": "3.0.3"
   },
   "dependencies": {
