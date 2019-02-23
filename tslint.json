@@ -58,6 +58,7 @@
       true,
       120
     ],
+    "linebreak-style": [true, "LF"],
     "jsdoc-format": true,
     "new-parens": true,
     "no-consecutive-blank-lines": true,

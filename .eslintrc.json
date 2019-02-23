@@ -28,6 +28,7 @@
       "tabWidth": 2,
       "ignoreComments": false
     }],
+    "linebreak-style": ["warn", "unix"],
     "require-jsdoc": [
       "warn",
       {
