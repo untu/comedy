@@ -1,3 +1,6 @@
+### v 2.1.0:
+- Added possibility to specify custom logger name.
+
 ### v 2.0.0:
 - Implemented hot configuration change.
 - **Breaking change:** removed possibility to create actor children from outside of an actor.
