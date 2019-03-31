@@ -845,7 +845,7 @@ To configure log levels dynamically, you need to:
 
 The `logger.json` file has the following format:
 
-```javascript
+```json
 {
   "categories": {
     "Default": "Info",
@@ -1381,7 +1381,7 @@ var system = actors({ balancers: ['/some-project-folder/balancers/custom-balance
 After that, we just specify the balancer's name in the `"balancer"` parameter of our clustered actor, either
 programmatically or via `actors.json` file:
 
-```javascript
+```json
 {
   "MyClusteredActor": {
     "mode": "forked",
