@@ -29,6 +29,7 @@ single host (by spawning sub-processes) or even to multiple hosts in your networ
     + [Named clusters](#named-clusters)
     + [Multiple hosts](#multiple-hosts)
   * [Threaded Actors](#threaded-actors)
+  * [Actor Respawning (Supervision)](#actor-respawning-supervision)
 - [Actor Lifecycle](#actor-lifecycle)
   * [initialize() lifecycle hook](#initialize-lifecycle-hook)
   * [destroy() lifecycle hook](#destroy-lifecycle-hook)
@@ -606,6 +607,36 @@ as usual:
 
 > In NodeJS v10 worker threads are an experimental feature, so they are not enabled by default. To enable them,
 > you need to run your NodeJS executable with `--experimental-worker` option.
+
+### Actor Respawning (Supervision)
+
+When an actor operates in `"in-memory"` mode, only one of two things may happen: either the actor is working or
+the whole process has failed. But when an actor is in `"forked"` or `"remote"` mode, it operates in a separate
+process and communicates with it's parent across the process boundary. In this case, a child process can fail while
+a parent process is alive, and thus the child actor may stop responding to messages from parent actor.
+
+Comedy has a built-in capability of respawning a crashed child process and restoring the child actor. It creates
+a new process and a new actor, so, the in-memory state that was kept in a child actor at that point would be lost.
+But in all other respects the new child actor will be identical to the lost one, except for actor ID, which will
+be new for respawned actor.
+
+To enable automatic child actor respawn, you just need to specify `"onCrash": "respawn"` actor parameter:
+
+```json
+{
+  "MyForkedActor": {
+    "mode": "forked",
+    "onCrash": "respawn"
+  }
+}
+```
+
+The configuration above enables automatic actor respawn for all actors with name `"MyForkedActor"`.
+
+There is some additional overhead that you get for enabling this option. Namely, when automatic respawning is enabled,
+the child actor with `"onCrash": "respawn"` configured and it's parent actor will exchange keep-alive ("ping-pong")
+messages every 5 seconds. If a child actor does not respond to ping within 5 seconds, it is considered dead and a
+new child process with new child actor is launched to replace the lost one.
 
 ## Actor Lifecycle
 
