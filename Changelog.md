@@ -1,3 +1,7 @@
+### v 2.1.1:
+- Fixed some NPM audit warnings.
+- Fixed `Promise.deferred` warning.
+
 ### v 2.1.0:
 - Added possibility to specify custom logger name.
 
