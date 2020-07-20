@@ -59,7 +59,7 @@ single host (by spawning sub-processes) or even to multiple hosts in your networ
 Comedy is installed with NPM by running:
 
     npm install comedy
-    
+
 After that you can use Comedy framework in your code by requiring `comedy` package.
 
 ```javascript
