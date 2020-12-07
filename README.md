@@ -1,6 +1,6 @@
 # Comedy
 
-[![Build Status](https://travis-ci.org/untu/comedy.svg?branch=master)](https://travis-ci.org/untu/comedy)
+[![Build Status](https://app.buddy.works/comedy/comedy/pipelines/pipeline/295827/badge.svg?token=e840837833e06c9064d4c12267b167b8c2641878f0f0e72e68d782d13f2e66e8 "buddy pipeline")](https://app.buddy.works/comedy/comedy/pipelines/pipeline/295827)
 [![Windows Tests](https://ci.appveyor.com/api/projects/status/m1vorqhe2yk09h5t/branch/master?svg=true&passingText=Windows%20Tests%20OK&failingText=Windows%20Tests%20FAIL&pendingText=Windows%20Tests%20pending)](https://ci.appveyor.com/project/weekens/comedy)
 [![codecov](https://codecov.io/gh/untu/comedy/branch/master/graph/badge.svg)](https://codecov.io/gh/untu/comedy)
 
