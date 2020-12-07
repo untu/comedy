@@ -1,0 +1,68 @@
+- pipeline: "Pull request"
+  trigger_mode: "ON_EVERY_PUSH"
+  ref_name: "refs/pull/*"
+  ref_type: "WILDCARD"
+  priority: "NORMAL"
+  fail_on_prepare_env_warning: true
+  trigger_condition: "ALWAYS"
+  actions:
+    - action: "NPM - Test"
+      type: "BUILD"
+      working_directory: "/buddy/comedy"
+      docker_image_name: "library/node"
+      docker_image_tag: "10"
+      execute_commands:
+        - "npm ci"
+        - "npm run validate"
+        - "npm run coverage"
+      volume_mappings:
+        - "/:/buddy/comedy"
+      trigger_condition: "ALWAYS"
+      shell: "BASH"
+    - action: "Codecov"
+      type: "BUILD"
+      working_directory: "/buddy/comedy"
+      docker_image_name: "library/ubuntu"
+      docker_image_tag: "18.04"
+      execute_commands:
+        - "bash <(curl -s https://codecov.io/bash)"
+      setup_commands:
+        - "apt-get update && apt-get -y install curl"
+      volume_mappings:
+        - "/:/buddy/comedy"
+      trigger_condition: "ALWAYS"
+      shell: "BASH"
+- pipeline: "Master"
+  trigger_mode: "ON_EVERY_PUSH"
+  ref_name: "master"
+  ref_type: "BRANCH"
+  priority: "NORMAL"
+  fail_on_prepare_env_warning: true
+  trigger_condition: "ALWAYS"
+  actions:
+    - action: "NPM - Test"
+      type: "BUILD"
+      working_directory: "/buddy/comedy"
+      docker_image_name: "library/node"
+      docker_image_tag: "10"
+      execute_commands:
+        - "npm ci"
+        - "npm run validate"
+        - "npm run coverage"
+      volume_mappings:
+        - "/:/buddy/comedy"
+      trigger_condition: "ALWAYS"
+      shell: "BASH"
+    - action: "Codecov"
+      type: "BUILD"
+      working_directory: "/buddy/comedy"
+      docker_image_name: "library/ubuntu"
+      docker_image_tag: "18.04"
+      execute_commands:
+        - "bash <(curl -s https://codecov.io/bash)"
+      setup_commands:
+        - "apt-get update && apt-get -y install curl"
+      volume_mappings:
+        - "/:/buddy/comedy"
+      trigger_condition: "ALWAYS"
+      shell: "BASH"
