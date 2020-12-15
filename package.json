@@ -1,6 +1,6 @@
 {
   "name": "comedy",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "Node.js actor framework.",
   "main": "index.js",
   "bin": {
