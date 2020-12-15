@@ -1,5 +1,6 @@
 ### v 2.1.2:
 - Fixed some dependency vulnerabilities.
+- Fixed missing custom parameters after hot configuration change (#50).
 
 ### v 2.1.1:
 - Fixed some NPM audit warnings.
