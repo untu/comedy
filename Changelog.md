@@ -1,3 +1,6 @@
+### v 2.1.2:
+- Fixed some dependency vulnerabilities.
+
 ### v 2.1.1:
 - Fixed some NPM audit warnings.
 - Fixed `Promise.deferred` warning.
