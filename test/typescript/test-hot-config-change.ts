@@ -9,7 +9,7 @@
 
 import * as actors from '../../';
 import {expect} from 'chai';
-import {Actor, ActorRef, ActorSystem} from '../../index';
+import { Actor, ActorDefinition, ActorRef, ActorSystem } from '../../index';
 import {afterEach, beforeEach} from 'mocha';
 import * as common from '../../lib/utils/common';
 import _ = require('underscore');
@@ -193,6 +193,42 @@ describe('Hot configuration change', () => {
       expect(finalPid).to.be.not.equal(pid1);
       expect(finalPid).to.be.not.equal(pid2);
       expect(finalPid).to.be.not.equal(pid3);
+    });
+
+    it('should respect custom parameters', async () => {
+      class TestActor implements ActorDefinition {
+        private selfActor: Actor;
+
+        initialize(selfActor: Actor): void {
+          this.selfActor = selfActor;
+        }
+
+        test() {
+          return `${this.selfActor.getCustomParameters().greeting} ${process.pid}`;
+        }
+
+        destroy(): void {
+          // Nothing to do.
+        }
+      }
+
+      let testActor = await rootActor.createChild(TestActor, {
+        mode: 'in-memory',
+        customParameters: {
+          greeting: 'Hello!'
+        }
+      });
+
+      let message = await testActor.sendAndReceive('test');
+
+      expect(message).to.match(/Hello! \d+/);
+
+      await testActor.changeConfiguration({ mode: 'forked' });
+
+      let forkedMessage = await testActor.sendAndReceive('test');
+
+      expect(forkedMessage).to.match(/Hello! \d+/);
+      expect(forkedMessage).to.be.not.equal(message);
     });
   });
 
