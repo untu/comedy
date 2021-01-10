@@ -229,6 +229,13 @@ describe('Hot configuration change', () => {
 
       expect(forkedMessage).to.match(/Hello! \d+/);
       expect(forkedMessage).to.be.not.equal(message);
+
+      await testActor.changeConfiguration({ mode: 'threaded' });
+
+      let threadedMessage = await testActor.sendAndReceive('test');
+
+      expect(threadedMessage).to.match(/Hello! \d+/);
+      expect(threadedMessage).to.be.equal(message);
     });
   });
 
