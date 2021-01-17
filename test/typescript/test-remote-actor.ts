@@ -10,7 +10,7 @@ import {afterEach} from 'mocha';
 import * as tu from '../../lib/utils/test';
 import * as actors from '../../index';
 import {expect} from 'chai';
-import * as isRunning from 'is-running';
+import isRunning = require('is-running');
 import * as P from 'bluebird';
 import * as _ from 'underscore';
 

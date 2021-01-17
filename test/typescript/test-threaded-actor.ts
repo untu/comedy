@@ -9,7 +9,7 @@ import {ActorSystem, Actor, ActorRef} from '../../index';
 import {afterEach} from 'mocha';
 import * as actors from '../../index';
 import {expect} from 'chai';
-import * as isRunning from 'is-running';
+import isRunning = require('is-running');
 import * as P from 'bluebird';
 import * as _ from 'underscore';
 import * as common from '../../lib/utils/common.js';
@@ -373,6 +373,23 @@ describe('ThreadedActor', function () {
 
         expect(result).to.be.equal('HELLO!');
         expect(localCounter).to.be.equal(1);
+      });
+
+      it('should correctly send numeric parameters', async function() {
+        /**
+         * Test actor class.
+         */
+        class TestActor {
+          printNumber(n: number): string {
+            return `${n}`;
+          }
+        }
+
+        let actor = await rootActor.createChild(TestActor, { mode: 'threaded' });
+
+        let result = await actor.sendAndReceive('printNumber', 0);
+
+        expect(result).to.be.equal('0');
       });
     });
 
