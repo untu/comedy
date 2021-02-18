@@ -1,10 +1,10 @@
 {
   "name": "comedy",
-  "version": "2.1.3",
+  "version": "2.1.4",
   "description": "Node.js actor framework.",
   "main": "index.js",
   "bin": {
-    "comedy-node": "./listener-node.js"
+    "comedy-node": "listener-node.js"
   },
   "files": [
     "lib/",
