@@ -78,6 +78,6 @@
     "tosource": "1.0.0",
     "underscore": "1.12.1",
     "underscore.string": "3.3.6",
-    "winston": "2.4.5"
+    "winston": "3.3.0"
   }
 }
