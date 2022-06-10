@@ -1,6 +1,6 @@
 {
   "name": "comedy",
-  "version": "2.1.5",
+  "version": "2.1.7",
   "description": "Node.js actor framework.",
   "main": "index.js",
   "bin": {
@@ -77,7 +77,7 @@
     "toobusy-js": "0.5.1",
     "tosource": "1.0.0",
     "underscore": "1.12.1",
-    "underscore.string": "3.3.5",
+    "underscore.string": "3.3.6",
     "winston": "3.3.0"
   }
 }
